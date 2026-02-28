@@ -1,0 +1,97 @@
+Grappling Instructional
+Reference Page (Tab 1)
+2D Mind Map (Tab 2)
+3D Weighted Network Map (Tab 3)
+
+Build a 3-tab web app that presents the same grappling instructional map in three formats. The dataset is pulled from my Mindomo OPML export.
+
+STACK (required)
+- Next.js + TypeScript
+- Zustand (global state)
+- OPML parsing: fast-xml-parser (or equivalent)
+- 2D layout: d3-hierarchy tree + d3-zoom (no overlap)
+- 3D: react-force-graph-3d
+
+DATA INGESTION (OPML)
+Parse Mindomo OPML into a canonical graph model used by all tabs:
+- nodes: { id, slug, title, type, childrenIds, tags?, videos?, offence_ids?, defence_ids? }
+- edges: { sourceId, targetId, kind: "child" | "outcome" }
+
+IDs must be stable and unique even if titles repeat. Prefer Mindomo IDs if present; otherwise use a path-based id.
+Support converging pathways using OUTCOME edges from OPML text convention:
+- Example in a node title or note: "Underhook Pass -> Side Control" or "[outcome:Side Control]"
+Destination matching: exact title match first, then slug match, else ignore with a warning in console.
+
+APP-WIDE BEHAVIOR (SYNCED TABS)
+All tabs are intertwined and must expand/collapse in unison.
+On first load, everything starts collapsed: show only the root node (e.g., “Grappling”), with no children expanded.
+
+SHARED STATE (required)
+Implement a single global state store containing:
+- expandedNodeIds (Set)
+- selectedNodeId
+- drillingIds (Set)
+- learnedIds (Set)
+- learnedOnly (boolean)
+- drillingOnly (boolean)
+
+All three tabs MUST read/write this same store.
+Any expand/collapse action in any tab updates expandedNodeIds and MUST immediately reflect in the other tabs.
+
+TOP BAR FEATURES (shown on ALL tabs)
+1) Collapse all: collapse everything to only the root node.
+2) Expand all: expand everything but automatically re-layout so it stays readable.
+   - 2D must prevent node overlap, maintain consistent spacing by depth, and include pan/zoom.
+   - If expanded visible nodes exceed ~500, switch to depth grouping / collapsible clusters by topic/depth.
+   - Reference tab must virtualize long lists so Expand-all doesn’t freeze the browser.
+3) Drilling: user can multi-select what they are drilling.
+4) Learned: user can mark techniques as learned and optionally view learned-only.
+
+FILTER SEMANTICS (consistent across all tabs)
+- Drilling mode: show only nodes in drillingIds PLUS their ancestor chain (context) PLUS their descendants. Hide/collapse everything else.
+- Learned-only mode: show only nodes in learnedIds PLUS their ancestor chain (context). Hide/collapse everything else unless user manually expands.
+- If both drilling + learned-only are enabled: show the INTERSECTION (learned nodes within drilling scope).
+Persist drillingIds + learnedIds in localStorage.
+
+INTERACTION RULES (consistent across tabs)
+- Clicking a node title toggles expand/collapse (updates shared store).
+- A separate “Details” icon/button opens a side panel with info (videos, offence/defence, notes).
+- Video buttons only appear if that node has video URLs.
+
+TAB 1 — Reference Page (nested outline)
+A reference page with headings that expand/collapse.
+- Children appear ~1cm to the right per depth level under the parent heading.
+- Continue until leaf nodes (end of chain).
+- Many pathways converge into core positions (Side Control, Mount, Back Control, Saddle, etc).
+- Where videos exist, show buttons: Instructional and/or Live Footage; click opens embedded modal player.
+- Must support search (jump to node) and virtualized rendering for large trees.
+
+TAB 2 — 2D Mind Map
+A mind map view of the same content.
+- Single root parent called “Grappling”
+- Clicking nodes expands branches progressively until leaf.
+- Must have pan/zoom.
+- Layout must not overlap nodes (use tree layout).
+- Expand-all must re-layout to remain readable and may use depth grouping/collapsible clusters when large.
+
+TAB 3 — 3D Weighted Network Graph
+A 3D weighted network where nodes grow based on how often branches lead to them.
+- Node size must have clear, obvious discrepancies.
+- Weight calculation: use inbound edge count (especially inbound outcome edges). Use a scaling that is visibly different (e.g., sqrt or log scaling + clamp).
+- Clicking a node opens a details panel with:
+  - Title
+  - Offence tab: offence_ids list
+  - Defence tab: defence_ids list
+Each offence/defence item deep-links back to the Reference tab and auto-expands the path to it.
+
+STRIPE (future phase - do not fully implement yet)
+I want a subscription model later: A$5 per week using Stripe.
+For now, include:
+- a simple paywall placeholder component
+- architecture notes for Stripe Checkout subscription + webhook entitlement
+Do NOT build full authentication unless asked later.
+
+DELIVERABLES
+- Full working code (all files)
+- Instructions to run locally
+- A sample dataset (in addition to OPML parsing) to demonstrate features if OPML isn’t provided
