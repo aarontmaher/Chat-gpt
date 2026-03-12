@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<style>
+<style
 :root {
   --bg: #0a0c10;
   --surface: #0f1218;
@@ -95,7 +95,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .inline-player { }
 
 /* ── 2D MAP VIEW ── */
-#customMapView { position: relative; background: #080a0e; overflow: hidden; }
 #cmSvg { display: block; }
 .map-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
 
@@ -205,7 +204,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <div class="view-tabs">
   <button class="view-tab active" data-view="reference">📋 Reference</button>
-  <button class="view-tab" data-view="custommap">✦ 2D Map</button>
   <button class="view-tab" data-view="graph3d">⬡ 3D Graph</button>
 </div>
 
@@ -231,30 +229,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 
 <!-- ══ 2D CUSTOM MAP ═══════════════════════════════════════════════════════ -->
-<div id="customMapView" style="display:none; flex-direction:column;">
-  <div class="toolbar">
-    <div class="search-wrap">
-      <span style="color:var(--text-muted);font-size:12px;">⌕</span>
-      <input type="text" id="cmSearch" placeholder="Search techniques...">
-    </div>
-    <div class="filter-tabs">
-      <button class="tab active cm-filter" data-filter="all">All</button>
-      <button class="tab cm-filter" data-filter="drilling">Drilling</button>
-      <button class="tab cm-filter" data-filter="learned">Learned</button>
-    </div>
-    <button class="toolbar-btn" id="cmCollapseAll">Collapse All</button>
-    <button class="toolbar-btn" id="cmExpandAll">Expand All</button>
-  </div>
-  <div style="position:relative; flex:1; overflow:hidden; background:#080a0e; min-height:calc(100vh - 200px);" id="cmCanvas">
-    <svg id="cmSvg" style="position:absolute;top:0;left:0;" overflow="visible"></svg>
-    <div style="position:absolute;top:8px;right:8px;display:flex;gap:5px;z-index:10;">
-      <button class="mctrl" id="cmZoomIn">+</button>
-      <button class="mctrl" id="cmZoomOut">&#8722;</button>
-      <button class="mctrl mctrl-label" id="cmReset">RESET</button>
-    </div>
-    <div id="cmPopup" class="node-popup"></div>
-  </div>
-</div>
 
 <!-- ══ 3D GRAPH ════════════════════════════════════════════════════════════ -->
 <div
@@ -435,7 +409,6 @@ function syncSelectedToTab(view) {
       }, 200);
     }, 100);
 
-  } else if (view === 'custommap') {
     // Only expand the SECTION that contains this node — no deep expansion
     // Deep expansion causes floating disconnected child nodes
     setTimeout(() => {
@@ -933,11 +906,8 @@ function switchToTab(view) {
   const btn = document.querySelector('[data-view="'+view+'"]');
   if (btn) btn.classList.add('active');
   document.getElementById('referenceView').style.display = view === 'reference' ? 'block' : 'none';
-  document.getElementById('customMapView').style.display = view === 'custommap' ? 'flex' : 'none';
-  document.getElementById('customMapView').style.flexDirection = 'column';
   document.getElementById('graph3dView').style.display = view === 'graph3d' ? 'flex' : 'none';
   document.getElementById('graph3dView').style.flexDirection = 'column';
-  if (view === 'custommap') initCustomMap();
   if (view === 'graph3d') { requestAnimationFrame(() => requestAnimationFrame(initGraph3D)); }
   // Sync selected node into the new tab
   syncSelectedToTab(view);
@@ -982,126 +952,9 @@ function refreshAllViews() {
     if (nb) nb.className = STATE.notes[key] ? 'btn-note has-note' : 'btn-note';
     li.dataset.hasNote = STATE.notes[key] ? '1' : '0';
   });
-  // Update 2D map node colours if initialized
-  if (window.cmRefreshNodes) window.cmRefreshNodes();
   // Update 3D node colours if initialized
   if (window.g3dRefreshNodes) window.g3dRefreshNodes();
 }
-
-// ─── 2D CUSTOM MAP ─────────────────────────────────────────────────────────
-window.initCustomMap = (function() {
-  let ready=false, tx=0, ty=0, sc=0.72, panX=0, panY=0, panning=false;
-  const NS='http://www.w3.org/2000/svg', reg={}; window._cmReg=reg;
-  const E=(tag,attrs,par)=>{const e=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(attrs||{}))e.setAttribute(k,v);if(par)par.appendChild(e);return e;};
-  const applyT=()=>{const g=document.getElementById('cmRoot');if(g)g.setAttribute('transform',`translate(${tx},${ty}) scale(${sc})`);};
-  const pc=key=>{const p=STATE.progress[key]||'none';return p==='learned'?'#e8ff47':p==='drilling'?'#47c8ff':null;};
-  const nw=d=>[0,180,164,148,132,118,106][Math.min(d,6)]||106;
-  const nh=d=>[0,38,30,26,24,22,20][Math.min(d,6)]||20;
-  const span=(nd,d,r)=>{
-    if(!nd.c||!nd.c.length)return Math.max(0.18,(nw(d)+14)/Math.max(r,1));
-    const cr=r+(d<=1?220:d<=2?180:d<=3?148:118);
-    return Math.max((nw(d)+14)/Math.max(r,1),nd.c.reduce((s,c)=>s+span(c,d+1,cr),0));
-  };
-  const refresh=r=>{const p=pc(r.key),c=r.col,hv=r.hv,d=r.depth;r.bg.setAttribute('fill',p?p+'22':(d===1?c+'1a':'#0f1218'));r.bg.setAttribute('stroke',p||(d<=2?c:(hv?'#ff6b35':'#1e2535')));r.txt.setAttribute('fill',p||(d===1?c:(hv?'#ff9966':'#6070a0')));};
-  window.cmRefreshAll=()=>Object.values(reg).forEach(refresh);
-  window.cmSyncExpanded=()=>{for(const[key,r]of Object.entries(reg)){if(!r.childG)continue;const vis=EXPANDED.has(key);r.childG.setAttribute('visibility',vis?'visible':'hidden');r.childG.style.pointerEvents=vis?'auto':'none';}};
-  function draw(par,nd,x,y,angle,d,col,st,px,py,parentActualH){
-    const text=nd.t.replace(/^[-•]\s*/,'').trim(),key=makeKey(st,nd.t),hv=!!(nd.v||nd.l),kids=nd.c||[],hasK=kids.length>0,w=nw(d),h=nh(d),fs=d===1?13:d===2?11:d===3?10:9;
-    // Pre-compute whether this node's text wraps to two lines so we know its real height
-    const _chars=Math.floor((w-10)/(fs*0.58));
-    const actualH = text.length > _chars ? h+fs+2 : h;
-    const g=E('g',{},par);
-    if(px!==undefined){
-      const dx=x-px,dy=y-py,len=Math.sqrt(dx*dx+dy*dy)||1,ux=dx/len,uy=dy/len;
-      // Use passed-in parent actual height, or fall back to worst-case (two-line text at parent depth)
-      const pActualH = parentActualH || (nh(d-1)+([0,13,11,10,9,9,9][Math.min(d-1,6)]||9)+2);
-      const tS=Math.min(nw(d-1)/2/Math.abs(ux||1e-4),pActualH/2/Math.abs(uy||1e-4));
-      const tD=Math.min(w/2/Math.abs(ux||1e-4),actualH/2/Math.abs(uy||1e-4));
-      const p0=pc(key);
-      E('line',{x1:px+ux*(tS+4),y1:py+uy*(tS+4),x2:x-ux*(tD+4),y2:y-uy*(tD+4),stroke:p0||(col+(d<=2?'cc':'55')),'stroke-width':d===1?2:d===2?1.5:1,'stroke-linecap':'round','stroke-dasharray':STATE.progress[key]==='drilling'?'5,3':'none'},g);
-    }
-    const p0=pc(key);
-    const bg=E('rect',{x:x-w/2,y:y-h/2,width:w,height:h,rx:d===1?5:3,fill:p0?p0+'22':(d===1?col+'1a':'#0f1218'),stroke:p0||(d<=2?col:(hv?'#ff6b35':'#1e2535')),'stroke-width':d===1?1.5:1},g);
-    const txt=E('text',{x,y:y+1,'text-anchor':'middle','dominant-baseline':'middle',fill:p0||(d===1?col:(hv?'#ff9966':'#6070a0')),'font-size':fs,'font-family':d===1?'Bebas Neue,sans-serif':'DM Mono,monospace','letter-spacing':d===1?'1.5':'0','pointer-events':'none'},g);
-    // Measure and wrap text - expand box to fit, never truncate
-    (()=>{
-      const chars=Math.floor((w-10)/(fs*0.58));
-      if(text.length<=chars){
-        txt.textContent=text;
-      } else {
-        // Try to split at a word boundary near the middle
-        const mid=Math.floor(text.length/2);
-        let split=text.lastIndexOf(' ',mid+8);
-        if(split<4) split=text.indexOf(' ',mid-8);
-        if(split<1) split=chars; // fallback hard split
-        const line1=text.slice(0,split).trim();
-        const line2=text.slice(split).trim();
-        txt.textContent='';
-        const t1=document.createElementNS(NS,'tspan');t1.setAttribute('x',x);t1.setAttribute('dy',`-${fs*0.55}`);t1.textContent=line1;txt.appendChild(t1);
-        const t2=document.createElementNS(NS,'tspan');t2.setAttribute('x',x);t2.setAttribute('dy',fs*1.1);t2.textContent=line2;txt.appendChild(t2);
-        // expand box height for 2-line text
-        bg.setAttribute('height',h+fs+2);bg.setAttribute('y',y-(h+fs+2)/2);
-      }
-    })();
-    if(hv)E('circle',{cx:x+w/2-5,cy:y-h/2+5,r:3,fill:'#ff6b35'},g);
-    if(STATE.notes[key])E('circle',{cx:x+w/2-5,cy:y+h/2-5,r:2.5,fill:'#a78bfa'},g);
-    let childG=null;
-    if(hasK){
-      childG=E('g',{visibility:EXPANDED.has(key)?'visible':'hidden'},g);
-      if(!EXPANDED.has(key)) childG.style.pointerEvents='none';
-      const dist=d===1?220:d===2?182:d===3?150:122;
-      const spans=kids.map(c=>span(c,d+1,dist)),total=spans.reduce((s,a)=>s+a,0);
-      const fan=Math.min(Math.PI*0.88,total),scale=fan/Math.max(total,0.001);
-      let cum=angle-fan/2;
-      kids.forEach((child,ci)=>{const s=spans[ci]*scale,ca=cum+s/2;cum+=s;draw(childG,child,x+Math.cos(ca)*dist,y+Math.sin(ca)*dist,ca,d+1,col,st,x,y,actualH);});
-    }
-    reg[key]={bg,txt,childG,key,col,depth:d,hv,nd,actualH,x,y};
-    g.style.cursor='pointer';
-    g.addEventListener('click',e=>{e.stopPropagation();setSelectedNode(key,text,st);if(hasK)toggleExpanded(key);else{let si=0;SECTIONS.forEach((s,i)=>{if(s.title===st)si=i;});buildPopup(document.getElementById('cmPopup'),nd,st,COLORS[si%COLORS.length]);}});
-    g.addEventListener('mouseenter',()=>{bg.setAttribute('fill',d===1?col+'33':'#1e2535');bg.setAttribute('stroke',col);txt.setAttribute('fill','#dde1ed');});
-    g.addEventListener('mouseleave',()=>refresh(reg[key]));
-  }
-  return function(){
-    const wrap=document.getElementById('cmCanvas'),W=wrap.clientWidth,H=wrap.clientHeight;
-    if(!W||!H){setTimeout(initCustomMap,50);return;}
-    if(!ready){
-      ready=true;
-      const svg=document.getElementById('cmSvg');svg.setAttribute('width',W);svg.setAttribute('height',H);svg.style.cssText=`width:${W}px;height:${H}px;`;
-      const rootG=document.createElementNS(NS,'g');rootG.id='cmRoot';svg.appendChild(rootG);
-      const cx=W/2,cy=H/2;
-      E('circle',{cx,cy,r:52,fill:'#13161e',stroke:'#8890a8','stroke-width':2},rootG);
-      E('text',{x:cx,y:cy,'text-anchor':'middle','dominant-baseline':'middle',fill:'#8890a8','font-family':'Bebas Neue,sans-serif','font-size':14,'letter-spacing':3,'pointer-events':'none'},rootG).textContent='GRAPPLING';
-      SECTIONS.forEach((sec,si)=>{
-        const angle=(si/SECTIONS.length)*Math.PI*2-Math.PI/2,dist=260,col=COLORS[si%COLORS.length];
-        const sx=cx+Math.cos(angle)*dist,sy=cy+Math.sin(angle)*dist,w1=nw(1),h1=nh(1);
-        const dx=sx-cx,dy=sy-cy,len=Math.sqrt(dx*dx+dy*dy)||1,ux=dx/len,uy=dy/len;
-        // Account for two-line section titles when computing line endpoint
-        const _secText=sec.title.replace(/^[-•]\s*/,'').trim(),_secFs=13;
-        const _secChars=Math.floor((w1-10)/(_secFs*0.58));
-        const secActualH = _secText.length>_secChars ? h1+_secFs+2 : h1;
-        const _tSec=Math.min(w1/2/Math.abs(ux||1e-4),secActualH/2/Math.abs(uy||1e-4));
-        E('line',{x1:cx+ux*54,y1:cy+uy*54,x2:sx-ux*(_tSec+4),y2:sy-uy*(_tSec+4),stroke:col+'88','stroke-width':2,'stroke-linecap':'round'},rootG);
-        draw(rootG,{t:sec.title,c:sec.nodes},sx,sy,angle,1,col,sec.title);
-      });
-      applyT();
-      wrap.addEventListener('mousedown',e=>{panning=true;panX=e.clientX;panY=e.clientY;});
-      window.addEventListener('mousemove',e=>{if(!panning)return;tx+=e.clientX-panX;ty+=e.clientY-panY;panX=e.clientX;panY=e.clientY;applyT();});
-      window.addEventListener('mouseup',()=>{panning=false;});
-      wrap.addEventListener('wheel',e=>{e.preventDefault();const r=wrap.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,f=e.deltaY>0?0.88:1.13,ns=Math.min(Math.max(sc*f,0.1),5);tx=mx-(mx-tx)*(ns/sc);ty=my-(my-ty)*(ns/sc);sc=ns;applyT();},{passive:false});
-      document.getElementById('cmZoomIn').addEventListener('click',()=>{sc=Math.min(sc*1.2,5);applyT();});
-      document.getElementById('cmZoomOut').addEventListener('click',()=>{sc=Math.max(sc*0.83,0.1);applyT();});
-      document.getElementById('cmReset').addEventListener('click',()=>{tx=0;ty=0;sc=0.72;applyT();});
-      document.getElementById('cmCollapseAll').addEventListener('click',()=>{EXPANDED.clear();window.cmSyncExpanded();window.g3dSyncExpanded&&window.g3dSyncExpanded();window.refSyncExpanded&&window.refSyncExpanded();});
-      document.getElementById('cmExpandAll').addEventListener('click',()=>{
-        const addAll=(nd,st)=>{const k=makeKey(st,nd.t);if(nd.c&&nd.c.length){EXPANDED.add(k);nd.c.forEach(c=>addAll(c,st));}};
-        SECTIONS.forEach(s=>{EXPANDED.add(makeKey(s.title,s.title));s.nodes.forEach(n=>addAll(n,s.title));});
-        window.cmSyncExpanded();window.g3dSyncExpanded&&window.g3dSyncExpanded();window.refSyncExpanded&&window.refSyncExpanded();
-      });
-      document.querySelectorAll('.cm-filter').forEach(t=>{t.addEventListener('click',function(){document.querySelectorAll('.cm-filter').forEach(x=>x.classList.remove('active'));this.classList.add('active');const f=this.dataset.filter;Object.values(reg).forEach(r=>{const p=STATE.progress[r.key]||'none',show=f==='all'||(f==='drilling'&&p==='drilling')||(f==='learned'&&p==='learned');r.bg.style.opacity=show?'1':'0.12';r.txt.style.opacity=show?'1':'0.12';});});});
-      document.getElementById('cmSearch').addEventListener('input',function(){const q=this.value.toLowerCase();Object.values(reg).forEach(r=>{const show=!q||r.nd.t.toLowerCase().includes(q);r.bg.style.opacity=show?'1':'0.1';r.txt.style.opacity=show?'1':'0.1';});});
-    } else { window.cmSyncExpanded(); window.cmRefreshAll(); }
-  };
-})();
 
 // ─── 3D WEIGHTED NETWORK GRAPH ───────────────────────────────────────────────
 window.initGraph3D = (function() {
