@@ -1373,6 +1373,12 @@ window.initGraph3D = (function() {
       canvas.addEventListener('wheel',e=>{e.preventDefault();tZ3d=Math.min(2200,Math.max(80,tZ3d+e.deltaY*0.8));},{passive:false});
       canvas.addEventListener('mouseleave',()=>{hoveredId3d=null;document.getElementById('g3dTooltip').style.display='none';});
 
+      // Touch controls (mobile: single-finger drag to rotate, tap to select)
+      let touchX=0,touchY=0,isTouchDrag=false;
+      canvas.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];touchX=t.clientX;touchY=t.clientY;isTouchDrag=false;},{passive:true});
+      canvas.addEventListener('touchmove',e=>{if(e.touches.length!==1)return;e.preventDefault();const t=e.touches[0];if(Math.abs(t.clientX-touchX)>3||Math.abs(t.clientY-touchY)>3)isTouchDrag=true;tRY+=(t.clientX-touchX)*0.004;tRX+=(t.clientY-touchY)*0.004;touchX=t.clientX;touchY=t.clientY;},{passive:false});
+      canvas.addEventListener('touchend',e=>{if(isTouchDrag)return;const t=e.changedTouches[0];const rect=wrap.getBoundingClientRect(),mx=((t.clientX-rect.left)/rect.width)*2-1,my=-((t.clientY-rect.top)/rect.height)*2+1;camera3d.updateMatrixWorld();const ray=new THREE.Raycaster();ray.setFromCamera({x:mx,y:my},camera3d);const vis=Object.values(meshMap3d).filter(m=>m.visible&&m.material.opacity>0.25);const hits=ray.intersectObjects(vis);if(!hits.length){resetHL3d();closeDetail3d();return;}const id=hits[0].object.userData.id;if(id===selectedId3d){resetHL3d();closeDetail3d();return;}selectNode3d(id);});
+
       // Shared filter applier — keeps top + bottom toolbars in sync
       function applyG3dFilter(sf){
         // Sync bottom toolbar
