@@ -1451,8 +1451,10 @@ window.initGraph3D = (function() {
       });
       document.getElementById('g3dOptBuiltOut').addEventListener('change',function(){
         builtOut3d=this.checked;
+        const boMap=new Map();
+        document.querySelectorAll('.tree-item').forEach(li=>boMap.set(li.dataset.key,li.dataset.builtout));
         const netNds=NET_NODES.filter(n=>n.in_network);
-        netNds.forEach(n=>{const m=meshMap3d[n.id];if(!m||!m.visible)return;m.material.opacity=builtOut3d&&isStubNode(n.has_video,n.children_ids.length)?0.04:(n.status==='none'?0.72:0.9);});
+        netNds.forEach(n=>{const m=meshMap3d[n.id];if(!m||!m.visible)return;m.material.opacity=builtOut3d&&boMap.get(n.key)!=='1'?0.04:(n.status==='none'?0.72:0.9);});
       });
       document.getElementById('g3dOptEdge').addEventListener('input',function(){
         globalEdgeOpac=this.value/100;
