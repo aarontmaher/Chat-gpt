@@ -987,7 +987,7 @@ window.initGraph3D = (function() {
   let rotX=0,rotY=0,tRX=0,tRY=0,zoom3d=800,tZ3d=800;
   const meshMap3d={}, ringMap3d={}, edgeMeshes3d=[];
   let simNodes3d=[], simByID3d={};
-  let selectedId3d=null, hoveredId3d=null;
+  let selectedId3d=null, hoveredId3d=null, selRing3d=null;
   let autoRotate3d=true, showRings3d=true, showTopLabels3d=true;
   let globalEdgeOpac=0.30, hubOnly3d=false, hubThresh3d=20;
   let statusFilter3d='all';
@@ -1069,6 +1069,7 @@ window.initGraph3D = (function() {
 
   function resetHL3d(){
     selectedId3d=null;
+    if(selRing3d)selRing3d.visible=false;
     Object.values(meshMap3d).forEach(m=>{if(!m.visible)return;const nd=nodeMap3d[m.userData.id];m.material.opacity=nd?.status==='none'?0.72:0.9;m.material.emissiveIntensity=nd?.status==='none'?0.12:0.35;});
     edgeMeshes3d.forEach(e=>{if(e.line.visible)e._mat.opacity=e._base;});
     Object.values(ringMap3d).forEach(r=>{if(r.visible)r.material.opacity=0.18;});
@@ -1099,6 +1100,8 @@ window.initGraph3D = (function() {
     if(nd3) { setSelectedNode(nd3.key||nd3.id, nd3.label, nd3.section); setTimeout(() => referenceReveal(nd3.label, nd3.section), 80); }
     const THREE=window.THREE;
     selectedId3d=id;
+    // Show selection pulse ring on selected node
+    if(selRing3d&&nd3){const sc=nd3._r*2.2;selRing3d.scale.set(sc,sc,sc);selRing3d.position.set(nd3.x,nd3.y,nd3.z);selRing3d.material.color.set(SECT_HEX3[nd3.section_idx]||0x888888);selRing3d.visible=true;}
     const connected=new Set([id]);
     const inE=[],outE=[];
     NET_EDGES.forEach(e=>{if(e.source===id){connected.add(e.target);outE.push(e);}if(e.target===id){connected.add(e.source);inE.push(e);}});
@@ -1299,6 +1302,10 @@ window.initGraph3D = (function() {
       const dl=new THREE.DirectionalLight(0x8899bb,1.5);dl.position.set(2,3,1);scene3d.add(dl);
       pivot3d=new THREE.Group();scene3d.add(pivot3d);
 
+      // Selection pulse ring — one shared ring, repositioned per selection
+      selRing3d=new THREE.Mesh(new THREE.TorusGeometry(1,0.6,8,48),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide}));
+      selRing3d.visible=false;pivot3d.add(selRing3d);
+
       applyProg3d();
       const netNds=NET_NODES.filter(n=>n.in_network);
       computeW3d(netNds,NET_EDGES);
@@ -1435,6 +1442,8 @@ window.initGraph3D = (function() {
         rotX+=(tRX-rotX)*0.08;rotY+=(tRY-rotY)*0.08;zoom3d+=(tZ3d-zoom3d)*0.08;
         pivot3d.rotation.x=rotX;pivot3d.rotation.y=rotY;camera3d.position.z=zoom3d;
         if(autoRotate3d)tRY+=0.00018;
+        // Animate selection pulse ring
+        if(selRing3d&&selRing3d.visible){const t=Date.now()*0.003;selRing3d.material.opacity=0.35+0.25*Math.sin(t);selRing3d.quaternion.copy(camera3d.quaternion);const snd=nodeMap3d[selectedId3d];if(snd)selRing3d.position.set(snd.x,snd.y,snd.z);}
         Object.values(ringMap3d).forEach(r=>{if(r.visible)r.quaternion.copy(camera3d.quaternion);});
         renderer3d.render(scene3d,camera3d);
         drawLabels3d();
