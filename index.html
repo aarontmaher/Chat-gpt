@@ -833,8 +833,9 @@ function markBuiltOut() {
   items.reverse().forEach(li => {
     const hasVideo = li.dataset.hasVideo === '1';
     const children = li.querySelectorAll(':scope > .children > .tree-item');
-    const anyChildBuilt = children.length > 0 && Array.from(children).some(c => c.dataset.builtout === '1');
-    li.dataset.builtout = (hasVideo || anyChildBuilt) ? '1' : '0';
+    const hasChildren = children.length > 0;
+    const anyChildBuilt = hasChildren && Array.from(children).some(c => c.dataset.builtout === '1');
+    li.dataset.builtout = (hasVideo || hasChildren || anyChildBuilt) ? '1' : '0';
   });
 }
 
