@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-16 12:36:53</dateModified>
+		<dateModified>2026-03-16 01:38:10</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -5157,36 +5157,36 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions">
-							<outline text="→ Knee on belly">
+							<outline text="From side control → Knee on belly">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
-								<outline text="→ Mount">
-									<outline text="High step to mount">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Gift wrap to back">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Seat belt to back">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Control points">
-										<outline text="Tight waist">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-										<outline text="Near side underhook">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-										<outline text="Crossface">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-									</outline>
+							</outline>
+						</outline>
+						<outline text="From side control → Mount">
+							<outline text="High step to mount">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Gift wrap to back">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Seat belt to back">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Control points">
+								<outline text="Tight waist">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Near side underhook">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Crossface">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
 								</outline>
 							</outline>
 						</outline>
@@ -5506,11 +5506,11 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions">
-							<outline text="→ Side control">
+							<outline text="After escape → Side control">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="→ Back">
+							<outline text="After escape → Back">
 								<outline text="Gift wrap">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
@@ -5520,11 +5520,11 @@
 									<outline text="Live video" />
 								</outline>
 							</outline>
-							<outline text="→ Front headlock">
+							<outline text="After escape → Front headlock">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="→ Turtle">
+							<outline text="After escape → Turtle">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
@@ -5748,14 +5748,14 @@
 							<outline text="Example: Underhook their leg" />
 							<outline text="Example: Go over-back with the other arm" />
 							<outline text="Example: Drive them sideways" />
-							<outline text="→ Side control" />
+							<outline text="Drive opponent sideways → Side control" />
 						</outline>
 					</outline>
 					<outline text="Finishes">
 						<outline text="Example: Consolidate dominant position" />
 					</outline>
 					<outline text="Exits / Transitions">
-						<outline text="→ Side control" />
+						<outline text="From grounded 50/50 → Side control" />
 					</outline>
 				</outline>
 				<outline text="Defensive">
