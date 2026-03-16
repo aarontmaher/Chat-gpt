@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-15 09:19:48</dateModified>
+		<dateModified>2026-03-16 07:52:41</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -581,19 +581,19 @@
 								<outline text="Live video" />
 							</outline>
 							<outline text="Shin Whizzer">
-								<outline text="Limp Arm Counter to Shin Whizzer">
+								<outline text="Limp Arm counter to Shin Whizzer">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
 								</outline>
-								<outline text="Running the Pipe Counter to Shin Whizzer">
+								<outline text="Running the Pipe counter to Shin Whizzer">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
 								</outline>
-								<outline text="Head Inside Double Leg Counter to Shin Whizzer">
+								<outline text="Head Inside Double Leg counter to Shin Whizzer">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
 								</outline>
-								<outline text="Collar Tie Ankle Tap Counter to Shin Whizzer">
+								<outline text="Collar Tie Ankle Tap counter to Shin Whizzer">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
 								</outline>
@@ -693,6 +693,10 @@
 						</outline>
 						<outline text="Submissions" />
 						<outline text="Offensive transitions" />
+						<outline text="Foot lift finish → Side Control" />
+						<outline text="Trip finish → Mount" />
+						<outline text="Run the pipe → Back Control" />
+						<outline text="Lift and return → Side Control" />
 					</outline>
 					<outline text="Defender">
 						<outline text="Setups / Entries" />
@@ -703,11 +707,11 @@
 								<outline text="Live video" />
 							</outline>
 							<outline text="Shin Whizzer">
-								<outline text="Limp Arm Counter to Shin Whizzer">
+								<outline text="Limp Arm counter to Shin Whizzer">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
 								</outline>
-								<outline text="Running the Pipe Counter to Shin Whizzer">
+								<outline text="Running the Pipe counter to Shin Whizzer">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
 								</outline>
@@ -4211,6 +4215,11 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions" />
+						<outline text="Seat belt back take → Back Control" />
+						<outline text="Spiral ride near side tip over → Side Control" />
+						<outline text="Spiral ride far side tip over → Mount" />
+						<outline text="Crab hook → Side Control" />
+						<outline text="Single hook → Back Control" />
 					</outline>
 				</outline>
 				<outline text="Defender">
@@ -4347,6 +4356,11 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions" />
+						<outline text="Seat belt back take → Back Control" />
+						<outline text="Spiral ride near side tip over → Side Control" />
+						<outline text="Spiral ride far side tip over → Mount" />
+						<outline text="Crab hook → Side Control" />
+						<outline text="Single hook → Back Control" />
 					</outline>
 				</outline>
 			</outline>
