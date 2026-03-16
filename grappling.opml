@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-16 01:38:10</dateModified>
+		<dateModified>2026-03-16 02:59:32</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -51,9 +51,9 @@
 						<outline text="Offensive transitions">
 							<outline text="Outside tie to 2-on-1 → 2-on-1" />
 							<outline text="Outside tie to double leg → Double leg" />
-							<outline text="Outside tie to head inside single → Head inside single" />
-							<outline text="Collar tie throw by to wrestling bodylock → Wrestling bodylock" />
-							<outline text="Knee pull to sweep single → Sweep single" />
+							<outline text="Outside tie to head inside single → Head inside single leg" />
+							<outline text="Collar tie throw by to wrestling bodylock" />
+							<outline text="Knee pull to sweep single → Head inside single leg" />
 						</outline>
 					</outline>
 					<outline text="Opponent">
@@ -75,7 +75,7 @@
 							</outline>
 						</outline>
 						<outline text="Offensive transitions">
-							<outline text="Inside tie to sweep single → Sweep single" />
+							<outline text="Inside tie to sweep single → Head inside single leg" />
 						</outline>
 					</outline>
 					<outline text="Opponent">
@@ -419,14 +419,14 @@
 							<outline text="Knee tap" />
 						</outline>
 						<outline text="Offensive transitions">
-							<outline text="Underhook throw by to wrestling bodylock → Wrestling bodylock" />
+							<outline text="Underhook throw by to wrestling bodylock" />
 							<outline text="Underhook to head inside snatch single → Head inside snatch single">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
 							<outline text="Underhook to front headlock → Front headlock" />
 							<outline text="Underhook to snatch head outside single → Snatch head outside single" />
-							<outline text="Underhook to head inside single → Head inside single" />
+							<outline text="Underhook to head inside single → Head inside single leg" />
 							<outline text="Underhook to head outside single → Head outside single" />
 						</outline>
 					</outline>
@@ -475,7 +475,7 @@
 						<outline text="Setups / Entries" />
 						<outline text="Control" />
 						<outline text="Offence">
-							<outline text="Sweep single">
+							<outline text="Sweep single wefgw">
 								<outline text="Live video" />
 								<outline text="Instructional video" />
 							</outline>
@@ -503,13 +503,7 @@
 								<outline text="Instructional video" />
 							</outline>
 						</outline>
-					</outline>
-					<outline text="Opponent">
-						<outline text="Setups / Entries" />
-						<outline text="Control" />
-						<outline text="Offence" />
-						<outline text="Defence" />
-						<outline text="Offensive transitions" />
+						<outline text="Opponent" />
 					</outline>
 				</outline>
 			</outline>
@@ -5157,36 +5151,36 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions">
-							<outline text="From side control → Knee on belly">
+							<outline text="→ Knee on belly">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
-							</outline>
-						</outline>
-						<outline text="From side control → Mount">
-							<outline text="High step to mount">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-							<outline text="Gift wrap to back">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-							<outline text="Seat belt to back">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-							<outline text="Control points">
-								<outline text="Tight waist">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
-								</outline>
-								<outline text="Near side underhook">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
-								</outline>
-								<outline text="Crossface">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
+								<outline text="→ Mount">
+									<outline text="High step to mount">
+										<outline text="Instructional video" />
+										<outline text="Live video" />
+									</outline>
+									<outline text="Gift wrap to back">
+										<outline text="Instructional video" />
+										<outline text="Live video" />
+									</outline>
+									<outline text="Seat belt to back">
+										<outline text="Instructional video" />
+										<outline text="Live video" />
+									</outline>
+									<outline text="Control points">
+										<outline text="Tight waist">
+											<outline text="Instructional video" />
+											<outline text="Live video" />
+										</outline>
+										<outline text="Near side underhook">
+											<outline text="Instructional video" />
+											<outline text="Live video" />
+										</outline>
+										<outline text="Crossface">
+											<outline text="Instructional video" />
+											<outline text="Live video" />
+										</outline>
+									</outline>
 								</outline>
 							</outline>
 						</outline>
@@ -5273,32 +5267,32 @@
 							<outline text="→ Knee on belly">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
-								<outline text="→ Mount">
-									<outline text="High step to mount">
+							</outline>
+							<outline text="Side control to mount via knee on belly → Mount">
+								<outline text="High step to mount">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Gift wrap to back">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Seat belt to back">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Control points">
+									<outline text="Tight waist">
 										<outline text="Instructional video" />
 										<outline text="Live video" />
 									</outline>
-									<outline text="Gift wrap to back">
+									<outline text="Near side underhook">
 										<outline text="Instructional video" />
 										<outline text="Live video" />
 									</outline>
-									<outline text="Seat belt to back">
+									<outline text="Crossface">
 										<outline text="Instructional video" />
 										<outline text="Live video" />
-									</outline>
-									<outline text="Control points">
-										<outline text="Tight waist">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-										<outline text="Near side underhook">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-										<outline text="Crossface">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
 									</outline>
 								</outline>
 							</outline>
@@ -5505,29 +5499,27 @@
 						<outline text="Submissions" />
 					</outline>
 					<outline text="Offensive transitions">
-						<outline text="Offensive transitions">
-							<outline text="After escape → Side control">
+						<outline text="Force turtle from north south → Turtle">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="North south to front headlock → Front Headlock">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="North south to back take → Back Control">
+							<outline text="Gift wrap">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="After escape → Back">
-								<outline text="Gift wrap">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
-								</outline>
-								<outline text="Kimura">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
-								</outline>
-							</outline>
-							<outline text="After escape → Front headlock">
+							<outline text="Kimura">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="After escape → Turtle">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
+						</outline>
+						<outline text="North south to side control → Side Control">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
 						</outline>
 					</outline>
 				</outline>
@@ -5729,7 +5721,7 @@
 			<outline text="Grounded 50/50">
 				<outline text="Initiative">
 					<outline text="Setups / Entries">
-						<outline text="Example: Sweep single defence → transition into Wrestling 50/50" />
+						<outline text="Example: Sweep single defence leading into Wrestling 50/50" />
 					</outline>
 					<outline text="Key battles">
 						<outline text="Example: Full control (definition)">
@@ -5748,14 +5740,14 @@
 							<outline text="Example: Underhook their leg" />
 							<outline text="Example: Go over-back with the other arm" />
 							<outline text="Example: Drive them sideways" />
-							<outline text="Drive opponent sideways → Side control" />
+							<outline text="→ Side control" />
 						</outline>
 					</outline>
 					<outline text="Finishes">
 						<outline text="Example: Consolidate dominant position" />
 					</outline>
 					<outline text="Exits / Transitions">
-						<outline text="From grounded 50/50 → Side control" />
+						<outline text="→ Side control" />
 					</outline>
 				</outline>
 				<outline text="Defensive">
