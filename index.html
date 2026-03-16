@@ -692,7 +692,8 @@ function buildPopup(popupEl, node, sectionTitle, color) {
   ns.className = 'popup-note-save';
   ns.textContent = 'Save Note';
   ns.addEventListener('click', () => {
-    const val = na.querySelector('textarea').value.trim();
+    const ta = na.querySelector('textarea');
+    const val = ta ? ta.value.trim() : '';
     if (val) STATE.notes[key] = val;
     else delete STATE.notes[key];
     saveState();
@@ -735,6 +736,14 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey) {
 
   const content = document.createElement('div');
   content.className = 'node-content';
+
+  // Transition parse warning: expect "ContextLabel → ExactCanonicalNodeName"
+  if (node.t && node.t.includes('\u2192')) {
+    const parts = node.t.split('\u2192');
+    if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
+      console.warn('WARN: malformed transition: "' + node.t + '" at node "' + (parentKey || sectionTitle) + '"');
+    }
+  }
 
   const label = document.createElement('span');
   label.className = (node.v || node.l) ? 'node-label has-video' : 'node-label';
@@ -936,8 +945,12 @@ function revealAncestorItems() {
 }
 
 // ─── SEARCH (Reference) ───────────────────────────────────────────────────────
+let _refSearchTimer;
 document.getElementById('refSearch').addEventListener('input', function() {
-  const q = this.value.toLowerCase().trim();
+  const self = this;
+  clearTimeout(_refSearchTimer);
+  _refSearchTimer = setTimeout(function() {
+  const q = self.value.toLowerCase().trim();
   document.querySelectorAll('.tree-item').forEach(li => {
     const label = li.querySelector('.node-label');
     if (!label) return;
@@ -955,6 +968,7 @@ document.getElementById('refSearch').addEventListener('input', function() {
   const emptyEl = document.getElementById('refEmpty');
   if (q && !anyVisible) { emptyEl.textContent = 'No results for "' + q + '"'; emptyEl.style.display = 'block'; }
   else { emptyEl.style.display = 'none'; }
+  }, 200);
 });
 
 // ─── FILTER (Reference) ──────────────────────────────────────────────────────
@@ -1585,14 +1599,19 @@ window.initGraph3D = (function() {
         edgeMeshes3d.forEach(e=>{e._base=Math.min(0.06+e.weight*0.06,globalEdgeOpac);if(e.line.visible&&!selectedId3d)e._mat.opacity=e._base;});
       });
 
-      // Search
+      // Search (debounced 200ms)
+      let _g3dSearchTimer;
       document.getElementById('g3dSearch').addEventListener('input',function(){
-        const q=this.value.toLowerCase().trim();
+        const self=this;
+        clearTimeout(_g3dSearchTimer);
+        _g3dSearchTimer=setTimeout(function(){
+        const q=self.value.toLowerCase().trim();
         const netNds=NET_NODES.filter(n=>n.in_network);
         if(!q){resetHL3d();return;}
         const matches=netNds.filter(n=>n.label.toLowerCase().includes(q));
         if(matches.length===1){selectedId3d=null;selectNode3d(matches[0].id);}
         else{const mids=new Set(matches.map(n=>n.id));Object.entries(meshMap3d).forEach(([id,m])=>{if(!m.visible)return;m.material.opacity=mids.has(id)?1.0:0.04;});edgeMeshes3d.forEach(e=>{if(e.line.visible)e._mat.opacity=0.005;});}
+        },200);
       });
 
       // Render loop
@@ -1689,8 +1708,9 @@ updateStats();
         if (!n.t || n.t.trim() === '') warnings.push('Empty node text at: ' + path);
         if (n.t && n.t.includes('\u2192')) {
           var parts = n.t.split('\u2192');
-          var dest = parts[parts.length - 1].trim().toLowerCase();
-          if (!dest) warnings.push('Empty arrow destination: ' + h(n.t));
+          if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
+            warnings.push('Malformed transition: ' + h(n.t) + ' at ' + h(path));
+          }
         }
         if (n.c) walk(n.c, cur);
       });
