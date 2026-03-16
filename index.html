@@ -672,6 +672,8 @@ function buildPopup(popupEl, node, sectionTitle, color) {
 
 // ─── REFERENCE VIEW ──────────────────────────────────────────────────────────
 function buildNode(node, sectionTitle, depth, parentUl) {
+  if (node.t === 'Instructional video' && !node.v) return;
+  if (node.t === 'Live video' && !node.l) return;
   const li = document.createElement('li');
   li.className = 'tree-item';
   const key = makeKey(sectionTitle, node.t);
