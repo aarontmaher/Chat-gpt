@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-17 01:30:27</dateModified>
+		<dateModified>2026-03-17 01:48:52</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -510,8 +510,8 @@
 			<outline text="Wrestling bodylock">
 				<outline text="Attacker">
 					<outline text="Setups / Entries">
-						<outline text="Underhook throw by to wrestling bodylock → Wrestling bodylock" />
-						<outline text="Collar tie throw by to wrestling bodylock → Wrestling bodylock" />
+						<outline text="Underhook throw by to wrestling bodylock" />
+						<outline text="Collar tie throw by to wrestling bodylock" />
 					</outline>
 					<outline text="Control">
 						<outline text="Wrestling rear bodylock">
@@ -840,11 +840,12 @@
 							</outline>
 						</outline>
 						<outline text="Submissions" />
-						<outline text="Offensive transitions" />
-						<outline text="Foot lift finish → Side Control" />
-						<outline text="Trip finish → Mount" />
-						<outline text="Run the pipe → Back Control" />
-						<outline text="Lift and return → Side Control" />
+						<outline text="Offensive transitions">
+							<outline text="Foot lift finish → Side Control" />
+							<outline text="Trip finish → Mount" />
+							<outline text="Run the pipe → Back Control" />
+							<outline text="Lift and return → Side Control" />
+						</outline>
 					</outline>
 					<outline text="Defender">
 						<outline text="Setups / Entries" />
