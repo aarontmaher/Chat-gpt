@@ -345,13 +345,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       </div>
     </div>
     <div id="g3dDetailBody" style="flex:1;overflow-y:auto;padding:14px 18px;">
+      <div id="g3dPerspTabs" style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);"></div>
+      <div id="g3dHeadingsSec" style="margin-bottom:16px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#4a5568;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;">Headings<span style="flex:1;height:1px;background:rgba(255,255,255,0.04);"></span></div>
+        <div id="g3dHeadingList"></div>
+      </div>
       <div style="margin-bottom:16px;">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#4a5568;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;">Connections<span style="flex:1;height:1px;background:rgba(255,255,255,0.04);"></span></div>
         <div id="g3dConnList"></div>
-      </div>
-      <div id="g3dChildrenSec">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#4a5568;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;">Sub-techniques<span style="flex:1;height:1px;background:rgba(255,255,255,0.04);"></span></div>
-        <div id="g3dChildList"></div>
       </div>
     </div>
   </div>
@@ -1510,6 +1511,15 @@ window.initGraph3D = (function() {
   var ACTIVE_EDGES = NET_EDGES; // default until buildTransitionEdges runs
   var transEdgesBuilt = false;
 
+  // Labels that are structural nodes (perspectives / schema headings) — NOT graph-worthy.
+  // These should never appear as 3D dots; they belong to the Reference panel only.
+  var GRAPH_EXCLUDE_LABELS = new Set([
+    'Attacker','Defender','Passer','Guard player',
+    'You','Opponent','Initiative','Defensive',
+    'Setups / Entries','Control','Offence','Defence / Escapes',
+    'Offensive transitions','Defensive transitions'
+  ]);
+
   function buildTransitionEdges() {
     if (transEdgesBuilt) return;
     transEdgesBuilt = true;
@@ -1547,24 +1557,26 @@ window.initGraph3D = (function() {
     if (TRANSITION_EDGES.length > 0) {
       useTransitionEdges = true;
       ACTIVE_EDGES = TRANSITION_EDGES;
-      // Update in_network: only nodes that participate in transition edges
-      var transNodeIds = new Set();
-      TRANSITION_EDGES.forEach(function(e) {
-        transNodeIds.add(e.source);
-        transNodeIds.add(e.target);
+      // in_network derived from transition edges ONLY — no structural hierarchy
+      var inNetworkIds = new Set();
+      ACTIVE_EDGES.forEach(function(e) {
+        inNetworkIds.add(e.source);
+        inNetworkIds.add(e.target);
       });
       NET_NODES.forEach(function(n) {
-        if (n.depth === 1) {
-          n.in_network = transNodeIds.has(n.id);
-        } else if (n.depth === 2) {
-          // Sub-positions stay in_network if their parent position is
-          n.in_network = transNodeIds.has(n.parent_id);
-        } else {
-          n.in_network = false;
-        }
+        n.in_network = inNetworkIds.has(n.id);
       });
+      var inNetCount = NET_NODES.filter(function(n){ return n.in_network; }).length;
+      // Fail-safe: if no transition edges, show all depth-1 nodes
+      if (inNetworkIds.size === 0) {
+        console.warn('in_network: no transition edges found, showing all nodes');
+        NET_NODES.forEach(function(n) {
+          if (n.depth === 1 && !GRAPH_EXCLUDE_LABELS.has(n.label)) n.in_network = true;
+        });
+        inNetCount = NET_NODES.filter(function(n){ return n.in_network; }).length;
+      }
       console.log('TRANSITION-EDGES: built', TRANSITION_EDGES.length, 'edges from _edgeBaseWeight,',
-        'in_network nodes:', NET_NODES.filter(function(n){ return n.in_network; }).length,
+        'in_network nodes:', inNetCount,
         '(skipped', skipped, 'unresolvable)');
     } else {
       console.warn('TRANSITION-EDGES: falling back to structural edges (0 edges resolved)');
@@ -1709,67 +1721,244 @@ window.initGraph3D = (function() {
   }
 
   function selectNode3d(id){
-    const nd3=nodeMap3d[id];
-    if(nd3) { setSelectedNode(nd3.key||nd3.id, nd3.label, nd3.section); setTimeout(() => referenceReveal(nd3.label, nd3.section), 80); }
-    const THREE=window.THREE;
+    var nd3=nodeMap3d[id];
+    if(!nd3) return;
+
+    // ── Canonical gating ──────────────────────────────────────────────
+    // Only canonical position nodes (depth 1, not a perspective/heading)
+    // get the full detail panel. Non-canonical clicks map UP to the
+    // nearest canonical ancestor via parent_id. If no reliable ancestry
+    // metadata exists, ignore the click silently.
+    if(nd3.depth !== 1 || GRAPH_EXCLUDE_LABELS.has(nd3.label)) {
+      if(typeof nd3.parent_id === 'undefined' || nd3.parent_id === null) return;
+      var anc = nd3, walk = 10;
+      while(anc && walk-- > 0) {
+        if(anc.depth === 1 && !GRAPH_EXCLUDE_LABELS.has(anc.label)) { id = anc.id; nd3 = anc; break; }
+        if(typeof anc.parent_id === 'undefined' || anc.parent_id === null) return;
+        anc = nodeMap3d[anc.parent_id];
+      }
+      if(!nd3 || nd3.depth !== 1 || GRAPH_EXCLUDE_LABELS.has(nd3.label)) return;
+    }
+
+    setSelectedNode(nd3.key||nd3.id, nd3.label, nd3.section);
+    setTimeout(function(){ referenceReveal(nd3.label, nd3.section); }, 80);
     selectedId3d=id;
     // Show selection pulse ring on selected node
-    if(selRing3d&&nd3){const sc=nd3._r*2.2;selRing3d.scale.set(sc,sc,sc);selRing3d.position.set(nd3.x,nd3.y,nd3.z);selRing3d.material.color.set(SECT_HEX3[nd3.section_idx]||0x888888);selRing3d.visible=true;}
-    const connected=new Set([id]);
-    const inE=[],outE=[];
-    ACTIVE_EDGES.forEach(e=>{if(e.source===id){connected.add(e.target);outE.push(e);}if(e.target===id){connected.add(e.source);inE.push(e);}});
-    Object.entries(meshMap3d).forEach(([nid,m])=>{
+    if(selRing3d&&nd3){var sc=nd3._r*2.2;selRing3d.scale.set(sc,sc,sc);selRing3d.position.set(nd3.x,nd3.y,nd3.z);selRing3d.material.color.set(SECT_HEX3[nd3.section_idx]||0x888888);selRing3d.visible=true;}
+    var connected=new Set([id]);
+    var inE=[],outE=[];
+    ACTIVE_EDGES.forEach(function(e){if(e.source===id){connected.add(e.target);outE.push(e);}if(e.target===id){connected.add(e.source);inE.push(e);}});
+    Object.entries(meshMap3d).forEach(function([nid,m]){
       if(!m.visible)return;
       if(nid===id){m.material.opacity=1.0;m.material.emissiveIntensity=0.8;}
       else if(connected.has(nid)){m.material.opacity=0.75;m.material.emissiveIntensity=0.4;}
       else{m.material.opacity=0.04;m.material.emissiveIntensity=0;}
     });
-    Object.entries(ringMap3d).forEach(([nid,r])=>{if(!r.visible)return;r.material.opacity=nid===id?0.6:connected.has(nid)?0.3:0.04;});
-    edgeMeshes3d.forEach(e=>{if(!e.line.visible)return;e._mat.opacity=(e.source===id||e.target===id)?0.8:0.01;});
-    openDetail3d(nodeMap3d[id],inE,outE);
+    Object.entries(ringMap3d).forEach(function([nid,r]){if(!r.visible)return;r.material.opacity=nid===id?0.6:connected.has(nid)?0.3:0.04;});
+    edgeMeshes3d.forEach(function(e){if(!e.line.visible)return;e._mat.opacity=(e.source===id||e.target===id)?0.8:0.01;});
+    openDetail3d(nd3,inE,outE);
+  }
+
+  // ── Count real techniques under a SECTIONS node (recursive) ────────
+  // Excludes: headings, perspective labels, Notes, media nodes.
+  function countTechniques(sNode) {
+    var count = 0;
+    (sNode.c || []).forEach(function(child) {
+      var t = (child.t || '').trim();
+      if (!t) return;
+      if (SCHEMA_NAMES.has(t)) { count += countTechniques(child); return; }
+      count++;
+      count += countTechniques(child);
+    });
+    return count;
   }
 
   function openDetail3d(nd,inE,outE){
-    const panel=document.getElementById('g3dDetail');
+    var panel=document.getElementById('g3dDetail');
     panel.style.transform=isMobile3d()?'translateY(0)':'translateX(0)';
     if(!isMobile3d())document.getElementById('g3dLegend').style.right='276px';
-    const col=SECT_CSS3[nd.section_idx]||'#888';
+    var col=SECT_CSS3[nd.section_idx]||'#888';
+
+    // ── 1. HEADER ─────────────────────────────────────────────────────
     document.getElementById('g3dDetailDot').style.background=col;
     document.getElementById('g3dDetailSect').textContent=nd.section;
     document.getElementById('g3dDetailName').textContent=nd.label;
     document.getElementById('g3dDetailName').style.color=col;
-    const b=document.getElementById('g3dDetailBadges');b.innerHTML='';
-    if(nd.status==='learned')b.innerHTML+=`<span style="background:#e8ff4720;color:#e8ff47;border:1px solid #e8ff4740;font-family:'Barlow Condensed',monospace;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;">✓ LEARNED</span>`;
-    else if(nd.status==='drilling')b.innerHTML+=`<span style="background:#47c8ff20;color:#47c8ff;border:1px solid #47c8ff40;font-family:'Barlow Condensed',monospace;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;">⟳ DRILLING</span>`;
-    else b.innerHTML+=`<span style="background:#1e2330;color:#4a5568;border:1px solid rgba(255,255,255,0.06);font-family:'Barlow Condensed',monospace;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;">NOT STARTED</span>`;
-    if(nd.has_video)b.innerHTML+=`<span style="background:#ff6b3520;color:#ff9966;border:1px solid #ff6b3540;font-family:'Barlow Condensed',monospace;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;cursor:pointer;" onclick="window.open('${nd.video_url}','_blank')">▶ VIDEO</span>`;
-    b.innerHTML+=`<span style="background:#ffffff10;color:#8899aa;border:1px solid rgba(255,255,255,0.08);font-family:'Barlow Condensed',monospace;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;cursor:pointer;margin-left:auto;" onclick="switchToReferenceNode('${nd.label.replace(/'/g,"\\'")}','${nd.section.replace(/'/g,"\\'")}')">→ REF</span>`;
-    document.getElementById('g3dStatW').textContent=Math.round(nd._w||0);
-    document.getElementById('g3dStatIn').textContent=Math.round(nd._in||0);
-    document.getElementById('g3dStatOut').textContent=Math.round(nd._out||0);
-    const cl=document.getElementById('g3dConnList');cl.innerHTML='';
-    const allC=[...outE.map(e=>({dir:'→',other:e.target})),...inE.map(e=>({dir:'←',other:e.source}))];
-    allC.slice(0,12).forEach(c=>{
-      const on=nodeMap3d[c.other];if(!on)return;
-      const si=on.status==='learned'?'<span style="color:#e8ff47">✓</span>':on.status==='drilling'?'<span style="color:#47c8ff">⟳</span>':'';
-      const item=document.createElement('div');
-      item.style.cssText='display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-family:Barlow Condensed,monospace;font-size:13px;';
-      item.innerHTML=`<span style="color:#4a5568;font-size:9px;width:12px;">${c.dir}</span><span style="flex:1;color:${SECT_CSS3[on.section_idx]||'#888'}">${on.label}</span>${si}`;
-      item.addEventListener('click',()=>{selectedId3d=null;selectNode3d(c.other);});
-      cl.appendChild(item);
+
+    // ── Badges: keep → REF only ───────────────────────────────────────
+    var b=document.getElementById('g3dDetailBadges');b.innerHTML='';
+    b.innerHTML='<span style="background:#ffffff10;color:#8899aa;border:1px solid rgba(255,255,255,0.08);font-family:\'Barlow Condensed\',monospace;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;cursor:pointer;margin-left:auto;" onclick="switchToReferenceNode(\''+nd.label.replace(/'/g,"\\'")+'\',\''+nd.section.replace(/'/g,"\\'")+'\')">→ REF</span>';
+
+    // ── Look up position in SECTIONS ──────────────────────────────────
+    var sectNode = null;
+    SECTIONS.forEach(function(sec) {
+      if (sec.title !== nd.section) return;
+      (sec.nodes || []).forEach(function(n) {
+        if (n.t === nd.label) sectNode = n;
+      });
     });
-    const chSec=document.getElementById('g3dChildrenSec');
-    const chList=document.getElementById('g3dChildList');chList.innerHTML='';
-    chSec.style.display=nd.children_ids.length>0?'block':'none';
-    nd.children_ids.slice(0,12).forEach(cid=>{
-      const cn=nodeMap3d[cid];if(!cn)return;
-      const si=cn.status==='learned'?'✓':cn.status==='drilling'?'⟳':'';
-      const sic=cn.status==='learned'?'#e8ff47':cn.status==='drilling'?'#47c8ff':'#2a3040';
-      const item=document.createElement('div');
-      item.style.cssText='display:flex;align-items:center;gap:6px;padding:2px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#4a5568;';
-      item.innerHTML=`<span style="width:4px;height:4px;border-radius:50%;background:${SECT_CSS3[nd.section_idx]||'#2a3040'};flex-shrink:0;display:inline-block;"></span><span style="flex:1">${cn.label}</span><span style="color:${sic};font-size:10px">${si}</span>${cn.has_video?'<span style="color:#ff9966;font-size:9px">▶</span>':''}`;
-      chList.appendChild(item);
-    });
+
+    // ── Identify perspectives ─────────────────────────────────────────
+    var PERSP_SET = new Set(['Attacker','Defender','Passer','Guard player',
+      'You','Opponent','Initiative','Defensive']);
+    var perspectives = [];
+    if (sectNode) {
+      (sectNode.c || []).forEach(function(c) {
+        if (PERSP_SET.has(c.t)) perspectives.push(c);
+      });
+    }
+
+    // ── Helper: render headings list for a parent node ────────────────
+    var headingListEl = document.getElementById('g3dHeadingList');
+    var headingsSecEl = document.getElementById('g3dHeadingsSec');
+    function renderHeadings(parentNode) {
+      headingListEl.innerHTML = '';
+      if (!parentNode || !parentNode.c || parentNode.c.length === 0) {
+        headingsSecEl.style.display = 'none';
+        return;
+      }
+      headingsSecEl.style.display = 'block';
+      var hasAny = false;
+      parentNode.c.forEach(function(h) {
+        var t = (h.t || '').trim();
+        if (!t || PERSP_SET.has(t)) return; // skip perspectives nested inside
+        hasAny = true;
+        var tc = countTechniques(h);
+        var item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-family:Barlow Condensed,monospace;font-size:13px;';
+        item.innerHTML = '<span style="width:4px;height:4px;border-radius:50%;background:'+col+';flex-shrink:0;display:inline-block;"></span>'
+          + '<span style="flex:1;color:#8899aa;">'+t+'</span>'
+          + '<span style="color:#4a5568;font-size:11px;">('+tc+')</span>';
+        item.addEventListener('click', function() {
+          if (typeof referenceReveal === 'function') referenceReveal(nd.label, nd.section);
+        });
+        headingListEl.appendChild(item);
+      });
+      if (!hasAny) headingsSecEl.style.display = 'none';
+    }
+
+    // ── 2. PERSPECTIVE TOGGLE ─────────────────────────────────────────
+    var perspTabsEl = document.getElementById('g3dPerspTabs');
+    perspTabsEl.innerHTML = '';
+
+    if (perspectives.length === 0) {
+      perspTabsEl.style.display = 'none';
+      // No perspectives — render headings from sectNode directly (e.g. Wrestling bodylock)
+      renderHeadings(sectNode);
+    } else {
+      perspTabsEl.style.display = 'flex';
+      var activeTabStyle = 'background:none;border:none;border-bottom:2px solid '+col+';color:#c4cdd8;font-family:Barlow Condensed,sans-serif;font-size:12px;letter-spacing:1px;padding:6px 10px;cursor:pointer;text-transform:uppercase;';
+      var inactiveTabStyle = 'background:none;border:none;border-bottom:2px solid transparent;color:#4a5568;font-family:Barlow Condensed,sans-serif;font-size:12px;letter-spacing:1px;padding:6px 10px;cursor:pointer;text-transform:uppercase;';
+
+      perspectives.forEach(function(p, i) {
+        var tab = document.createElement('button');
+        tab.textContent = p.t;
+        tab.style.cssText = (i === 0) ? activeTabStyle : inactiveTabStyle;
+        tab.addEventListener('click', function() {
+          perspTabsEl.querySelectorAll('button').forEach(function(btn) { btn.style.cssText = inactiveTabStyle; });
+          tab.style.cssText = activeTabStyle;
+          renderHeadings(p);
+        });
+        perspTabsEl.appendChild(tab);
+      });
+      // Default: render headings for first perspective
+      renderHeadings(perspectives[0]);
+    }
+
+    // ── 3. CONNECTIONS from _transitionOccurrences ────────────────────
+    var cl = document.getElementById('g3dConnList'); cl.innerHTML = '';
+    var to = window._transitionOccurrences;
+
+    if (!to) {
+      cl.innerHTML = '<div style="color:#4a5568;font-size:12px;font-family:Barlow Condensed,monospace;font-style:italic;padding:4px 0;">Transitions not available yet</div>';
+    } else {
+      var ndNorm = normalizeSegment(nd.label);
+      // Outgoing: entries where srcPositionLabel normalizes to this node
+      var outMap = new Map(); // key=(contextLabel|destLabel) → {context, dest, weight}
+      // Incoming: entries where destLabel normalizes to this node
+      var inMap = new Map();  // key=(contextLabel|srcPositionLabel) → {context, src, weight}
+      to.forEach(function(occ) {
+        var srcN = normalizeSegment(occ.srcPositionLabel);
+        var destN = normalizeSegment(occ.destLabel);
+        if (srcN === ndNorm && destN !== ndNorm) {
+          var ok = occ.contextLabel + '|' + occ.destLabel;
+          var existing = outMap.get(ok);
+          if (existing) { existing.weight++; } else { outMap.set(ok, { context: occ.contextLabel, dest: occ.destLabel, weight: 1 }); }
+        }
+        if (destN === ndNorm && srcN !== ndNorm) {
+          var ik = occ.contextLabel + '|' + occ.srcPositionLabel;
+          var existing2 = inMap.get(ik);
+          if (existing2) { existing2.weight++; } else { inMap.set(ik, { context: occ.contextLabel, src: occ.srcPositionLabel, weight: 1 }); }
+        }
+        // Self-loops (src === dest): count as outgoing
+        if (srcN === ndNorm && destN === ndNorm) {
+          var sk = occ.contextLabel + '|' + occ.destLabel;
+          var existing3 = outMap.get(sk);
+          if (existing3) { existing3.weight++; } else { outMap.set(sk, { context: occ.contextLabel, dest: occ.destLabel, weight: 1 }); }
+        }
+      });
+
+      // Render incoming
+      if (inMap.size > 0) {
+        var inLabel = document.createElement('div');
+        inLabel.style.cssText = 'font-size:9px;color:#47c8ff;letter-spacing:1px;text-transform:uppercase;font-family:Barlow Condensed,monospace;margin-bottom:4px;margin-top:2px;';
+        inLabel.textContent = 'INCOMING';
+        cl.appendChild(inLabel);
+        inMap.forEach(function(v) {
+          var item = document.createElement('div');
+          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#8899aa;';
+          item.innerHTML = '<span style="color:#47c8ff;font-size:9px;width:12px;">←</span>'
+            + '<span style="flex:1;">'+v.src+': '+v.context+'</span>'
+            + '<span style="color:#4a5568;font-size:10px;">('+v.weight+')</span>';
+          item.style.cursor = 'pointer';
+          (function(srcLabel) {
+            item.addEventListener('click', function() {
+              var match = NET_NODES.find(function(n) { return n.depth === 1 && n.label === srcLabel; });
+              if (match) { selectedId3d = null; selectNode3d(match.id); }
+            });
+          })(v.src);
+          cl.appendChild(item);
+        });
+      }
+
+      // Render outgoing
+      if (outMap.size > 0) {
+        var outLabel = document.createElement('div');
+        outLabel.style.cssText = 'font-size:9px;color:#ff9966;letter-spacing:1px;text-transform:uppercase;font-family:Barlow Condensed,monospace;margin-bottom:4px;'+(inMap.size>0?'margin-top:10px;':'margin-top:2px;');
+        outLabel.textContent = 'OUTGOING';
+        cl.appendChild(outLabel);
+        outMap.forEach(function(v) {
+          var item = document.createElement('div');
+          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#8899aa;';
+          item.innerHTML = '<span style="color:#ff9966;font-size:9px;width:12px;">→</span>'
+            + '<span style="flex:1;">'+v.context+' → '+v.dest+'</span>'
+            + '<span style="color:#4a5568;font-size:10px;">('+v.weight+')</span>';
+          item.style.cursor = 'pointer';
+          (function(destLabel) {
+            item.addEventListener('click', function() {
+              var match = NET_NODES.find(function(n) { return n.depth === 1 && n.label === destLabel; });
+              if (match) { selectedId3d = null; selectNode3d(match.id); }
+            });
+          })(v.dest);
+          cl.appendChild(item);
+        });
+      }
+
+      if (inMap.size === 0 && outMap.size === 0) {
+        cl.innerHTML = '<div style="color:#4a5568;font-size:12px;font-family:Barlow Condensed,monospace;font-style:italic;padding:4px 0;">No transitions for this position</div>';
+      }
+    }
+
+    // ── 5. STATS ──────────────────────────────────────────────────────
+    if (to) {
+      document.getElementById('g3dStatW').textContent = Math.round(nd._w || 0);
+      document.getElementById('g3dStatIn').textContent = inE.length;
+      document.getElementById('g3dStatOut').textContent = outE.length;
+    } else {
+      document.getElementById('g3dStatW').textContent = 'n/a';
+      document.getElementById('g3dStatIn').textContent = 'n/a';
+      document.getElementById('g3dStatOut').textContent = 'n/a';
+    }
   }
 
   function closeDetail3d(){
@@ -2086,9 +2275,32 @@ window.initGraph3D = (function() {
         edgeMeshes3d.push({line,source:e.source,target:e.target,weight:e.weight,edgeKey:ek,_mat:mat,_base:base});
       });
 
-      // Initial force sim
+      // Auto-fit camera to show all nodes centred (initial load only)
+      function autoFitCamera3d() {
+        var fitNds = NET_NODES.filter(function(n) { return n.in_network; });
+        if (fitNds.length === 0) { console.warn('auto-fit: no in_network nodes, skipping'); return; }
+        var minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+        fitNds.forEach(function(n) {
+          if(n.x<minX)minX=n.x; if(n.x>maxX)maxX=n.x;
+          if(n.y<minY)minY=n.y; if(n.y>maxY)maxY=n.y;
+          if(n.z<minZ)minZ=n.z; if(n.z>maxZ)maxZ=n.z;
+        });
+        var cx=(minX+maxX)/2, cy=(minY+maxY)/2, cz=(minZ+maxZ)/2;
+        var extent=Math.max(maxX-minX, maxY-minY, maxZ-minZ);
+        // Offset pivot so node cluster is centred at origin
+        pivot3d.position.set(-cx, -cy, -cz);
+        // Set camera distance to fit all nodes within viewport
+        var fovRad = camera3d.fov * Math.PI / 180;
+        var dist = (extent / 2) / Math.tan(fovRad / 2) * 1.4; // 1.4x padding
+        dist = Math.max(dist, 200); // minimum distance
+        zoom3d = dist; tZ3d = dist;
+        camera3d.position.z = dist;
+        console.log('auto-fit: extent', Math.round(extent), 'distance', Math.round(dist), 'nodes', fitNds.length);
+      }
+
+      // Initial force sim — auto-fit camera after simulation settles
       let initSt=0;
-      const initSim=setInterval(()=>{runForce3d(simNodes3d,ACTIVE_EDGES,4);syncEdges3d(null);initSt+=4;if(initSt>=160)clearInterval(initSim);},16);
+      const initSim=setInterval(()=>{runForce3d(simNodes3d,ACTIVE_EDGES,4);syncEdges3d(null);initSt+=4;if(initSt>=160){clearInterval(initSim);autoFitCamera3d();}},16);
 
       // Camera controls
       let downX=0,downY=0,isDrag=false;
