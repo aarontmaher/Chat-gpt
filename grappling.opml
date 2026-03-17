@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-16 11:48:09</dateModified>
+		<dateModified>2026-03-17 04:48:01</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -424,7 +424,7 @@
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="Underhook to front headlock → Front headlock" />
+							<outline text="Underhook to front headlock → Front Headlock" />
 							<outline text="Underhook to snatch head outside single → Snatch head outside single" />
 							<outline text="Underhook to head inside single → Head inside single leg" />
 							<outline text="Underhook to head outside single → Head outside single" />
@@ -4928,7 +4928,7 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions">
-							<outline text="Side control">
+							<outline text="Side Control">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
@@ -4942,7 +4942,7 @@
 									<outline text="Live video" />
 								</outline>
 							</outline>
-							<outline text="Front headlock">
+							<outline text="Front Headlock">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
@@ -5081,6 +5081,7 @@
 					<outline text="Submissions">
 						<outline text="Submissions" />
 					</outline>
+					<outline text="" />
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions" />
 					</outline>
@@ -5252,7 +5253,7 @@
 					<outline text="Offensive transitions" />
 				</outline>
 				<outline text="Offensive transitions">
-					<outline text="Crab ride to back control → Back control">
+					<outline text="Crab ride to back control → Back Control">
 						<outline text="Instructional video" />
 						<outline text="Live video" />
 					</outline>
@@ -5280,14 +5281,14 @@
 							<outline text="Example: Underhook their leg" />
 							<outline text="Example: Go over-back with the other arm" />
 							<outline text="Example: Drive them sideways" />
-							<outline text="→ Side control" />
+							<outline text="→ Side Control" />
 						</outline>
 					</outline>
 					<outline text="Finishes">
 						<outline text="Example: Consolidate dominant position" />
 					</outline>
 					<outline text="Exits / Transitions">
-						<outline text="→ Side control" />
+						<outline text="→ Side Control" />
 					</outline>
 				</outline>
 				<outline text="Defensive">
