@@ -1520,6 +1520,13 @@ window.initGraph3D = (function() {
     'Offensive transitions','Defensive transitions'
   ]);
 
+  // Orphan nodes (in_network===false) always render at this opacity.
+  var ORPHAN_OPACITY = 0.3;
+  // True if node should have a mesh in the 3D graph (depth-1 position, not excluded).
+  function isGraphableNode(n) {
+    return n.depth === 1 && !GRAPH_EXCLUDE_LABELS.has(n.label);
+  }
+
   function buildTransitionEdges() {
     if (transEdgesBuilt) return;
     transEdgesBuilt = true;
@@ -1663,7 +1670,7 @@ window.initGraph3D = (function() {
   function resetHL3d(){
     selectedId3d=null;
     if(selRing3d)selRing3d.visible=false;
-    Object.values(meshMap3d).forEach(m=>{if(!m.visible)return;const nd=nodeMap3d[m.userData.id];m.material.opacity=nd?.status==='none'?0.72:0.9;m.material.emissiveIntensity=nd?.status==='none'?0.12:0.35;});
+    Object.values(meshMap3d).forEach(m=>{if(!m.visible)return;const nd=nodeMap3d[m.userData.id];if(!nd)return;if(!nd.in_network){m.material.opacity=ORPHAN_OPACITY;m.material.emissiveIntensity=0.05;return;}m.material.opacity=nd.status==='none'?0.72:0.9;m.material.emissiveIntensity=nd.status==='none'?0.12:0.35;});
     edgeMeshes3d.forEach(e=>{if(e.line.visible)e._mat.opacity=e._base;});
     Object.values(ringMap3d).forEach(r=>{if(r.visible)r.material.opacity=0.18;});
   }
@@ -1750,11 +1757,13 @@ window.initGraph3D = (function() {
     ACTIVE_EDGES.forEach(function(e){if(e.source===id){connected.add(e.target);outE.push(e);}if(e.target===id){connected.add(e.source);inE.push(e);}});
     Object.entries(meshMap3d).forEach(function([nid,m]){
       if(!m.visible)return;
-      if(nid===id){m.material.opacity=1.0;m.material.emissiveIntensity=0.8;}
-      else if(connected.has(nid)){m.material.opacity=0.75;m.material.emissiveIntensity=0.4;}
+      var nidN=Number(nid);var nnd=nodeMap3d[nid];
+      if(nidN===id){m.material.opacity=1.0;m.material.emissiveIntensity=0.8;}
+      else if(connected.has(nidN)){m.material.opacity=0.75;m.material.emissiveIntensity=0.4;}
+      else if(nnd&&!nnd.in_network){m.material.opacity=ORPHAN_OPACITY;m.material.emissiveIntensity=0.05;}
       else{m.material.opacity=0.04;m.material.emissiveIntensity=0;}
     });
-    Object.entries(ringMap3d).forEach(function([nid,r]){if(!r.visible)return;r.material.opacity=nid===id?0.6:connected.has(nid)?0.3:0.04;});
+    Object.entries(ringMap3d).forEach(function([nid,r]){if(!r.visible)return;var nidN=Number(nid);r.material.opacity=nidN===id?0.6:connected.has(nidN)?0.3:0.04;});
     edgeMeshes3d.forEach(function(e){if(!e.line.visible)return;e._mat.opacity=(e.source===id||e.target===id)?0.8:0.01;});
     openDetail3d(nd3,inE,outE);
   }
@@ -2084,6 +2093,7 @@ window.initGraph3D = (function() {
     });
     netNds.filter(n=>!aIds.has(n.id)).forEach(n=>{n._in=0;n._out=0;n._w=0;n._r=1.2;});
     var isEmpty = isPositionFilter && aIds.size === 0;
+    // Update meshes for in_network nodes
     netNds.forEach(n=>{
       const m=meshMap3d[n.id];if(!m)return;
       m.geometry.dispose();m.geometry=new THREE.SphereGeometry(n._r,14,14);
@@ -2091,6 +2101,11 @@ window.initGraph3D = (function() {
       else if(isEmpty){m.material.opacity=0.15;m.visible=true;}
       else{m.material.opacity=sf==='all'?0.06:0;m.visible=sf==='all';}
       const ring=ringMap3d[n.id];if(ring)ring.visible=aIds.has(n.id)&&showRings3d&&n._w>20;
+    });
+    // Orphan nodes always at ORPHAN_OPACITY
+    NET_NODES.filter(function(n){return isGraphableNode(n)&&!n.in_network;}).forEach(function(n){
+      var m=meshMap3d[n.id];if(!m)return;
+      m.material.opacity=ORPHAN_OPACITY;m.material.emissiveIntensity=0.05;m.visible=true;
     });
     edgeMeshes3d.forEach(e=>{
       if(isEmpty){e.line.visible=true;e._base=0.04;e._mat.opacity=0.04;return;}
@@ -2160,9 +2175,10 @@ window.initGraph3D = (function() {
   window.g3dSyncExpanded = function() {
     if (!ready) return;
     const anyExpanded = EXPANDED.size > 0;
-    NET_NODES.filter(n => n.in_network).forEach(n => {
+    NET_NODES.filter(isGraphableNode).forEach(n => {
       const mesh = meshMap3d[n.id];
       if (!mesh) return;
+      if (!n.in_network) { mesh.material.opacity = ORPHAN_OPACITY; mesh.material.emissiveIntensity = 0.05; return; }
       const secTitle = SECTIONS[n.section_idx] ? SECTIONS[n.section_idx].title : '';
       const secKey = makeKey(secTitle, secTitle);
       const secExpanded = EXPANDED.has(secKey);
@@ -2205,7 +2221,7 @@ window.initGraph3D = (function() {
       window._diagNet = { nodeCount: NET_NODES.length, edgeCount: ACTIVE_EDGES.length,
         nodes: NET_NODES, edges: ACTIVE_EDGES,
         structuralEdges: NET_EDGES.length, transitionEdges: TRANSITION_EDGES.length,
-        useTransitionEdges: useTransitionEdges };
+        useTransitionEdges: useTransitionEdges, meshMap: meshMap3d, nodeMap: nodeMap3d };
 
       const THREE=window.THREE;
       const canvas=document.getElementById('g3dCanvas');
@@ -2242,17 +2258,26 @@ window.initGraph3D = (function() {
       selRing3d.visible=false;pivot3d.add(selRing3d);
 
       applyProg3d();
-      const netNds=NET_NODES.filter(n=>n.in_network);
+      // All graphable nodes get meshes — in_network at full opacity, orphans at 0.3
+      var allGraphable=NET_NODES.filter(isGraphableNode);
+      var netNds=allGraphable.filter(function(n){return n.in_network;});
+      // Orphans get minimal weight/radius
+      allGraphable.forEach(function(n){if(!n.in_network){n._w=0;n._in=0;n._out=0;n._r=2.5;}});
       computeW3d(netNds,ACTIVE_EDGES);
-      const maxW3=Math.max(...netNds.map(n=>n._w));
+      const maxW3=Math.max(...netNds.map(n=>n._w),1);
+      // Fail-safe: if all nodes are orphans, show all at full opacity
+      var allOrphan = netNds.length === 0 && allGraphable.length > 0;
+      if (allOrphan) console.warn('ORPHAN-FAILSAFE: all nodes are orphans — showing all at full opacity');
 
-      netNds.forEach(n=>{
-        const p=randSph3d(340);n.x=p[0];n.y=p[1];n.z=p[2];
+      allGraphable.forEach(n=>{
+        const p=randSph3d(n.in_network?340:500);n.x=p[0];n.y=p[1];n.z=p[2];
         const col=nodeCol3d(n,THREE);
-        const mat=new THREE.MeshPhongMaterial({color:col.clone(),emissive:col.clone(),emissiveIntensity:n.status==='none'?0.12:0.35,shininess:120,transparent:true,opacity:0.9});
+        var opac = allOrphan ? 0.9 : (n.in_network ? 0.9 : ORPHAN_OPACITY);
+        var emI = allOrphan ? 0.12 : (n.in_network ? (n.status==='none'?0.12:0.35) : 0.05);
+        const mat=new THREE.MeshPhongMaterial({color:col.clone(),emissive:col.clone(),emissiveIntensity:emI,shininess:120,transparent:true,opacity:opac});
         const mesh=new THREE.Mesh(new THREE.SphereGeometry(n._r,14,14),mat);
         mesh.position.set(n.x,n.y,n.z);mesh.userData={id:n.id};pivot3d.add(mesh);meshMap3d[n.id]=mesh;
-        if(n._w>maxW3*0.5){
+        if(n.in_network&&n._w>maxW3*0.5){
           const rmat=new THREE.MeshBasicMaterial({color:col.clone(),transparent:true,opacity:0.18,side:THREE.DoubleSide});
           const ring=new THREE.Mesh(new THREE.TorusGeometry(n._r*1.55,0.5,6,32),rmat);
           ring.userData={nodeId:n.id};pivot3d.add(ring);ringMap3d[n.id]=ring;
@@ -2378,8 +2403,7 @@ window.initGraph3D = (function() {
       document.getElementById('g3dOptRotate').addEventListener('change',function(){autoRotate3d=this.checked;});
       document.getElementById('g3dOptHubOnly').addEventListener('change',function(){
         hubOnly3d=this.checked;
-        const netNds=NET_NODES.filter(n=>n.in_network);
-        netNds.forEach(n=>{const m=meshMap3d[n.id];if(!m||!m.visible)return;m.material.opacity=hubOnly3d&&n._w<hubThresh3d?0.04:(n.status==='none'?0.72:0.9);});
+        NET_NODES.filter(isGraphableNode).forEach(n=>{const m=meshMap3d[n.id];if(!m||!m.visible)return;if(!n.in_network){m.material.opacity=ORPHAN_OPACITY;return;}m.material.opacity=hubOnly3d&&n._w<hubThresh3d?0.04:(n.status==='none'?0.72:0.9);});
       });
       var _boDebugOnce=false;
       applyBuiltOut3d=function(){
@@ -2392,8 +2416,7 @@ window.initGraph3D = (function() {
           var sampleNode=NET_NODES.find(function(n){return n.in_network;});
           console.log('builtOutNetMap size:',netMap.size,'| sample map key:',[...netMap.keys()][0],'| sample node key:',sampleNode?sampleNode.key:'N/A');
         }
-        var netNds=NET_NODES.filter(function(n){return n.in_network;});
-        netNds.forEach(function(n){var m=meshMap3d[n.id];if(!m||!m.visible)return;var isBuilt=netMap.get(n.key)===true;m.material.opacity=builtOut3d&&!isBuilt?0.08:(n.status==='none'?0.72:0.9);});
+        NET_NODES.filter(isGraphableNode).forEach(function(n){var m=meshMap3d[n.id];if(!m||!m.visible)return;if(!n.in_network){m.material.opacity=ORPHAN_OPACITY;return;}var isBuilt=netMap.get(n.key)===true;m.material.opacity=builtOut3d&&!isBuilt?0.08:(n.status==='none'?0.72:0.9);});
       };
       const boCheckbox=document.getElementById('g3dOptBuiltOut');
       const boBtn=document.getElementById('g3dBuiltOutBtn');
