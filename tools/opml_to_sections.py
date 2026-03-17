@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+from collections import Counter
 
 COLORS = ['#e8ff47', '#ff6b35', '#a78bfa', '#47c8ff', '#34d399']
 
@@ -147,6 +148,20 @@ def opml_to_sections(opml_path):
 
 
 # ---------------------------------------------------------------------------
+# Perspective / schema layer names (must match SCHEMA_NAMES in index.html)
+# ---------------------------------------------------------------------------
+
+SCHEMA_NAMES = frozenset([
+    'Setups / Entries', 'Control', 'Offence', 'Defence / Escapes',
+    'Submissions', 'Offensive transitions', 'Defence',
+    'Instructional video', 'Live video',
+    'Attacker', 'Defender', 'Passer', 'Guard player',
+    'You', 'Opponent', 'Initiative', 'Defensive',
+    'Entries', 'Passes', 'Notes', 'Subtopic', 'Main topic',
+])
+
+
+# ---------------------------------------------------------------------------
 # NET_NODES / NET_EDGES generation
 # ---------------------------------------------------------------------------
 
@@ -155,18 +170,204 @@ def _make_key(section_title, text):
     return re.sub(r'\s+', '_', (section_title + '|' + text).lower())
 
 
-def sections_to_network(sections):
-    """Flatten SECTIONS into NET_NODES and NET_EDGES arrays."""
-    nodes = []
+PERSPECTIVE_NAMES = frozenset([
+    'Attacker', 'Defender', 'Passer', 'Guard player',
+    'Initiative', 'Defensive', 'You', 'Opponent',
+])
+
+
+def _normalize_segment(s):
+    """Python equivalent of normalizeSegment() in index.html."""
+    s = s.strip().lower()
+    s = re.sub(r'\s+', '_', s)
+    s = re.sub(r'[^a-z0-9_\-]', '', s)
+    s = re.sub(r'_+', '_', s)
+    return s
+
+
+def _build_transition_edges(sections, node_id_by_label):
+    """Scan SECTIONS for OT (Offensive transitions) leaves and return weighted
+    transition edges + categorized warnings.
+
+    Canonical position = any node whose direct children include at least one
+    PERSPECTIVE_NAMES entry (isCanonical).
+
+    Walk algorithm uses a canonical_stack (push on enter, pop on leave) so
+    nested canonical positions are tracked correctly.
+
+    Edge key = (srcPositionLabel, contextLabel, destLabel) — 3-part key.
+    Same context→dest from different source positions = separate edges.
+    Same dest with different contextLabels = separate edges.
+
+    Returns:
+        edges          – list of {source, target, label, type, weight, ...}
+        warnings       – list of human-readable warning strings
+        canonical_set  – set of canonical position label strings
+    """
+    ARROW = _REAL_ARROW  # → (U+2192)
+
+    # 1. Identify canonical positions: nodes with a direct perspective child
+    def _is_canonical(node):
+        child_labels = {c['t'] for c in node.get('c', [])}
+        return bool(child_labels & PERSPECTIVE_NAMES)
+
+    canonical_set = set()
+    canonical_by_section = {}  # label -> [section_title, ...]
+
+    def _scan_canonical(node, section_title):
+        if _is_canonical(node):
+            canonical_set.add(node['t'])
+            canonical_by_section.setdefault(node['t'], []).append(section_title)
+        for c in node.get('c', []):
+            _scan_canonical(c, section_title)
+
+    for sec in sections:
+        for node in sec['nodes']:
+            _scan_canonical(node, sec['title'])
+
+    # Build normalized lookup: norm -> [{label, section}]
+    norm_to_positions = {}
+    for label in canonical_set:
+        norm = _normalize_segment(label)
+        norm_to_positions.setdefault(norm, []).append({
+            'label': label,
+            'sections': canonical_by_section.get(label, []),
+        })
+
+    # 2. Walk tree with canonical_stack — collect OT leaves only
+    #    edge_counter key = (srcPositionLabel, contextLabel, destLabel) — 3-part key
+    #    same context→dest from different source positions = separate edges
+    edge_counter = Counter()          # (src, context, dest_label) -> count
+    warnings = []
+    canonical_stack = []              # push/pop as we enter/leave canonical nodes
+
+    def _is_ot_heading(text):
+        return text == 'Offensive transitions'
+
+    def _walk_tree(node, section_title):
+        """Recursive walk with canonical_stack push/pop."""
+        t = node.get('t', '')
+        children = node.get('c', [])
+        pushed = False
+
+        # On entering node: if isCanonical → push onto stack
+        if _is_canonical(node):
+            canonical_stack.append(t)
+            pushed = True
+
+        if _is_ot_heading(t):
+            # Flatten double-wrapper: OT > OT → descend into inner
+            inner_children = children
+            if (len(children) == 1
+                    and _is_ot_heading(children[0].get('t', ''))):
+                inner_children = children[0].get('c', [])
+            # Collect OT leaves
+            _walk_ot_children(inner_children, section_title)
+        else:
+            # Not an OT heading — recurse looking for OT headings deeper
+            for c in children:
+                _walk_tree(c, section_title)
+
+        # On leaving node: if we pushed → pop
+        if pushed:
+            canonical_stack.pop()
+
+    def _walk_ot_children(nodes, section_title):
+        """Walk children of an OT heading, collecting arrow leaves."""
+        for node in nodes:
+            t = node.get('t', '')
+            children = node.get('c', [])
+            # Filter out media children
+            real_children = [c for c in children
+                             if c.get('t', '') not in
+                             ('Instructional video', 'Live video')]
+
+            # Leaf with arrow = transition
+            if ARROW in t and len(real_children) == 0:
+                # Split at FIRST arrow only
+                idx = t.index(ARROW)
+                context_label = t[:idx].strip()
+                dest_raw = t[idx + len(ARROW):].strip()
+
+                current_canonical = (canonical_stack[-1]
+                                     if canonical_stack else None)
+
+                if not context_label or not dest_raw:
+                    warnings.append(
+                        f'MALFORMED: "{t}" (section "{section_title}")')
+                elif current_canonical is None:
+                    warnings.append(
+                        f'NO_SRC: "{t}" — no canonical ancestor '
+                        f'(section "{section_title}")')
+                else:
+                    dest_norm = _normalize_segment(dest_raw)
+                    matches = norm_to_positions.get(dest_norm, [])
+
+                    if len(matches) > 1:
+                        candidates = ', '.join(
+                            f'{m["label"]} ({"/".join(m["sections"])})'
+                            for m in matches)
+                        warnings.append(
+                            f'AMBIG_DEST: "→ {dest_raw}" matches '
+                            f'[{candidates}] '
+                            f'(src: "{current_canonical}", '
+                            f'section "{section_title}")')
+                    elif len(matches) == 0:
+                        warnings.append(
+                            f'NO_DEST: "→ {dest_raw}" — no matching '
+                            f'position '
+                            f'(src: "{current_canonical}", '
+                            f'section "{section_title}")')
+                    else:
+                        # Exactly 1 match — valid edge
+                        resolved_dest = matches[0]['label']
+                        key = (current_canonical, context_label, resolved_dest)
+                        edge_counter[key] += 1
+            else:
+                # Recurse into non-leaf OT children
+                _walk_ot_children(children, section_title)
+
+    for sec in sections:
+        for node in sec['nodes']:
+            _walk_tree(node, sec['title'])
+
+    # 3. Build edges list — one edge per unique (src, context, dest) triple
     edges = []
+    for (src_label, context_label, tgt_label), weight in edge_counter.items():
+        src_id = node_id_by_label.get(src_label)
+        tgt_id = node_id_by_label.get(tgt_label)
+        if src_id is None or tgt_id is None:
+            warnings.append(
+                f'UNRESOLVED: "{src_label}" → "{tgt_label}" '
+                f'(context: "{context_label}") — '
+                f'could not resolve node IDs')
+            continue
+        edges.append({
+            'source': src_id,
+            'target': tgt_id,
+            'source_label': src_label,
+            'target_label': tgt_label,
+            'label': context_label,
+            'type': 'transition',
+            'weight': weight,
+        })
+
+    return edges, warnings, canonical_set
+
+
+def sections_to_network(sections):
+    """Flatten SECTIONS into NET_NODES and transition-based NET_EDGES."""
+    nodes = []
     node_id = 0
+
+    # Mapping: position label -> node ID (populated after canonical detection)
+    node_id_by_label = {}
 
     def walk(node, section_title, section_idx, depth, parent_id):
         nonlocal node_id
         my_id = node_id
         node_id += 1
         children = node.get('c', [])
-        in_net = depth <= 2
         entry = {
             'id': my_id,
             'label': node['t'],
@@ -178,17 +379,9 @@ def sections_to_network(sections):
             'has_video': 'v' in node,
             'video_url': node.get('v', ''),
             'key': _make_key(section_title, node['t']),
-            'in_network': in_net,
+            'in_network': False,  # set after edge resolution
         }
         nodes.append(entry)
-        # Edge from parent to this node (both must be in_network)
-        if parent_id is not None and in_net:
-            edges.append({
-                'source': parent_id,
-                'target': my_id,
-                'type': 'leads_to',
-                'weight': 2,
-            })
         # Recurse into children — collect actual IDs
         for c in children:
             child_id = node_id  # next ID that walk() will assign
@@ -199,7 +392,39 @@ def sections_to_network(sections):
         for top_node in s['nodes']:
             walk(top_node, s['title'], si, 1, None)
 
-    return nodes, edges
+    # Build transition-based edges (replaces structural parent-child edges)
+    # First, get canonical_set so we know which labels to register for ID lookup
+    edges, warnings, canonical_set = _build_transition_edges(
+        sections, {})  # empty dict — we'll re-resolve after
+
+    # Populate node_id_by_label for all canonical positions (any depth)
+    # Prefer shallowest node when labels collide
+    for n in nodes:
+        if n['label'] in canonical_set and n['label'] not in node_id_by_label:
+            node_id_by_label[n['label']] = n['id']
+
+    # Re-run edge building with populated label→ID map
+    edges, warnings, canonical_set = _build_transition_edges(
+        sections, node_id_by_label)
+
+    # Update in_network: node participates as source or target in a transition edge,
+    # OR is a shallow (depth <= 2) child of an edge participant
+    trans_node_ids = set()
+    for e in edges:
+        trans_node_ids.add(e['source'])
+        trans_node_ids.add(e['target'])
+
+    for n in nodes:
+        if n['id'] in trans_node_ids:
+            # Direct edge participant (any depth)
+            n['in_network'] = True
+        elif n['depth'] <= 2 and n['parent_id'] in trans_node_ids:
+            # Child of an edge participant (sub-positions visible with parent)
+            n['in_network'] = True
+        else:
+            n['in_network'] = False
+
+    return nodes, edges, warnings, canonical_set
 
 
 def update_index_html(sections, net_nodes, net_edges, dry_run=False):
@@ -264,9 +489,35 @@ if __name__ == '__main__':
         section_names = [s['title'] for s in sections]
         print(f'Parsed {len(sections)} sections: {section_names}')
 
-        net_nodes, net_edges = sections_to_network(sections)
+        net_nodes, net_edges, warnings, canonical_set = sections_to_network(sections)
         in_net = sum(1 for n in net_nodes if n['in_network'])
-        print(f'Network: {len(net_nodes)} total nodes, {in_net} in_network, {len(net_edges)} edges')
+
+        # Transition edge stats
+        matched = len(net_edges)
+        total_weight = sum(e['weight'] for e in net_edges)
+        max_weight = max((e['weight'] for e in net_edges), default=0)
+        print(f'Canonical positions: {len(canonical_set)}')
+        print(f'Transition edges: {matched} unique | '
+              f'total weight: {total_weight} | max weight: {max_weight}')
+
+        # Categorize warnings
+        no_dest = [w for w in warnings if w.startswith('NO_DEST:')]
+        ambig_dest = [w for w in warnings if w.startswith('AMBIG_DEST:')]
+        no_src = [w for w in warnings if w.startswith('NO_SRC:')]
+        malformed = [w for w in warnings if w.startswith('MALFORMED:')]
+        unresolved = [w for w in warnings if w.startswith('UNRESOLVED:')]
+        other = [w for w in warnings if not any(
+            w.startswith(p) for p in ('NO_DEST:', 'AMBIG_DEST:', 'NO_SRC:', 'MALFORMED:', 'UNRESOLVED:'))]
+
+        print(f'Warnings: {len(warnings)} total '
+              f'(NO_DEST: {len(no_dest)}, AMBIG_DEST: {len(ambig_dest)}, '
+              f'NO_SRC: {len(no_src)}, MALFORMED: {len(malformed)}, '
+              f'UNRESOLVED: {len(unresolved)})')
+        for w in warnings:
+            print(f'  WARN: {w}')
+
+        print(f'Network: {len(net_nodes)} total nodes, {in_net} in_network, '
+              f'{len(net_edges)} transition edges')
 
         chars = update_index_html(sections, net_nodes, net_edges, dry_run=dry_run)
         if not dry_run:
