@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-17 04:27:53</dateModified>
+		<dateModified>2026-03-17 02:39:35</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -5110,9 +5110,7 @@
 					<outline text="Submissions">
 						<outline text="Submissions" />
 					</outline>
-					<outline text="Offensive transitions">
-						<outline text="Offensive transitions" />
-					</outline>
+					<outline text="Offensive transitions" />
 				</outline>
 				<outline text="Defender">
 					<outline text="Setups / Entries">
