@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-17 06:38:29</dateModified>
+		<dateModified>2026-03-17 06:47:59</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -5310,7 +5310,7 @@
 					<outline text="Setups / Entries">
 						<outline text="Example: Sweep single defence leading into Wrestling 50/50" />
 					</outline>
-					<outline text="Key battles">
+					<outline text="Control">
 						<outline text="Example: Full control (definition)">
 							<outline text="Control opponent&apos;s ankle OR tight waist on their far hip" />
 							<outline text="Nearside arm controls far ankle OR tight waist toward their far hip" />
@@ -5327,21 +5327,21 @@
 							<outline text="Example: Underhook their leg" />
 							<outline text="Example: Go over-back with the other arm" />
 							<outline text="Example: Drive them sideways" />
-							<outline text="→ Side Control" />
+							<outline text="Side Control" />
 						</outline>
 					</outline>
-					<outline text="Finishes">
+					<outline text="Submissions">
 						<outline text="Example: Consolidate dominant position" />
 					</outline>
-					<outline text="Exits / Transitions">
-						<outline text="→ Side Control" />
+					<outline text="Offensive transitions">
+						<outline text="Side Control" />
 					</outline>
 				</outline>
 				<outline text="Defensive">
 					<outline text="Setups / Entries">
 						<outline text="Example: Opponent initiates Grounded 50/50 from Sweep single" />
 					</outline>
-					<outline text="Key battles">
+					<outline text="Control">
 						<outline text="Example: Keep tight control of opponent&apos;s leg and build toward initiative" />
 					</outline>
 					<outline text="Offence" />
@@ -5350,8 +5350,8 @@
 							<outline text="Example: Transition to your own control (ankle grip OR hip/tight-waist grip)" />
 						</outline>
 					</outline>
-					<outline text="Finishes" />
-					<outline text="Exits / Transitions">
+					<outline text="Submissions" />
+					<outline text="Offensive transitions">
 						<outline text="" />
 					</outline>
 				</outline>
