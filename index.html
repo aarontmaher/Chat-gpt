@@ -402,6 +402,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <div id="diagReveal" class="diag-section"></div>
   <div id="diagKeys" class="diag-section"></div>
   <div id="diagWarnings" class="diag-section"></div>
+  <div id="diagTransitions" class="diag-section"></div>
   <div id="diagErrors" class="diag-section"></div>
 </div>
 
@@ -1133,12 +1134,34 @@ function initDataFromSections() {
   // Walk positions → find transition leaves (text contains →).
   // srcPositionLabel = nearest ancestor whose children include a perspective
   // (Attacker/Defender/Passer/Guard player/You/Opponent/Initiative/Defensive).
+  // AMBIG_DEST / NO_DEST: validate destLabel against canonical positions.
   var ARROW_CHAR = '\u2192';
   var SKIP_LABELS = { 'Offensive transitions': 1, 'Notes': 1, 'Instructional video': 1, 'Live video': 1 };
   var PERSPECTIVE_NAMES = { 'Attacker':1, 'Defender':1, 'Passer':1, 'Guard player':1,
     'You':1, 'Opponent':1, 'Initiative':1, 'Defensive':1 };
   var occurrences = [];
   var baseWeight = new Map();
+  var transWarnings = [];  // AMBIG_DEST + NO_DEST warnings for DIAG
+
+  // Build canonical position list: depth-1 nodes that have schema children
+  // normToPositions: normalizedLabel → [{label, section}]
+  var normToPositions = new Map();
+  SECTIONS.forEach(function(sec) {
+    if (!sec.nodes) return;
+    sec.nodes.forEach(function(node) {
+      var childLabels = (node.c || []).map(function(c) { return c.t; });
+      var hasSchema = false;
+      for (var i = 0; i < childLabels.length; i++) {
+        if (SCHEMA_NAMES.has(childLabels[i])) { hasSchema = true; break; }
+      }
+      if (hasSchema) {
+        var norm = normalizeSegment(node.t);
+        var arr = normToPositions.get(norm);
+        if (!arr) { arr = []; normToPositions.set(norm, arr); }
+        arr.push({ label: node.t, section: sec.title });
+      }
+    });
+  });
 
   // Check if a node has at least one child that is a perspective name
   function hasPerspectiveChild(nd) {
@@ -1173,14 +1196,40 @@ function initDataFromSections() {
               if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
                 var contextLabel = parts[0].trim();
                 var destLabel = parts[1].trim();
-                var edgeKey = normalizeSegment(posLabel) + '|' + normalizeSegment(destLabel);
-                occurrences.push({
-                  srcPositionLabel: posLabel,
-                  contextLabel: contextLabel,
-                  destLabel: destLabel,
-                  edgeKey: edgeKey
-                });
-                baseWeight.set(edgeKey, (baseWeight.get(edgeKey) || 0) + 1);
+                var destNorm = normalizeSegment(destLabel);
+                var matches = normToPositions.get(destNorm) || [];
+
+                if (matches.length > 1) {
+                  // AMBIG_DEST: multiple canonical positions match — skip edge
+                  transWarnings.push({
+                    type: 'AMBIG_DEST',
+                    raw: destLabel,
+                    normalized: destNorm,
+                    candidates: matches.map(function(p) { return p.label + ' (' + p.section + ')'; }),
+                    sourceLine: t,
+                    srcPosition: posLabel
+                  });
+                  console.warn('AMBIG_DEST: "' + destLabel + '" matches', matches.map(function(p) { return p.label; }));
+                } else if (matches.length === 0) {
+                  // NO_DEST: no canonical position match — skip edge
+                  transWarnings.push({
+                    type: 'NO_DEST',
+                    raw: destLabel,
+                    sourceLine: t,
+                    srcPosition: posLabel
+                  });
+                  console.warn('NO_DEST: "' + destLabel + '" — no matching position (src: ' + posLabel + ')');
+                } else {
+                  // Exactly 1 match — valid edge, proceed
+                  var edgeKey = normalizeSegment(posLabel) + '|' + destNorm;
+                  occurrences.push({
+                    srcPositionLabel: posLabel,
+                    contextLabel: contextLabel,
+                    destLabel: destLabel,
+                    edgeKey: edgeKey
+                  });
+                  baseWeight.set(edgeKey, (baseWeight.get(edgeKey) || 0) + 1);
+                }
               }
             }
           }
@@ -1192,8 +1241,10 @@ function initDataFromSections() {
 
   window._transitionOccurrences = occurrences;
   window._edgeBaseWeight = baseWeight;
+  window._diagTransitionWarnings = transWarnings;
   console.log('_transitionOccurrences:', occurrences.length,
     '_edgeBaseWeight:', baseWeight.size,
+    'transition warnings (AMBIG_DEST/NO_DEST):', transWarnings.length,
     '_techPositionMap will be populated by buildSections()');
 }
 
@@ -1433,7 +1484,7 @@ window.initGraph3D = (function() {
   const SECT_HEX3 = [0xf0c040,0xe05a30,0x9b72f5,0x3abfaa,0x50c878];
   const SECT_CSS3 = ['#f0c040','#e05a30','#9b72f5','#3abfaa','#50c878'];
   const SECT_NAMES3 = SECTIONS.map(s => s.title);
-  window._diagNet = { nodeCount: NET_NODES.length, edgeCount: NET_EDGES.length, nodes: NET_NODES, edges: NET_EDGES };
+  // _diagNet set after TRANSITION_EDGES are built (below)
 
   const nodeMap3d={};
   NET_NODES.forEach(n => nodeMap3d[n.id]=n);
@@ -1449,6 +1500,80 @@ window.initGraph3D = (function() {
     }
     n.key = normalizeSegment(n.section) + '|' + chain.join('|');
   });
+
+  // ─── TRANSITION_EDGES from _edgeBaseWeight ─────────────────────────────
+  // Maps position→position semantic transitions to NET_NODES IDs.
+  // Built lazily on first initGraph3D() call (after initDataFromSections boots).
+  // Falls back to NET_EDGES if no transition data available.
+  var TRANSITION_EDGES = [];
+  var useTransitionEdges = false;
+  var ACTIVE_EDGES = NET_EDGES; // default until buildTransitionEdges runs
+  var transEdgesBuilt = false;
+
+  function buildTransitionEdges() {
+    if (transEdgesBuilt) return;
+    transEdgesBuilt = true;
+    var ebw = window._edgeBaseWeight;
+    if (!ebw || ebw.size === 0) {
+      console.warn('TRANSITION-EDGES: falling back to structural edges (_edgeBaseWeight empty)');
+      ACTIVE_EDGES = NET_EDGES;
+      return;
+    }
+    // Build norm→node lookup for depth-1 (position) nodes only
+    var normToNode = {};
+    NET_NODES.forEach(function(n) {
+      if (n.depth === 1) {
+        var norm = normalizeSegment(n.label);
+        normToNode[norm] = n;
+      }
+    });
+    var skipped = 0;
+    ebw.forEach(function(weight, edgeKey) {
+      var parts = edgeKey.split('|');
+      if (parts.length !== 2) { skipped++; return; }
+      var srcNorm = parts[0], destNorm = parts[1];
+      var srcNode = normToNode[srcNorm], destNode = normToNode[destNorm];
+      if (!srcNode || !destNode) { skipped++; return; }
+      TRANSITION_EDGES.push({
+        source: srcNode.id,
+        target: destNode.id,
+        weight: weight,
+        type: 'transition',
+        edgeKey: edgeKey,
+        source_label: srcNode.label,
+        target_label: destNode.label
+      });
+    });
+    if (TRANSITION_EDGES.length > 0) {
+      useTransitionEdges = true;
+      ACTIVE_EDGES = TRANSITION_EDGES;
+      // Update in_network: only nodes that participate in transition edges
+      var transNodeIds = new Set();
+      TRANSITION_EDGES.forEach(function(e) {
+        transNodeIds.add(e.source);
+        transNodeIds.add(e.target);
+      });
+      NET_NODES.forEach(function(n) {
+        if (n.depth === 1) {
+          n.in_network = transNodeIds.has(n.id);
+        } else if (n.depth === 2) {
+          // Sub-positions stay in_network if their parent position is
+          n.in_network = transNodeIds.has(n.parent_id);
+        } else {
+          n.in_network = false;
+        }
+      });
+      console.log('TRANSITION-EDGES: built', TRANSITION_EDGES.length, 'edges from _edgeBaseWeight,',
+        'in_network nodes:', NET_NODES.filter(function(n){ return n.in_network; }).length,
+        '(skipped', skipped, 'unresolvable)');
+    } else {
+      console.warn('TRANSITION-EDGES: falling back to structural edges (0 edges resolved)');
+      ACTIVE_EDGES = NET_EDGES;
+    }
+  }
+
+  // Expose for DIAG — updated after buildTransitionEdges runs
+  window._diagNet = { nodeCount: NET_NODES.length, edgeCount: NET_EDGES.length, nodes: NET_NODES, edges: NET_EDGES };
 
   function loadProg3d() {
     try { return JSON.parse(localStorage.getItem('grapplingProgress')||'{}'); } catch(e){return{};}
@@ -1592,7 +1717,7 @@ window.initGraph3D = (function() {
     if(selRing3d&&nd3){const sc=nd3._r*2.2;selRing3d.scale.set(sc,sc,sc);selRing3d.position.set(nd3.x,nd3.y,nd3.z);selRing3d.material.color.set(SECT_HEX3[nd3.section_idx]||0x888888);selRing3d.visible=true;}
     const connected=new Set([id]);
     const inE=[],outE=[];
-    NET_EDGES.forEach(e=>{if(e.source===id){connected.add(e.target);outE.push(e);}if(e.target===id){connected.add(e.source);inE.push(e);}});
+    ACTIVE_EDGES.forEach(e=>{if(e.source===id){connected.add(e.target);outE.push(e);}if(e.target===id){connected.add(e.source);inE.push(e);}});
     Object.entries(meshMap3d).forEach(([nid,m])=>{
       if(!m.visible)return;
       if(nid===id){m.material.opacity=1.0;m.material.emissiveIntensity=0.8;}
@@ -1727,7 +1852,7 @@ window.initGraph3D = (function() {
     }
 
     const aIds=new Set(active.map(n=>n.id));
-    const aEdges=NET_EDGES.filter(e=>aIds.has(e.source)&&aIds.has(e.target));
+    const aEdges=ACTIVE_EDGES.filter(e=>aIds.has(e.source)&&aIds.has(e.target));
 
     // FIX 2/3: Recompute visible edge weights from _transitionOccurrences
     // filtered to positions that survive the current filter.
@@ -1750,7 +1875,7 @@ window.initGraph3D = (function() {
     } else {
       // ALL filter: use _edgeBaseWeight (full transition counts) or original weight
       var ebw = window._edgeBaseWeight;
-      NET_EDGES.forEach(function(e) {
+      ACTIVE_EDGES.forEach(function(e) {
         if (ebw && ebw.size > 0) {
           var srcN = nodeMap3d[e.source], tgtN = nodeMap3d[e.target];
           if (srcN && tgtN) {
@@ -1885,6 +2010,14 @@ window.initGraph3D = (function() {
     if(!W||!H){setTimeout(initGraph3D,50);return;}
 
     if(!ready){
+      // Build transition edges from _edgeBaseWeight (available after initDataFromSections)
+      buildTransitionEdges();
+      // Update DIAG with resolved edge data
+      window._diagNet = { nodeCount: NET_NODES.length, edgeCount: ACTIVE_EDGES.length,
+        nodes: NET_NODES, edges: ACTIVE_EDGES,
+        structuralEdges: NET_EDGES.length, transitionEdges: TRANSITION_EDGES.length,
+        useTransitionEdges: useTransitionEdges };
+
       const THREE=window.THREE;
       const canvas=document.getElementById('g3dCanvas');
 
@@ -1921,7 +2054,7 @@ window.initGraph3D = (function() {
 
       applyProg3d();
       const netNds=NET_NODES.filter(n=>n.in_network);
-      computeW3d(netNds,NET_EDGES);
+      computeW3d(netNds,ACTIVE_EDGES);
       const maxW3=Math.max(...netNds.map(n=>n._w));
 
       netNds.forEach(n=>{
@@ -1941,7 +2074,7 @@ window.initGraph3D = (function() {
 
       // TODO: replace THREE.Line with Line2/CylinderGeometry for true edge thickness
       // WebGL ignores lineWidth on most platforms — weight encoded via opacity only for now
-      NET_EDGES.forEach(e=>{
+      ACTIVE_EDGES.forEach(e=>{
         const src=nodeMap3d[e.source],tgt=nodeMap3d[e.target];if(!src||!tgt)return;
         const cs=new THREE.Color(SECT_HEX3[src.section_idx]||0x334466);
         cs.lerp(new THREE.Color(SECT_HEX3[tgt.section_idx]||0x334466),0.5).multiplyScalar(0.65);
@@ -1949,13 +2082,13 @@ window.initGraph3D = (function() {
         const mat=new THREE.LineBasicMaterial({color:cs,transparent:true,opacity:base});
         const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(1,1,1)]);
         const line=new THREE.Line(geo,mat);pivot3d.add(line);
-        var ek=normalizeSegment((nodeMap3d[e.source]||{}).label||'')+'|'+normalizeSegment((nodeMap3d[e.target]||{}).label||'');
+        var ek=e.edgeKey || (normalizeSegment((nodeMap3d[e.source]||{}).label||'')+'|'+normalizeSegment((nodeMap3d[e.target]||{}).label||''));
         edgeMeshes3d.push({line,source:e.source,target:e.target,weight:e.weight,edgeKey:ek,_mat:mat,_base:base});
       });
 
       // Initial force sim
       let initSt=0;
-      const initSim=setInterval(()=>{runForce3d(simNodes3d,NET_EDGES,4);syncEdges3d(null);initSt+=4;if(initSt>=160)clearInterval(initSim);},16);
+      const initSim=setInterval(()=>{runForce3d(simNodes3d,ACTIVE_EDGES,4);syncEdges3d(null);initSt+=4;if(initSt>=160)clearInterval(initSim);},16);
 
       // Camera controls
       let downX=0,downY=0,isDrag=false;
@@ -2436,6 +2569,39 @@ updateStats();
         });
       }
       el.innerHTML = html;
+    }
+    // Transition warnings (AMBIG_DEST / NO_DEST from _transitionOccurrences boot)
+    el = document.getElementById('diagTransitions');
+    if (el) {
+      var tw = window._diagTransitionWarnings || [];
+      var ambigList = tw.filter(function(w) { return w.type === 'AMBIG_DEST'; });
+      var noDestList = tw.filter(function(w) { return w.type === 'NO_DEST'; });
+      var twTotal = tw.length;
+      var twHtml = '<div class="diag-label">Transition Edge Warnings (' + twTotal + ' total)</div>';
+      if (twTotal === 0) {
+        twHtml += '<div class="diag-val" style="color:#4a5568;">None</div>';
+      } else {
+        if (ambigList.length > 0) {
+          twHtml += '<div style="color:#ff6b35;font-weight:600;font-size:11px;margin:6px 0 2px;">AMBIG_DEST — multiple position matches (' + ambigList.length + ')</div>';
+          ambigList.forEach(function(w) {
+            twHtml += '<div class="diag-warn" style="border-left:3px solid #ff6b35;padding-left:6px;margin:1px 0;">' +
+              h('AMBIG_DEST: \'\u2192 ' + w.raw + '\' matches [' + w.candidates.join(', ') + ']') +
+              '<br><span style="color:#4a5568;font-size:10px;">src: ' + h(w.srcPosition) + ' | line: ' + h(w.sourceLine) + '</span></div>';
+          });
+        }
+        if (noDestList.length > 0) {
+          twHtml += '<div style="color:#e8c847;font-weight:600;font-size:11px;margin:6px 0 2px;">NO_DEST — no matching position (' + noDestList.length + ')</div>';
+          noDestList.forEach(function(w) {
+            twHtml += '<div class="diag-warn" style="border-left:3px solid #e8c847;padding-left:6px;margin:1px 0;">' +
+              h('NO_DEST: \'\u2192 ' + w.raw + '\' \u2014 no matching position found') +
+              '<br><span style="color:#4a5568;font-size:10px;">src: ' + h(w.srcPosition) + ' | line: ' + h(w.sourceLine) + '</span></div>';
+          });
+        }
+      }
+      var validOcc = window._transitionOccurrences ? window._transitionOccurrences.length : 0;
+      var ebwCount = window._edgeBaseWeight ? window._edgeBaseWeight.size : 0;
+      twHtml += '<div class="diag-val" style="margin-top:4px;">Valid transitions: ' + validOcc + ' | Unique edges: ' + ebwCount + ' | Skipped: ' + twTotal + '</div>';
+      el.innerHTML = twHtml;
     }
     // Errors
     el = document.getElementById('diagErrors');
