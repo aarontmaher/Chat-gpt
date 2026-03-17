@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-17 05:10:58</dateModified>
+		<dateModified>2026-03-17 06:18:42</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -508,77 +508,214 @@
 				</outline>
 			</outline>
 			<outline text="Wrestling bodylock">
-				<outline text="Setups / Entries">
-					<outline text="Underhook throw by to wrestling bodylock → Wrestling bodylock" />
-					<outline text="Collar tie throw by to wrestling bodylock → Wrestling bodylock" />
+				<outline text="Attacker">
+					<outline text="Setups / Entries">
+						<outline text="Underhook throw by to wrestling bodylock → Wrestling bodylock" />
+						<outline text="Collar tie throw by to wrestling bodylock → Wrestling bodylock" />
+					</outline>
+					<outline text="Control">
+						<outline text="Wrestling rear bodylock">
+							<outline text="Attacker">
+								<outline text="Setups / Entries" />
+								<outline text="Control" />
+								<outline text="Offence" />
+								<outline text="Defence" />
+								<outline text="Submissions" />
+								<outline text="Offensive transitions" />
+							</outline>
+							<outline text="Defender">
+								<outline text="Setups / Entries" />
+								<outline text="Control" />
+								<outline text="Offence" />
+								<outline text="Defence" />
+								<outline text="Submissions" />
+								<outline text="Offensive transitions" />
+							</outline>
+						</outline>
+						<outline text="Wrestling side bodylock">
+							<outline text="Attacker">
+								<outline text="Setups / Entries" />
+								<outline text="Control" />
+								<outline text="Offence" />
+								<outline text="Defence" />
+								<outline text="Submissions" />
+								<outline text="Offensive transitions" />
+							</outline>
+							<outline text="Defender">
+								<outline text="Setups / Entries" />
+								<outline text="Control" />
+								<outline text="Offence" />
+								<outline text="Defence" />
+								<outline text="Submissions" />
+								<outline text="Offensive transitions" />
+							</outline>
+						</outline>
+						<outline text="Tripod bodylock" />
+					</outline>
+					<outline text="Offence">
+						<outline text="Wrestling rear bodylock mat return">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Wrestling rear bodylock lift and dump" />
+						<outline text="Wrestling side bodylock front side uchimata">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Wrestling side bodylock lift and dump">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+					</outline>
+					<outline text="Defence" />
+					<outline text="Submissions" />
+					<outline text="Offensive transitions">
+						<outline text="Wrestling rear bodylock to turtle → Turtle" />
+						<outline text="Wrestling rear bodylock to crab ride → Crab ride" />
+						<outline text="Wrestling rear bodylock to knee staple → Knee staple">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+					</outline>
 				</outline>
-				<outline text="Control">
-					<outline text="Wrestling rear bodylock">
-						<outline text="Attacker">
-							<outline text="Setups / Entries" />
-							<outline text="Control" />
-							<outline text="Offence" />
-							<outline text="Defence" />
-							<outline text="Submissions" />
-							<outline text="Offensive transitions" />
-						</outline>
-						<outline text="Defender">
-							<outline text="Setups / Entries" />
-							<outline text="Control" />
-							<outline text="Offence" />
-							<outline text="Defence" />
-							<outline text="Submissions" />
-							<outline text="Offensive transitions" />
-						</outline>
-					</outline>
-					<outline text="Wrestling side bodylock">
-						<outline text="Attacker">
-							<outline text="Setups / Entries" />
-							<outline text="Control" />
-							<outline text="Offence" />
-							<outline text="Defence" />
-							<outline text="Submissions" />
-							<outline text="Offensive transitions" />
-						</outline>
-						<outline text="Defender">
-							<outline text="Setups / Entries" />
-							<outline text="Control" />
-							<outline text="Offence" />
-							<outline text="Defence" />
-							<outline text="Submissions" />
-							<outline text="Offensive transitions" />
-						</outline>
-					</outline>
-					<outline text="Tripod bodylock" />
-				</outline>
-				<outline text="Offence">
-					<outline text="Wrestling rear bodylock mat return">
-						<outline text="Instructional video" />
-						<outline text="Live video" />
-					</outline>
-					<outline text="Wrestling rear bodylock lift and dump" />
-					<outline text="Wrestling side bodylock front side uchimata">
-						<outline text="Instructional video" />
-						<outline text="Live video" />
-					</outline>
-					<outline text="Wrestling side bodylock lift and dump">
-						<outline text="Instructional video" />
-						<outline text="Live video" />
-					</outline>
-				</outline>
-				<outline text="Offensive transitions">
-					<outline text="Wrestling rear bodylock to turtle → Turtle" />
-					<outline text="Wrestling rear bodylock to crab ride → Crab ride" />
-					<outline text="Wrestling rear bodylock to knee staple → Knee staple">
-						<outline text="Instructional video" />
-						<outline text="Live video" />
-					</outline>
+				<outline text="Defender">
+					<outline text="Setups / Entries" />
+					<outline text="Control" />
+					<outline text="Offence" />
+					<outline text="Defence" />
+					<outline text="Submissions" />
+					<outline text="Offensive transitions" />
 				</outline>
 			</outline>
 			<outline text="Shots (NEW)">
-				<outline text="Double leg">
-					<outline text="Attacker" />
-					<outline text="Defender" />
+				<outline text="Head inside snatch single">
+					<outline text="Offence">
+						<outline text="Head inside double">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Run the pipe">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Foot lift">
+							<outline text="Live video" />
+							<outline text="Instructional video" />
+						</outline>
+					</outline>
+				</outline>
+				<outline text="Low ankle">
+					<outline text="Attacker">
+						<outline text="Setups / Entries">
+							<outline text="From: Outside tie (You)" />
+							<outline text="From: Inside tie (You)" />
+							<outline text="From: Over/Under (You)" />
+						</outline>
+						<outline text="Control" />
+						<outline text="Offence" />
+						<outline text="Defence / Escapes" />
+						<outline text="Submissions" />
+						<outline text="Offensive transitions" />
+					</outline>
+					<outline text="Defender">
+						<outline text="Setups / Entries" />
+						<outline text="Control" />
+						<outline text="Offence" />
+						<outline text="Defence / Escapes">
+							<outline text="Sprawl" />
+							<outline text="Whizzer" />
+							<outline text="Crossface" />
+						</outline>
+						<outline text="Submissions" />
+						<outline text="Offensive transitions" />
+					</outline>
+				</outline>
+				<outline text="Head outside single leg">
+					<outline text="Attacker">
+						<outline text="Setups / Entries">
+							<outline text="Example: Outside tie" />
+						</outline>
+						<outline text="Control">
+							<outline text="Example: Good posture" />
+							<outline text="Example: Hip extension" />
+							<outline text="Example: Knee on the ground on the inside" />
+							<outline text="Example: Other leg stepped up, ready to transition" />
+							<outline text="Example: Four grips" />
+							<outline text="Example: One hand reinforces the other" />
+							<outline text="Example: Control extended below the knee" />
+						</outline>
+						<outline text="Offence">
+							<outline text="Running the Pipe">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Double leg">
+								<outline text="Hands locked">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Split grip">
+									<outline text="Complete double">
+										<outline text="Instructional video" />
+										<outline text="Live video" />
+									</outline>
+									<outline text="Cut to rear bodylock">
+										<outline text="Tripod breakdown">
+											<outline text="Instructional video" />
+											<outline text="Live video" />
+										</outline>
+									</outline>
+								</outline>
+							</outline>
+							<outline text="Crackdown">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+						</outline>
+						<outline text="Defence / Escapes">
+							<outline text="Example: Crotch hold" />
+						</outline>
+						<outline text="Submissions">
+							<outline text="Example: Guillotine" />
+							<outline text="Example: Kimura" />
+						</outline>
+						<outline text="Offensive transitions" />
+					</outline>
+					<outline text="Defender">
+						<outline text="Setups / Entries" />
+						<outline text="Control" />
+						<outline text="Offence">
+							<outline text="Running the Pipe">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Double leg">
+								<outline text="Hands locked">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Split grip">
+									<outline text="Complete double">
+										<outline text="Instructional video" />
+										<outline text="Live video" />
+									</outline>
+									<outline text="Cut to rear bodylock">
+										<outline text="Tripod breakdown">
+											<outline text="Instructional video" />
+											<outline text="Live video" />
+										</outline>
+									</outline>
+								</outline>
+							</outline>
+							<outline text="Crackdown">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+						</outline>
+						<outline text="Defence / Escapes" />
+						<outline text="Submissions" />
+						<outline text="Offensive transitions" />
+					</outline>
 				</outline>
 				<outline text="Head inside single leg">
 					<outline text="Attacker">
@@ -832,134 +969,9 @@
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
-				<outline text="Head outside single leg">
-					<outline text="Attacker">
-						<outline text="Setups / Entries">
-							<outline text="Example: Outside tie" />
-						</outline>
-						<outline text="Control">
-							<outline text="Example: Good posture" />
-							<outline text="Example: Hip extension" />
-							<outline text="Example: Knee on the ground on the inside" />
-							<outline text="Example: Other leg stepped up, ready to transition" />
-							<outline text="Example: Four grips" />
-							<outline text="Example: One hand reinforces the other" />
-							<outline text="Example: Control extended below the knee" />
-						</outline>
-						<outline text="Offence">
-							<outline text="Running the Pipe">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-							<outline text="Double leg">
-								<outline text="Hands locked">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
-								</outline>
-								<outline text="Split grip">
-									<outline text="Complete double">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Cut to rear bodylock">
-										<outline text="Tripod breakdown">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-									</outline>
-								</outline>
-							</outline>
-							<outline text="Crackdown">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-						</outline>
-						<outline text="Defence / Escapes">
-							<outline text="Example: Crotch hold" />
-						</outline>
-						<outline text="Submissions">
-							<outline text="Example: Guillotine" />
-							<outline text="Example: Kimura" />
-						</outline>
-						<outline text="Offensive transitions" />
-					</outline>
-					<outline text="Defender">
-						<outline text="Setups / Entries" />
-						<outline text="Control" />
-						<outline text="Offence">
-							<outline text="Running the Pipe">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-							<outline text="Double leg">
-								<outline text="Hands locked">
-									<outline text="Instructional video" />
-									<outline text="Live video" />
-								</outline>
-								<outline text="Split grip">
-									<outline text="Complete double">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Cut to rear bodylock">
-										<outline text="Tripod breakdown">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-									</outline>
-								</outline>
-							</outline>
-							<outline text="Crackdown">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-						</outline>
-						<outline text="Defence / Escapes" />
-						<outline text="Submissions" />
-						<outline text="Offensive transitions" />
-					</outline>
-				</outline>
-				<outline text="Low ankle">
-					<outline text="Attacker">
-						<outline text="Setups / Entries">
-							<outline text="From: Outside tie (You)" />
-							<outline text="From: Inside tie (You)" />
-							<outline text="From: Over/Under (You)" />
-						</outline>
-						<outline text="Control" />
-						<outline text="Offence" />
-						<outline text="Defence / Escapes" />
-						<outline text="Submissions" />
-						<outline text="Offensive transitions" />
-					</outline>
-					<outline text="Defender">
-						<outline text="Setups / Entries" />
-						<outline text="Control" />
-						<outline text="Offence" />
-						<outline text="Defence / Escapes">
-							<outline text="Sprawl" />
-							<outline text="Whizzer" />
-							<outline text="Crossface" />
-						</outline>
-						<outline text="Submissions" />
-						<outline text="Offensive transitions" />
-					</outline>
-				</outline>
-				<outline text="Head inside snatch single">
-					<outline text="Offence">
-						<outline text="Head inside double">
-							<outline text="Instructional video" />
-							<outline text="Live video" />
-						</outline>
-						<outline text="Run the pipe">
-							<outline text="Instructional video" />
-							<outline text="Live video" />
-						</outline>
-						<outline text="Foot lift">
-							<outline text="Live video" />
-							<outline text="Instructional video" />
-						</outline>
-					</outline>
+				<outline text="Double leg">
+					<outline text="Attacker" />
+					<outline text="Defender" />
 				</outline>
 			</outline>
 		</outline>
