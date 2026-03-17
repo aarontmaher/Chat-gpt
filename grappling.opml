@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-17 06:18:42</dateModified>
+		<dateModified>2026-03-17 06:38:29</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -4740,7 +4740,7 @@
 							<outline text="→ Knee on belly">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
-								<outline text="→ Mount">
+								<outline text="Side control to mount via knee on belly → Mount">
 									<outline text="High step to mount">
 										<outline text="Instructional video" />
 										<outline text="Live video" />
@@ -4974,11 +4974,11 @@
 					</outline>
 					<outline text="Offensive transitions">
 						<outline text="Offensive transitions">
-							<outline text="Side Control">
+							<outline text="North south hip-switch recovery → Side Control">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="Back">
+							<outline text="North south spin-behind back take → Back Control">
 								<outline text="Gift wrap">
 									<outline text="Instructional video" />
 									<outline text="Live video" />
@@ -4988,11 +4988,11 @@
 									<outline text="Live video" />
 								</outline>
 							</outline>
-							<outline text="Front Headlock">
+							<outline text="North south snap/front-headlock collect → Front Headlock">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
-							<outline text="Turtle">
+							<outline text="North south force turtle → Turtle">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
 							</outline>
