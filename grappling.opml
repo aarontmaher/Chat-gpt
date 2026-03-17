@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-17 01:48:52</dateModified>
+		<dateModified>2026-03-17 03:47:33</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -4717,6 +4717,32 @@
 								<outline text="Live video" />
 							</outline>
 						</outline>
+						<outline text="High step to mount">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Gift wrap to back">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Seat belt to back">
+							<outline text="Instructional video" />
+							<outline text="Live video" />
+						</outline>
+						<outline text="Control points">
+							<outline text="Tight waist">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Near side underhook">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+							<outline text="Crossface">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+						</outline>
 					</outline>
 					<outline text="Defence / Escapes">
 						<outline text="Defence">
@@ -4750,34 +4776,7 @@
 							<outline text="→ Knee on belly">
 								<outline text="Instructional video" />
 								<outline text="Live video" />
-								<outline text="Side control to mount via knee on belly → Mount">
-									<outline text="High step to mount">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Gift wrap to back">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Seat belt to back">
-										<outline text="Instructional video" />
-										<outline text="Live video" />
-									</outline>
-									<outline text="Control points">
-										<outline text="Tight waist">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-										<outline text="Near side underhook">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-										<outline text="Crossface">
-											<outline text="Instructional video" />
-											<outline text="Live video" />
-										</outline>
-									</outline>
-								</outline>
+								<outline text="Side control to mount via knee on belly → Mount" />
 							</outline>
 						</outline>
 					</outline>
