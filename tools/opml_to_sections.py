@@ -493,12 +493,19 @@ def update_index_html(sections, net_nodes, net_edges, dry_run=False):
 
 if __name__ == '__main__':
     dry_run = '--dry-run' in sys.argv
+    # Allow OPML path override via argv (first non-flag argument)
+    opml_override = None
+    for arg in sys.argv[1:]:
+        if not arg.startswith('-') and arg.endswith('.opml'):
+            opml_override = arg
+            break
+    opml_path = opml_override or OPML_PATH
     try:
-        print(f'Reading: {OPML_PATH}')
-        if not os.path.exists(OPML_PATH):
-            raise FileNotFoundError(f'OPML file not found: {OPML_PATH}')
+        print(f'Reading: {opml_path}')
+        if not os.path.exists(opml_path):
+            raise FileNotFoundError(f'OPML file not found: {opml_path}')
 
-        sections = opml_to_sections(OPML_PATH)
+        sections = opml_to_sections(opml_path)
         section_names = [s['title'] for s in sections]
         print(f'Parsed {len(sections)} sections: {section_names}')
 

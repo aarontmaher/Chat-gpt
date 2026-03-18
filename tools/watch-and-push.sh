@@ -20,10 +20,12 @@ set -euo pipefail
 EXPORTS_DIR="${HOME}/GrapplingMap/exports"
 ARCHIVE_DIR="${HOME}/GrapplingMap/exports/archive"
 DOWNLOADS_DIR="${HOME}/Downloads"
+CANONICAL_OPML="${HOME}/GrapplingMap/exports/grappling.opml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-CANONICAL_OPML="${REPO_ROOT}/grappling.opml"
+REPO_OPML="${REPO_ROOT}/grappling.opml"
 CONVERTER="${SCRIPT_DIR}/opml_to_sections.py"
+LIVE_FOLDER_GEN="${HOME}/GrapplingMap/tools/live_folders_from_opml.py"
 
 # Colour helpers
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -74,33 +76,50 @@ handle_new_opml() {
     [[ -f "${changed_file}" ]] || return 0
 
     log "Detected: ${changed_file}"
-
-    # Use the file that was just saved (works for both exports + Downloads)
-    local newest="${changed_file}"
-    log "Processing: $(basename "${newest}")"
-
-    # Archive timestamped copy
     local ts
     ts=$(date +"%Y%m%d_%H%M%S")
+
+    # ── STEP 1: Ensure canonical OPML is up-to-date ──────────────────
+    # Find newest Downloads export
+    local latest_dl
+    latest_dl=$(ls -t "${DOWNLOADS_DIR}"/grappling*.opml 2>/dev/null | head -n 1)
+
+    if [[ -n "${latest_dl}" && -f "${latest_dl}" ]]; then
+        # Stale-guard: always copy newest Downloads → canonical
+        cp "${latest_dl}" "${CANONICAL_OPML}"
+        log "OPML_SOURCE=downloads:${latest_dl}"
+    elif [[ -f "${CANONICAL_OPML}" ]]; then
+        log "OPML_SOURCE=exports:${CANONICAL_OPML} (no newer download)"
+    else
+        err "No OPML found in Downloads or exports. Checked:"
+        err "  Downloads: ${DOWNLOADS_DIR}/grappling*.opml"
+        err "  Canonical: ${CANONICAL_OPML}"
+        return 1
+    fi
+
+    log "OPML_SOURCE=exports:${CANONICAL_OPML}"
+    log "OPML_MTIME=$(stat -f '%Sm' -t '%Y-%m-%dT%H:%M:%S' "${CANONICAL_OPML}" 2>/dev/null || date -r "${CANONICAL_OPML}" '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo 'unknown')"
+
+    # Archive timestamped copy
     local archive_name="grappling_${ts}.opml"
-    cp "${newest}" "${ARCHIVE_DIR}/${archive_name}"
+    cp "${CANONICAL_OPML}" "${ARCHIVE_DIR}/${archive_name}"
     log "Archived -> archive/${archive_name}"
 
-    # Copy to canonical path in repo
-    cp "${newest}" "${CANONICAL_OPML}"
-    log "Copied to $(basename "${CANONICAL_OPML}")"
+    # Copy canonical to repo working copy (for git tracking)
+    cp "${CANONICAL_OPML}" "${REPO_OPML}"
 
-    # Run OPML to SECTIONS conversion
-    log "Converting OPML -> updating index.html..."
-    if ! python3 "${CONVERTER}"; then
+    # ── STEP 2: Run pipeline from canonical OPML ─────────────────────
+    log "Running opml_to_sections.py ${CANONICAL_OPML}"
+    if ! python3 "${CONVERTER}" "${CANONICAL_OPML}"; then
         err "Conversion failed. Aborting commit."
         return 1
     fi
 
-    # Auto-create live footage folders for new canonical positions (safe, additive-only)
-    python3 "${HOME}/GrapplingMap/tools/live_folders_from_opml.py" >/dev/null 2>&1 || true
+    # ── STEP 3: Live-footage folder generation from same canonical ───
+    log "LIVE_OPML=${CANONICAL_OPML}"
+    python3 "${LIVE_FOLDER_GEN}" "${CANONICAL_OPML}" >/dev/null 2>&1 || true
 
-    # Git: detect changes, commit, push
+    # ── STEP 4: Git commit + push ────────────────────────────────────
     cd "${REPO_ROOT}"
 
     if git diff --quiet grappling.opml index.html 2>/dev/null \
@@ -114,7 +133,6 @@ handle_new_opml() {
 
     log "Pulling latest from GitHub (in case worktree pushed)..."
     if ! git pull --no-rebase origin main 2>/dev/null; then
-        # Conflict — accept ours (watcher's pipeline output is latest)
         if git diff --name-only --diff-filter=U | grep -q .; then
             git checkout --ours index.html 2>/dev/null || true
             git add index.html
