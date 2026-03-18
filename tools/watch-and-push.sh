@@ -97,6 +97,9 @@ handle_new_opml() {
         return 1
     fi
 
+    # Auto-create live footage folders for new canonical positions (safe, additive-only)
+    python3 "${HOME}/GrapplingMap/tools/create-live-folders.py" >/dev/null 2>&1 || true
+
     # Git: detect changes, commit, push
     cd "${REPO_ROOT}"
 

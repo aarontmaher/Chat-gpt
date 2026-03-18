@@ -720,6 +720,20 @@ function buildPopup(popupEl, node, sectionTitle, color, pathKey) {
     actions.appendChild(lb);
   }
 
+  // Live footage playlist (from live-playlists.json — fail-soft)
+  if (window._livePlaylists) {
+    var liveEntry = window._livePlaylists[pathKey];
+    if (liveEntry && liveEntry.youtubePlaylistId) {
+      var lfb = document.createElement('button');
+      lfb.className = 'btn-video btn-live';
+      lfb.textContent = '\u25b6 Live footage';
+      lfb.addEventListener('click', function() {
+        window.open('https://www.youtube.com/playlist?list=' + liveEntry.youtubePlaylistId, '_blank');
+      });
+      actions.appendChild(lfb);
+    }
+  }
+
   // Note button
   const nb = document.createElement('button');
   nb.className = 'btn-note' + (note ? ' has-note' : '');
@@ -2493,6 +2507,8 @@ document.getElementById('referenceView').addEventListener('click', function(e) {
 checkKeyVersion();
 loadState();
 initDataFromSections();
+// Live playlists — fail-soft fetch (no console errors if missing)
+fetch('./live-playlists.json').then(function(r){if(!r.ok)throw r;return r.json();}).then(function(d){window._livePlaylists=d.techniques||{};}).catch(function(){window._livePlaylists={};});
 buildSections();
 console.log('TechPositionMap built:', window._techPositionMap.size);
 markBuiltOut();
