@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-19 12:23:41</dateModified>
+		<dateModified>2026-03-19 01:00:42</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -2375,17 +2375,6 @@
 					</outline>
 					<outline text="Control">
 						<outline text="Control" />
-					</outline>
-					<outline text="Offence">
-						<outline text="Offence" />
-					</outline>
-					<outline text="Defence / Escapes">
-						<outline text="Defence" />
-					</outline>
-					<outline text="Submissions">
-						<outline text="Submissions" />
-					</outline>
-					<outline text="Offensive transitions">
 						<outline text="Chest to chest">
 							<outline text="Upper body controls">
 								<outline text="Crossface">
@@ -2420,6 +2409,51 @@
 								</outline>
 							</outline>
 						</outline>
+						<outline text="Chest to chest">
+							<outline text="Upper body controls">
+								<outline text="Crossface">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Double unders">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Near side underhook">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+								<outline text="Head positioning">
+									<outline text="Instructional video" />
+									<outline text="Live video" />
+								</outline>
+							</outline>
+							<outline text="Passes">
+								<outline text="Windshield wiper">
+									<outline text="Three quarter mount">
+										<outline text="Mount">
+											<outline text="Instructional video" />
+											<outline text="Live video" />
+										</outline>
+									</outline>
+									<outline text="Knee cut">
+										<outline text="Instructional video" />
+										<outline text="Live video" />
+									</outline>
+								</outline>
+							</outline>
+						</outline>
+					</outline>
+					<outline text="Offence">
+						<outline text="Offence" />
+					</outline>
+					<outline text="Defence / Escapes">
+						<outline text="Defence" />
+					</outline>
+					<outline text="Submissions">
+						<outline text="Submissions" />
+					</outline>
+					<outline text="Offensive transitions">
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
@@ -2429,17 +2463,6 @@
 					</outline>
 					<outline text="Control">
 						<outline text="Control" />
-					</outline>
-					<outline text="Offence">
-						<outline text="Offence" />
-					</outline>
-					<outline text="Defence / Escapes">
-						<outline text="Defence" />
-					</outline>
-					<outline text="Submissions">
-						<outline text="Submissions" />
-					</outline>
-					<outline text="Offensive transitions">
 						<outline text="Chest to chest">
 							<outline text="Upper body controls">
 								<outline text="Crossface">
@@ -2474,6 +2497,17 @@
 								</outline>
 							</outline>
 						</outline>
+					</outline>
+					<outline text="Offence">
+						<outline text="Offence" />
+					</outline>
+					<outline text="Defence / Escapes">
+						<outline text="Defence" />
+					</outline>
+					<outline text="Submissions">
+						<outline text="Submissions" />
+					</outline>
+					<outline text="Offensive transitions">
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
@@ -2786,6 +2820,10 @@
 						<outline text="Hands controlling behind the opponent&apos;s knee" />
 						<outline text="Foot tight to the opponent&apos;s hip" />
 						<outline text="Pull the body underneath the opponent to increase connection" />
+						<outline text="Opponent backsteps">
+							<outline text="Transition to standard 50/50" />
+							<outline text="Transition to saddle" />
+						</outline>
 					</outline>
 					<outline text="Offence">
 						<outline text="Hips low on foot fight feet">
@@ -2814,12 +2852,7 @@
 						<outline text="Submissions" />
 						<outline text="Inside heel hook" />
 					</outline>
-					<outline text="Offensive transitions">
-						<outline text="Opponent backsteps">
-							<outline text="Transition to standard 50/50" />
-							<outline text="Transition to saddle" />
-						</outline>
-					</outline>
+					<outline text="Offensive transitions" />
 				</outline>
 			</outline>
 			<outline text="De la riva">
@@ -2927,6 +2960,12 @@
 					</outline>
 					<outline text="Control">
 						<outline text="Control" />
+						<outline text="Diving to crab x">
+							<outline text="Crab ride">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+						</outline>
 					</outline>
 					<outline text="Offence">
 						<outline text="Back step strip foot step back in">
@@ -2944,12 +2983,6 @@
 						<outline text="Submissions" />
 					</outline>
 					<outline text="Offensive transitions">
-						<outline text="Diving to crab x">
-							<outline text="Crab ride">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-						</outline>
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
@@ -2959,6 +2992,12 @@
 					</outline>
 					<outline text="Control">
 						<outline text="Control" />
+						<outline text="Diving to crab x">
+							<outline text="Crab ride">
+								<outline text="Instructional video" />
+								<outline text="Live video" />
+							</outline>
+						</outline>
 					</outline>
 					<outline text="Offence">
 						<outline text="Back step strip foot step back in">
@@ -2976,12 +3015,6 @@
 						<outline text="Submissions" />
 					</outline>
 					<outline text="Offensive transitions">
-						<outline text="Diving to crab x">
-							<outline text="Crab ride">
-								<outline text="Instructional video" />
-								<outline text="Live video" />
-							</outline>
-						</outline>
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
@@ -5322,7 +5355,7 @@
 						<outline text="Example: Consolidate dominant position" />
 					</outline>
 					<outline text="Offensive transitions">
-						<outline text="Side Control" />
+						<outline text="Exit grounded 50/50 to side control → Side Control" />
 					</outline>
 				</outline>
 				<outline text="Defensive">
