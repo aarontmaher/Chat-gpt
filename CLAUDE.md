@@ -178,6 +178,26 @@ Scripts: ~/Chat-gpt/tools/hotkeys/raycast/
 Setup: Raycast prefs → Extensions → Script Commands → Add Directory → ~/Chat-gpt/tools/hotkeys/raycast/
 No Zapier, no API, no Siri needed. Works offline (except GitHub fetch for status).
 ---
+## WORKFLOW (LOCKED — OPML-ONLY)
+Source of truth: grappling.opml in git (repo file)
+- Repo path: ~/Chat-gpt/grappling.opml
+- Pipeline input (canonical): ~/GrapplingMap/exports/grappling.opml
+Mindomo: reference viewer only — NOT an editor
+HOW CHANGES ARE MADE:
+  Aaron tells Chat → Chat writes OPML-PATCH prompt → Code edits grappling.opml
+  → pipeline runs → site updates shortly after push → Chat verifies
+  No manual edits to OPML except via Code patch prompts.
+PATCH REQUEST FORMAT:
+  Aaron: "Add [text] to [Section > Position > Perspective > Heading]"
+  Chat: writes OPML-PATCH-NN prompt with exact path + text
+  Code: edits grappling.opml, runs pipeline, commits, pushes
+WHAT IS NOT ALLOWED:
+  - "Add content in Mindomo" (Mindomo is not the editor)
+  - "Export OPML from Mindomo" as primary workflow
+  - Cowork for structural edits (retired)
+COWORK STATUS: RETIRED
+  Re-enable only if explicitly requested for rare Mindomo UI task
+---
 ## OPML PIPELINE
 Single source of truth: ~/GrapplingMap/exports/grappling.opml
 Watcher copies newest Downloads OPML -> exports/ on each run.
@@ -207,6 +227,11 @@ Half guard: RESOLVED — created 2026-03-19 by Cowork. Now 19 Guard canonical po
 Guard OT status: 16/19 positions have zero OT lines. Only HGP + RDLR have edges. Content needed from Aaron.
 OPML audit (2026-03-19): 3592 paths, 808 technique leaves, 48 canonical, 27 OT leaves,
   0 non-standard attrs, fingerprint cb7b55fb. Safe to drop Mindomo as editor: YES.
+NEXT SESSION PRIORITIES:
+1. Add OT lines to Guard positions (Aaron tells Chat which + labels)
+2. Add technique content via OPML patches (no Mindomo)
+3. Test live footage: drop first real clip → run dry-run
+4. Record proper demo video
 ---
 ## LOCKED DECISIONS
 | Decision | Resolution |
@@ -239,6 +264,9 @@ OPML audit (2026-03-19): 3592 paths, 808 technique leaves, 48 canonical, 27 OT l
 | Live footage shuffle | youtubePlaylistUrl() adds shuffle=1&playnext=1 (commit 6630276) |
 | Results feed | results.md written after every Code task. Schema: prompt_id, timestamp, summary, edges, commit, flags. |
 | Siri integration | Archived — not needed yet. results.md feed active. Scripts in tools/siri/ for future. |
+| OPML-only workflow | Active. grappling.opml = source of truth. Mindomo = viewer only. |
+| Cowork retired | 2026-03-19. Patch system replaces all structural Cowork work. |
+| OPML audit | Passed 2026-03-19. Fingerprint: cb7b55fbfcf6e601f49ec920f652dcf5 |
 ---
 ## PROMPT-ID LOG
 | ID | Task | Status |
