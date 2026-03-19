@@ -29,7 +29,7 @@ Build a demo-ready proof of product:
 |------|---------------|
 | Claude Chat | Prompt writer + coordinator ONLY. Read-only monitoring allowed (refresh/scroll/read). No state-changing clicks. No JS. |
 | Cowork | Mindomo UI edits + verification checklists. UI-only. No JS ever. Does not invent technique names. |
-| Code | Repo/website implementer. Edits, commits, pushes only. Verifies localhost before pushing. |
+| Code | Repo/website implementer. Edits, commits, pushes only. Verifies localhost before pushing. Plain English paste-backs. |
 | Aaron | All decisions + all technique names + all OT context labels. |
 | ChatGPT | OPML analysis, prompt QA, technical advice. No direct edits. |
 ### Claude Chat:
@@ -37,6 +37,11 @@ Build a demo-ready proof of product:
 - No state-changing clicks, no JS, no DevTools commands.
 - Never invents BJJ technique names or OT context labels.
 - If a prompt needs technique names or labels: ask Aaron first, wait, then issue prompt.
+### Code paste-back format:
+Every paste-back must include a PLAIN ENGLISH SUMMARY section:
+- What changed (one sentence, no jargon)
+- What decisions Aaron needs to make (simple questions only)
+- What to check on the live site (one action)
 ### Cowork:
 - Mindomo UI-only. No JavaScript tools anywhere ever.
 - Does not invent technique names or content.
@@ -44,6 +49,11 @@ Build a demo-ready proof of product:
 - For verification: may access live site for binary pass/fail checklists only. No exploration, no JS.
 - Dismiss popups: prefer Cancel/close. If a popup blocks work, report it and stop.
 - Export goes to ~/Downloads/ — always report "needs pipeline copy".
+### Cowork paste-back format:
+Every paste-back must include a PLAIN ENGLISH SUMMARY section:
+- What was fixed (e.g. "Renamed 3 misplaced nodes")
+- What was flagged (e.g. "Found a node with wrong spelling — needs Aaron to confirm")
+- Nothing technical — write as if explaining to someone who doesn't code
 ### Aaron provides:
 - ALL BJJ technique names and content.
 - ALL OT context labels (left side of arrow).
@@ -258,7 +268,9 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | SITE-BATCH-07 | Built-out fix + live playlists | done |
 | SITE-BATCH-08 | UX polish + DIAG + canonical logging | this |
 | RESULTS-WRITER-01 | results.md feed + write-result.sh + pipeline hook + site fetch | done |
-| SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | this |
+| SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | done |
+| SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
+| DEBRIEF-FORMAT-01 | Plain English debrief format | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT

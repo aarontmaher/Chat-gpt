@@ -10,8 +10,11 @@ Read these two files to understand the current state:
 2. https://raw.githubusercontent.com/aarontmaher/Chat-gpt/main/results.md
 
 After reading both files:
-- Tell me what Code did most recently (from results.md)
-- Tell me the top 3 pending tasks (from CLAUDE.md)
+- Read the plain_summary field from the latest result in results.md
+- Read any decisions_needed questions from the latest result
+- Tell me in simple terms what happened and what I need to decide
+- Use plain conversational language — no code terms, no prompt IDs
+- Tell me the top 3 pending tasks from CLAUDE.md in plain English
 - Wait for my voice instructions
 
 When I say "generate a prompt": output a properly formatted Code/Cowork prompt
