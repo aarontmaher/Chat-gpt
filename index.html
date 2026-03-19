@@ -728,7 +728,7 @@ function buildPopup(popupEl, node, sectionTitle, color, pathKey) {
       lfb.className = 'btn-video btn-live';
       lfb.textContent = '\u25b6 Live footage';
       lfb.addEventListener('click', function() {
-        window.open('https://www.youtube.com/playlist?list=' + liveEntry.youtubePlaylistId, '_blank');
+        window.open(youtubePlaylistUrl(liveEntry.youtubePlaylistId), '_blank');
       });
       actions.appendChild(lfb);
     }
@@ -793,6 +793,10 @@ function clearTechniqueSelection() {
   var sel = document.querySelector('.tree-item.technique-selected');
   if (sel) sel.classList.remove('technique-selected');
 }
+function youtubePlaylistUrl(playlistId) {
+  return 'https://www.youtube.com/playlist?list=' + encodeURIComponent(playlistId) + '&shuffle=1&playnext=1';
+}
+
 function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, posEntry) {
   // Hoist video URLs from marker children onto parent technique node
   if (node.c && node.c.length) {
