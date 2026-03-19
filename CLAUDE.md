@@ -68,10 +68,10 @@ Build a demo-ready proof of product:
 - Perspectives: Passer / Guard player
 - Headings (6): Setups/Entries, Control, Offence, Defence/Escapes, Submissions, Offensive transitions
 - Half guard is canonical and must remain canonical.
-- Canonical (19): Shin pin, Supine Guard, J point, Closed Guard, Headquarters,
+- Canonical (18): Shin pin, Supine Guard, J point, Closed Guard, Headquarters,
   Quarter guard, Half Guard Passing, Butterfly guard, Half butterfly,
   Knee shield half guard, K guard, De la riva, Reverse de la riva,
-  Butterfly ashi, Outside ashi, X guard, Single leg X, Seated Guard, Half guard
+  Butterfly ashi, Outside ashi, X guard, Single leg X, Seated Guard
 ### C) Scrambles
 - Perspectives: Initiative / Defensive
 - Headings (6): Setups/Entries, Control, Offence, Defence/Escapes, Submissions, Offensive transitions
@@ -176,14 +176,15 @@ Cowork: GUARD-03 done (HGP→Mount + RDLR→Crab ride landed, edges=36)
 Aaron decisions: Saddle canonical name TBD
 Half guard flag: listed as 19th Guard canonical in CLAUDE.md but NOT found in OPML (only 18 positions).
   Pending Aaron: is "Half guard" a standalone position or covered by "Half Guard Passing"?
-Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges. Content needed from Aaron.
+Guard OT status: 16/18 positions have zero OT lines. Only HGP + RDLR have edges. Content needed from Aaron.
 ---
 ## LOCKED DECISIONS
 | Decision | Resolution |
 |----------|-----------|
 | Technique content | Aaron only. Claude NEVER invents. |
 | No-Gi | Confirmed permanent. |
-| Half guard | Canonical. Must remain. |
+| Half guard | Not in Mindomo — 18 Guard positions confirmed. Pending Aaron: create, remove from spec, or rename. |
+| Guard canonical count | 18 (not 19 as previously stated) |
 | Knee on belly | PERMANENT HOLD. Never redirect/delete. |
 | Saddle canonical | Not defined. Hold. |
 | Wrestling heading | "Defence" (not "Defence / Escapes") |
@@ -205,6 +206,7 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | HGP Passer OT | "Half guard passing to mount (knee slide) → Mount" |
 | RDLR GP OT | "Reverse de la riva inversion to crab ride → Crab ride" |
 | Boot sequence | loadState->initDataFromSections->buildSections->markBuiltOut->updateStats->initGraph3D |
+| Live footage shuffle | youtubePlaylistUrl() adds shuffle=1&playnext=1 (commit 6630276) |
 ---
 ## PROMPT-ID LOG
 | ID | Task | Status |
@@ -226,7 +228,9 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | GUARD-03 | Add 2 new OT lines (HGP→Mount, RDLR→Crab ride) | done |
 | SITE-CLAUDE-MD | Create this file | done 50d9d9e |
 | SITE-BATCH-07 | Built-out fix + live playlists | done |
-| SITE-BATCH-08 | UX polish + DIAG + canonical logging | this |
+| SITE-BATCH-08 | UX polish + DIAG + canonical logging | done |
+| LIVE-SHUFFLE-01 | YouTube shuffle URL helper | done 6630276 |
+| SITE-OVERNIGHT-05 | Full overnight batch | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
