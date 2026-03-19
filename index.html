@@ -1751,11 +1751,13 @@ window.initGraph3D = (function() {
 
   // ── Count real techniques under a SECTIONS node (recursive) ────────
   // Excludes: headings, perspective labels, Notes, media nodes.
+  var COUNT_SKIP = new Set(['Notes','Instructional video','Live video']);
   function countTechniques(sNode) {
     var count = 0;
     (sNode.c || []).forEach(function(child) {
       var t = (child.t || '').trim();
       if (!t) return;
+      if (COUNT_SKIP.has(t)) return; // skip Notes/media entirely
       if (SCHEMA_NAMES.has(t)) { count += countTechniques(child); return; }
       count++;
       count += countTechniques(child);
@@ -2334,7 +2336,8 @@ window.initGraph3D = (function() {
             hoveredId3d=nd.id;
             const col=SECT_CSS3[nd.section_idx]||'#888';
             const si=nd.status==='learned'?'<span style="color:#e8ff47"> ✓</span>':nd.status==='drilling'?'<span style="color:#47c8ff"> ⟳</span>':'';
-            tip.innerHTML=`<span style="color:${col};font-family:Barlow Condensed,monospace;font-weight:600;">${nd.label}</span>${si}`;
+            const inDeg=nd._in||0;
+            tip.innerHTML=`<span style="color:${col};font-family:Barlow Condensed,monospace;font-weight:600;">${nd.label}</span> <span style="color:#4a5568;font-size:11px;">| ${nd.section} | IN: ${inDeg}</span>${si}`;
             const r2=wrap.getBoundingClientRect();
             tip.style.display='block';tip.style.left=(e.clientX-r2.left+14)+'px';tip.style.top=(e.clientY-r2.top-10)+'px';
             canvas.style.cursor='pointer';
@@ -2757,6 +2760,36 @@ updateStats();
         for (var sk in secEdges) secParts.push(sk + ' ' + secEdges[sk]);
         if (secParts.length) {
           el.innerHTML += '<div class="diag-val">Edge breakdown: ' + secParts.join(' | ') + '</div>';
+        }
+        // Guard OT coverage
+        if (typeof SECTIONS !== 'undefined') {
+          var guardSec = SECTIONS.find(function(s){ return s.title === 'Guard'; });
+          if (guardSec && guardSec.nodes) {
+            var guardTotal = guardSec.nodes.length;
+            var guardWithOT = 0;
+            guardSec.nodes.forEach(function(pos) {
+              // Walk into perspectives to find Offensive transitions with arrow children
+              function hasOTLeaf(node) {
+                if (!node.c) return false;
+                return node.c.some(function(c) {
+                  if (c.t === 'Offensive transitions' && c.c && c.c.length) {
+                    return c.c.some(function(leaf) { return leaf.t && leaf.t.indexOf('\u2192') !== -1; });
+                  }
+                  return hasOTLeaf(c);
+                });
+              }
+              if (hasOTLeaf(pos)) guardWithOT++;
+            });
+            el.innerHTML += '<div class="diag-val">Guard OT: ' + guardWithOT + '/' + guardTotal + ' positions have OT lines</div>';
+          }
+        }
+        // NO_DEST count
+        var twArr = window._diagTransitionWarnings || [];
+        var noDestCount = twArr.filter(function(w){ return w.type === 'NO_DEST'; }).length;
+        el.innerHTML += '<div class="diag-val">NO_DEST: ' + noDestCount + '</div>';
+        // OPML fingerprint (if available from pipeline)
+        if (window._lastResult && window._lastResult.opml_fingerprint) {
+          el.innerHTML += '<div class="diag-val">OPML fingerprint: ' + window._lastResult.opml_fingerprint + '</div>';
         }
       } else {
         el.innerHTML = '<div class="diag-label">3D Graph</div><div class="diag-val" style="color:#4a5568;">Not initialized</div>';

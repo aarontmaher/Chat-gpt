@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "description": "Structural patches. Status: pending_aaron = needs Aaron decision first. done_by_cowork = already applied in Mindomo. ready = apply on next OPML edit.",
+  "patches": [
+    {
+      "id": "PATCH-001",
+      "type": "rename_node",
+      "description": "K guard GP OT: Transition to standard 50/50 moved to Control by Cowork — already done",
+      "status": "done_by_cowork",
+      "skip": true
+    },
+    {
+      "id": "PATCH-002",
+      "type": "move_node",
+      "description": "SC Attacker OT: Side control to mount via knee on belly nested under Knee on belly — pending Aaron A/B/C",
+      "status": "pending_aaron",
+      "options": "A=move to direct OT leaf, B=leave buried, C=delete"
+    },
+    {
+      "id": "PATCH-003",
+      "type": "move_node",
+      "description": "NS Back Control OT: Gift Wrap + Kimura children under Back Control transition — pending Aaron A/B/C",
+      "status": "pending_aaron",
+      "options": "A=move to Submissions, B=move to Offence, C=leave as-is"
+    },
+    {
+      "id": "PATCH-004",
+      "type": "rename_node",
+      "description": "Front Headlock OT: add OT lines when Aaron provides labels — 78 techniques, highest priority",
+      "status": "pending_aaron"
+    }
+  ]
+}

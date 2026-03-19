@@ -220,13 +220,20 @@ CLAUDE.md: live, commit 50d9d9e
 ---
 ## PENDING TASKS
 # Update this section every session.
-Code: PIPE-LIVE-01B (verify live button wiring), SITE-BATCH-07 (done)
+Code: PIPE-LIVE-01B (verified — wiring correct, button appears when playlist ID present)
 Cowork: RETIRED — patch system + Chat verification replaces Cowork for structural work.
-Aaron decisions: Saddle canonical name TBD
+Aaron decisions:
+  - Saddle canonical name TBD
+  - SC OT nested (PATCH-002 A/B/C): move to direct OT leaf / leave buried / delete
+  - NS Back Control children (PATCH-003 A/B/C): move to Submissions / Offence / leave as-is
+  - Front Headlock OT labels (PATCH-004 — 78 techniques ready)
 Half guard: RESOLVED — created 2026-03-19 by Cowork. Now 19 Guard canonical positions.
 Guard OT status: 16/19 positions have zero OT lines. Only HGP + RDLR have edges. Content needed from Aaron.
+Patches: patches.json has 4 entries (1 done_by_cowork, 3 pending_aaron).
 OPML audit (2026-03-19): 3592 paths, 808 technique leaves, 48 canonical, 27 OT leaves,
   0 non-standard attrs, fingerprint cb7b55fb. Safe to drop Mindomo as editor: YES.
+OPML-WORKFLOW-HARDEN-01 complete 9f607e3: lock file, fingerprint logging,
+  stale-guard, delete threshold all active.
 NEXT SESSION PRIORITIES:
 1. Add OT lines to Guard positions (Aaron tells Chat which + labels)
 2. Add technique content via OPML patches (no Mindomo)
@@ -277,7 +284,7 @@ NEXT SESSION PRIORITIES:
 | PIPE-09 | Pipeline + CLAUDE.md | done b954aa6 |
 | PIPE-10 | CLAUDE.md update + GUARD-03 monitor | running |
 | PIPE-LIVE-01A | 574 live footage folders | done 93c5b88 |
-| PIPE-LIVE-01B | live-playlists.json + button | pending verify |
+| PIPE-LIVE-01B | live-playlists.json + button | done (wiring verified) |
 | COWORK-BATCH-01 to 07 | Schema + OT fixes | done |
 | COWORK-OVERNIGHT-02 to 03 | Schema + OT verify | done |
 | WREST-01 to 07 | Wrestling fixes | done |
@@ -294,7 +301,9 @@ NEXT SESSION PRIORITIES:
 | SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | done |
 | SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
 | DEBRIEF-FORMAT-01 | Plain English debrief format | done |
-| SITE-OVERNIGHT-05 | Full overnight batch | this |
+| SITE-OVERNIGHT-05 | Full overnight batch | done |
+| OPML-WORKFLOW-HARDEN-01 | Watcher hardened + patch system + lock file | done 9f607e3 |
+| SITE-OVERNIGHT-06 | Non-OPML polish: tooltips + DIAG + patches + CLAUDE.md | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
