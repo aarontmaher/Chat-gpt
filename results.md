@@ -8,6 +8,12 @@ COWORK: GUARD-03 | Added 2 OT lines (HGP->Mount, RDLR->Crab ride) | Export: yes 
 STATUS: edges=36 NO_DEST=0 built-out=12 console=clean
 <!-- LATEST-RESULT-END -->
 
+<!-- NEXT-PROMPT-START -->
+Monitor for new Cowork exports. When grappling*.opml newer than commit 8380bb0 appears:
+cp to canonical, confirm watcher processes, verify DIAG edges>=36 NO_DEST=0.
+Push if new content. Update results.md.
+<!-- NEXT-PROMPT-END -->
+
 ## History
 - 2026-03-19: SITE-OVERNIGHT-05 complete. Half guard locked at 18. Edge audit clean.
 - 2026-03-19: SITE-BATCH-08 complete. Auto-scroll, panel close, tint, DIAG improvements.

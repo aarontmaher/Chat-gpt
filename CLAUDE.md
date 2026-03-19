@@ -170,6 +170,14 @@ DAILY PASTE-BACK WORKFLOW:
 3. Paste to Claude Chat in one message
 That's it — Chat reads Code + Cowork results from one paste.
 ---
+## HOTKEY WORKFLOW (Raycast — install with: brew install --cask raycast)
+Scripts: ~/Chat-gpt/tools/hotkeys/raycast/
+- Cmd+Shift+G: copy next Code prompt to clipboard (from results.md NEXT-PROMPT block)
+- Cmd+Shift+S: show pipeline status (LATEST-RESULT from results.md)
+- Cmd+Shift+B: open bridge.md in default editor
+Setup: Raycast prefs → Extensions → Script Commands → Add Directory → ~/Chat-gpt/tools/hotkeys/raycast/
+No Zapier, no API, no Siri needed. Works offline (except GitHub fetch for status).
+---
 ## OPML PIPELINE
 Single source of truth: ~/GrapplingMap/exports/grappling.opml
 Watcher copies newest Downloads OPML -> exports/ on each run.
