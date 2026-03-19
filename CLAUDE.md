@@ -303,7 +303,7 @@ Auto-merge is enabled for PRs opened from branches matching `claude/**`.
 | SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
 | DEBRIEF-FORMAT-01 | Plain English debrief format | done |
 | SITE-OVERNIGHT-05 | Full overnight batch | this |
-| GH-AUTOMERGE-01 | Auto-merge workflow for claude/** PRs | done |
+| GH-AUTOMERGE-01 | Auto-merge workflow for claude/** PRs | done 4afba62 |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
