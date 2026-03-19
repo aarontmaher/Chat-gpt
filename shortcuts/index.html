@@ -1,158 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GrapplingMap — Siri Shortcuts</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrapplingMap Shortcuts</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0a0a0a;
-    color: #e0e0e0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 40px 20px;
-  }
-  h1 {
-    font-size: 1.6rem;
-    margin-bottom: 8px;
-    color: #fff;
-  }
-  .subtitle {
-    font-size: 0.95rem;
-    color: #888;
-    margin-bottom: 40px;
-    text-align: center;
-  }
-  .card {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 28px 24px;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 400px;
-  }
-  .card h2 {
-    font-size: 1.15rem;
-    margin-bottom: 6px;
-    color: #fff;
-  }
-  .card p {
-    font-size: 0.85rem;
-    color: #999;
-    margin-bottom: 20px;
-    line-height: 1.4;
-  }
-  .card .trigger {
-    font-size: 0.8rem;
-    color: #6af;
-    margin-bottom: 16px;
-    font-style: italic;
-  }
-  .btn {
-    display: block;
-    width: 100%;
-    padding: 16px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-    text-align: center;
-    transition: transform 0.1s, opacity 0.2s;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-status {
-    background: #0a84ff;
-    color: #fff;
-  }
-  .btn-next {
-    background: #30d158;
-    color: #fff;
-  }
-  .instructions {
-    max-width: 400px;
-    margin-top: 20px;
-    padding: 20px;
-    background: #111;
-    border-radius: 12px;
-    border: 1px solid #282828;
-  }
-  .instructions h3 {
-    font-size: 0.95rem;
-    margin-bottom: 12px;
-    color: #ccc;
-  }
-  .instructions ol {
-    padding-left: 20px;
-    font-size: 0.85rem;
-    color: #aaa;
-    line-height: 1.7;
-  }
-  .footer {
-    margin-top: 40px;
-    font-size: 0.75rem;
-    color: #555;
-    text-align: center;
-  }
-  .footer a { color: #6af; text-decoration: none; }
+body { font-family: -apple-system, sans-serif; background: #111; color: #fff;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh; padding: 20px; gap: 20px; }
+h1 { color: #e8ff47; font-size: 1.4em; margin-bottom: 10px; }
+p { color: #888; font-size: 0.9em; text-align: center; max-width: 300px; }
+.btn { display: block; width: 280px; padding: 18px; border-radius: 14px;
+  text-align: center; text-decoration: none; font-size: 1.1em; font-weight: bold;
+  background: #e8ff47; color: #111; margin: 8px 0; }
+.btn2 { background: #333; color: #e8ff47; border: 1px solid #e8ff47; }
+.step { font-size: 0.8em; color: #555; margin-top: 4px; }
 </style>
 </head>
 <body>
+<h1>GRAPPLING</h1>
+<p>Install these 2 Siri Shortcuts. Each takes 30 seconds to set up.</p>
 
-<h1>GrapplingMap</h1>
-<p class="subtitle">Siri Shortcuts for hands-free pipeline control</p>
+<a class="btn" href="shortcuts://create-shortcut">
+  ▶ Build "Status" Shortcut
+</a>
+<p class="step">Opens Shortcuts app → New shortcut → Add these actions:<br>
+1. Get contents of URL:<br>
+<small>raw.githubusercontent.com/aarontmaher/Chat-gpt/main/results.md</small><br>
+2. Get text between markers<br>
+3. Speak text<br>
+Name it: <b>Status</b></p>
 
-<div class="card">
-  <h2>Status</h2>
-  <p>Fetches the latest pipeline result from results.md and speaks it aloud.</p>
-  <div class="trigger">"Hey Siri, GrapplingMap Status"</div>
-  <a class="btn btn-status"
-     href="shortcuts://import-shortcut?url=https://aarontmaher.github.io/Chat-gpt/shortcuts/GrapplingMap-Status.shortcut&name=GrapplingMap%20Status"
-     id="status-btn">
-    Install Status Shortcut
-  </a>
-</div>
+<a class="btn btn2" href="shortcuts://create-shortcut">
+  ▶ Build "What's Next" Shortcut
+</a>
+<p class="step">Same steps but URL:<br>
+<small>raw.githubusercontent.com/aarontmaher/Chat-gpt/main/CLAUDE.md</small><br>
+Get text between: ## PENDING TASKS and ## LOCKED<br>
+Name it: <b>What's Next</b></p>
 
-<div class="card">
-  <h2>What's Next</h2>
-  <p>Fetches pending tasks from CLAUDE.md and speaks the top items aloud.</p>
-  <div class="trigger">"Hey Siri, What's Next GrapplingMap"</div>
-  <a class="btn btn-next"
-     href="shortcuts://import-shortcut?url=https://aarontmaher.github.io/Chat-gpt/shortcuts/GrapplingMap-WhatsNext.shortcut&name=GrapplingMap%20WhatsNext"
-     id="next-btn">
-    Install What's Next Shortcut
-  </a>
-</div>
-
-<div class="instructions">
-  <h3>How to install</h3>
-  <ol>
-    <li>Open this page on your iPhone</li>
-    <li>Tap the install button above</li>
-    <li>Shortcuts app opens automatically</li>
-    <li>Tap <strong>Add Shortcut</strong></li>
-    <li>Say <em>"Hey Siri, GrapplingMap Status"</em> to test</li>
-  </ol>
-</div>
-
-<div class="instructions" style="margin-top: 16px;">
-  <h3>Requires</h3>
-  <ol>
-    <li>iOS 16+ with Shortcuts app</li>
-    <li><strong>Settings → Shortcuts → Allow Untrusted Shortcuts</strong> enabled</li>
-    <li>Internet connection (fetches from GitHub)</li>
-  </ol>
-</div>
-
-<div class="footer">
-  <a href="https://aarontmaher.github.io/Chat-gpt/">GrapplingMap</a> &middot; Siri Integration
-</div>
-
+<p style="margin-top:30px; color:#444; font-size:0.75em">
+Say: "Hey Siri Status" or "Hey Siri What's Next"
+</p>
 </body>
 </html>
