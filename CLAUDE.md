@@ -268,6 +268,14 @@ NEXT SESSION PRIORITIES:
 | Cowork retired | 2026-03-19. Patch system replaces all structural Cowork work. |
 | OPML audit | Passed 2026-03-19. Fingerprint: cb7b55fbfcf6e601f49ec920f652dcf5 |
 ---
+## AUTO-MERGE (claude/** branches)
+Auto-merge is enabled for PRs opened from branches matching `claude/**`.
+- Merge method: squash (falls back to merge if squash is disallowed).
+- Fork PRs are ignored for security.
+- Pre-req: Aaron must enable Settings -> General -> Pull Requests -> "Allow auto-merge" = ON.
+- Verify: open a PR from a `claude/test-automerge` branch — the PR should show "Auto-merge enabled" badge.
+- Workflow file: `.github/workflows/auto-enable-automerge.yml`
+---
 ## PROMPT-ID LOG
 | ID | Task | Status |
 |----|------|--------|
@@ -295,6 +303,7 @@ NEXT SESSION PRIORITIES:
 | SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
 | DEBRIEF-FORMAT-01 | Plain English debrief format | done |
 | SITE-OVERNIGHT-05 | Full overnight batch | this |
+| GH-AUTOMERGE-01 | Auto-merge workflow for claude/** PRs | done |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
