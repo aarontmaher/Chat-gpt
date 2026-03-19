@@ -172,7 +172,7 @@ CLAUDE.md: live, commit 50d9d9e
 ## PENDING TASKS
 # Update this section every session.
 Code: PIPE-LIVE-01B (verify live button wiring), SITE-BATCH-07 (this batch)
-Cowork: GUARD-03 running (adding +2 OT edges, expect edges=36)
+Cowork: GUARD-03 done (HGP→Mount + RDLR→Crab ride landed, edges=36)
 Aaron decisions: Saddle canonical name TBD
 ---
 ## LOCKED DECISIONS
@@ -190,6 +190,7 @@ Aaron decisions: Saddle canonical name TBD
 | 2-on-1 canonical | "2-on-1 (You)" |
 | KEY_VERSION | 2 |
 | Built-out filter | Excludes Hand Fighting |
+| Built-out count | 11 positions (verified 2026-03-19) |
 | COMMIT_MIN | 5 videos per technique folder |
 | Playlists | Per technique |
 | OT nested content | Move to Control as-is |
