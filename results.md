@@ -3,9 +3,9 @@
 # Aaron: copy the LATEST-RESULT block and paste to Claude Chat.
 
 <!-- LATEST-RESULT-START -->
-CODE: RESULTS-FORMAT-01 | Updated results.md to plain text format for easy copy-paste | Edges: 36 | Commit: pending | Errors: none
-COWORK: GUARD-03 | Added 2 OT lines (HGP->Mount, RDLR->Crab ride) | Export: yes | Flags: none
-STATUS: edges=36 NO_DEST=0 built-out=12 console=clean
+PROMPT: SITE-BATCH-09 | STATUS: complete | Edge highlight, tracking dots, connection weights, built-out pulse, results format
+SITE: edges=36 | built-out=11 | console=clean | commit=pending
+NEXT: Add OT lines to Guard positions (Aaron provides labels)
 <!-- LATEST-RESULT-END -->
 
 <!-- NEXT-PROMPT-START -->
@@ -15,6 +15,8 @@ Push if new content. Update results.md.
 <!-- NEXT-PROMPT-END -->
 
 ## History
+- 2026-03-19: SITE-BATCH-09 complete. Edge highlight + tracking dots + connection weights + built-out pulse.
+- 2026-03-19: SITE-OVERNIGHT-06 complete. Tooltips, DIAG, patches.json, CLAUDE.md.
 - 2026-03-19: SITE-OVERNIGHT-05 complete. Half guard locked at 18. Edge audit clean.
 - 2026-03-19: SITE-BATCH-08 complete. Auto-scroll, panel close, tint, DIAG improvements.
 - 2026-03-19: GUARD-03 complete. +2 edges (HGP->Mount, RDLR->Crab ride). edges=36.
