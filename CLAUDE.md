@@ -160,17 +160,20 @@ git -C ~/Chat-gpt log -1 --format="%h %s %ci"
 # Regenerate after major pipeline runs. Run DIAG on localhost after hard refresh.
 # Do NOT hardcode counts here - they drift.
 Last updated: 2026-03-19
-Pipeline: stable, NO_DEST=0, MALFORMED=1 (Knee on belly bare arrow - HELD)
+Pipeline: stable, NO_DEST=0, HELD=1 (Knee on belly bare arrow)
+Transition edges: 34 (Python). in_network: 32.
 Schema verified: all Guard (12/12), Wrestling sub-positions, Scrambles
 OT restructure: Half Guard Passing, Reverse de la riva, K guard, Grounded 50/50 all cleaned
-Built-out set (8): J point, K guard, Quarter guard, Supine Guard, Mount, Turtle, Berimbolo, Grounded 50/50
+Built-out set (11): J point, K guard, Quarter guard, Supine Guard, Mount, Turtle,
+  Berimbolo, Grounded 50/50, Wrestling bodylock, Back Control, Crab ride
 Live footage: 574 folders created, sync script ready, Phase 2 (YouTube) pending
+CLAUDE.md: live, commit 50d9d9e
 ---
 ## PENDING TASKS
 # Update this section every session.
-Code: PIPE-09 (process COWORK-OVERNIGHT-03 export), PIPE-LIVE-01B (verify live button wiring)
-Cowork: bare OT fixes pending Aaron context labels (Mount in HGP Passer, Crab ride in RDLR GP)
-Aaron decisions: context labels for bare OT destinations, Saddle canonical name TBD
+Code: PIPE-LIVE-01B (verify live button wiring), SITE-BATCH-07 (this batch)
+Cowork: GUARD-03 running (adding +2 OT edges, expect edges=36)
+Aaron decisions: Saddle canonical name TBD
 ---
 ## LOCKED DECISIONS
 | Decision | Resolution |
@@ -195,6 +198,8 @@ Aaron decisions: context labels for bare OT destinations, Saddle canonical name 
 | Opponent backsteps (K guard) | Moved to Control |
 | Grounded 50/50 OT | "Exit grounded 50/50 to side control -> Side Control" |
 | Exits / Transitions | NOT graph edges |
+| HGP Passer OT | "Half guard passing to mount (knee slide) → Mount" |
+| RDLR GP OT | "Reverse de la riva inversion to crab ride → Crab ride" |
 | Boot sequence | loadState->initDataFromSections->buildSections->markBuiltOut->updateStats->initGraph3D |
 ---
 ## PROMPT-ID LOG
@@ -203,7 +208,8 @@ Aaron decisions: context labels for bare OT destinations, Saddle canonical name 
 | SITE-BATCH-01 to 06 | Website fixes + demo hardening | done |
 | SITE-OVERNIGHT-02 to 03 | Overnight export processing | done |
 | PIPE-01 to 08 | Pipeline copies + re-runs | done |
-| PIPE-09 | COWORK-OVERNIGHT-03 export | pending |
+| PIPE-09 | Pipeline + CLAUDE.md | done b954aa6 |
+| PIPE-10 | CLAUDE.md update + GUARD-03 monitor | running |
 | PIPE-LIVE-01A | 574 live footage folders | done 93c5b88 |
 | PIPE-LIVE-01B | live-playlists.json + button | pending verify |
 | COWORK-BATCH-01 to 07 | Schema + OT fixes | done |
@@ -211,8 +217,11 @@ Aaron decisions: context labels for bare OT destinations, Saddle canonical name 
 | WREST-01 to 07 | Wrestling fixes | done |
 | DP-01 to 06 | Dominant Positions fixes | done |
 | SCR-01 to 04 | Scrambles fixes | done |
-| GUARD-01 | Guard OT check | pending |
-| SITE-CLAUDE-MD | Create this file | this commit |
+| GUARD-01 | Guard OT check | done |
+| GUARD-02 | HGP + RDLR bare OT flags | done (fixed by GUARD-03) |
+| GUARD-03 | Add 2 new OT lines (HGP→Mount, RDLR→Crab ride) | running |
+| SITE-CLAUDE-MD | Create this file | done 50d9d9e |
+| SITE-BATCH-07 | Built-out fix + live playlists | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
