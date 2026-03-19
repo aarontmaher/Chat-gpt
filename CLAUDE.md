@@ -150,6 +150,32 @@ Scripts:
 - ~/GrapplingMap/live-footage/live-index.json (manifest: 574 entries)
 - ~/Chat-gpt/live-playlists.json (keyed by technique path key)
 ---
+## SIRI + VOICE INTEGRATION
+
+### Siri Shortcuts (install from Shortcuts app):
+- "GrapplingMap Status" → speaks latest results.md entry
+- "Send GrapplingMap Prompt" → POSTs clipboard to Zapier webhook
+- "Run GrapplingMap Pipeline" → triggers watch-and-push.sh (future)
+- "What's Next GrapplingMap" → speaks PENDING TASKS from CLAUDE.md
+
+### Scripts:
+- ~/Chat-gpt/tools/siri/send-prompt.sh
+- ~/Chat-gpt/tools/siri/get-status.sh
+- ~/Chat-gpt/tools/siri/get-next.sh
+
+### Voice Claude workflow:
+1. "Hey Siri GrapplingMap Status" → hear what happened
+2. Open Claude voice chat → paste voice-claude-template.md → speak instructions
+3. Claude voice generates prompt → copy it
+4. "Hey Siri Send GrapplingMap Prompt" → fires to Zapier → Code runs
+5. Back to rolling/editing
+
+### .env.zapier:
+~/Chat-gpt/.env.zapier (chmod 600)
+  GITHUB_PAT=<token>
+  ZAPIER_WEBHOOK=<url after Zapier setup>
+  ZAPIER_PIPELINE_WEBHOOK=<url future>
+---
 ## OPML PIPELINE
 Single source of truth: ~/GrapplingMap/exports/grappling.opml
 Watcher copies newest Downloads OPML -> exports/ on each run.
@@ -207,6 +233,8 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | RDLR GP OT | "Reverse de la riva inversion to crab ride → Crab ride" |
 | Boot sequence | loadState->initDataFromSections->buildSections->markBuiltOut->updateStats->initGraph3D |
 | Results feed | results.md written after every Code task. Schema: prompt_id, timestamp, summary, edges, commit, flags. |
+| Siri integration | 4 shortcuts: Status, Send Prompt, Run Pipeline, What's Next |
+| Voice Claude template | docs/voice-claude-template.md — paste at voice chat start |
 ---
 ## PROMPT-ID LOG
 | ID | Task | Status |
@@ -230,6 +258,7 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | SITE-BATCH-07 | Built-out fix + live playlists | done |
 | SITE-BATCH-08 | UX polish + DIAG + canonical logging | this |
 | RESULTS-WRITER-01 | results.md feed + write-result.sh + pipeline hook + site fetch | done |
+| SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
