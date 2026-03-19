@@ -176,9 +176,11 @@ Scripts:
 ### Voice Claude workflow:
 1. "Hey Siri GrapplingMap Status" → hear what happened
 2. Open Claude voice chat → paste voice-claude-template.md → speak instructions
-3. Claude voice generates prompt → copy it
-4. "Hey Siri Send GrapplingMap Prompt" → fires to Zapier → Code runs
-5. Back to rolling/editing
+3. Voice Chat reads QUESTIONS FOR AARON section → asks Aaron each question
+4. Aaron answers verbally → Voice Chat converts to CODE/COWORK prompt
+5. Claude voice generates prompt → copy it
+6. "Hey Siri Send GrapplingMap Prompt" → fires to Zapier → Code runs
+7. Back to rolling/editing
 
 ### .env.zapier:
 ~/Chat-gpt/.env.zapier (chmod 600)
@@ -245,6 +247,7 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | Results feed | results.md written after every Code task. Schema: prompt_id, timestamp, summary, edges, commit, flags. |
 | Siri integration | 4 shortcuts: Status, Send Prompt, Run Pipeline, What's Next |
 | Voice Claude template | docs/voice-claude-template.md — paste at voice chat start |
+| Questions for Aaron | CLAUDE.md section — Text Chat posts, Voice Chat reads + routes answers |
 ---
 ## PROMPT-ID LOG
 | ID | Task | Status |
@@ -271,6 +274,39 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | done |
 | SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
 | DEBRIEF-FORMAT-01 | Plain English debrief format | this |
+| QUESTIONS-FLOW-01 | Questions for Aaron section in CLAUDE.md | done |
+---
+## QUESTIONS FOR AARON
+# Text Chat posts questions here. Voice Chat reads them to Aaron, captures answers,
+# converts to CODE/COWORK prompts, and routes via Zapier to bridge.md.
+# Format: numbered, with context. Once answered, move to ANSWERED below.
+# Keep this section clean — only active unanswered questions live here.
+
+### Active Questions
+<!-- Text Chat: add new questions at the bottom. Use the format below. -->
+<!-- 1. [CONTEXT: section/area] Question text? (posted by: Chat, date: YYYY-MM-DD) -->
+
+1. [CONTEXT: Guard schema] Is "Half guard" a standalone canonical position, or is it covered by "Half Guard Passing"? Currently listed as 19th Guard canonical but not found in OPML. (posted by: Chat, 2026-03-19)
+
+### Answered
+<!-- Voice Chat: move answered questions here with result link. -->
+<!-- 1. [CONTEXT: ...] Question? → ANSWER: ... (result: results.md#PROMPT-ID) -->
+
+### Question Flow
+# 1. Text Chat identifies a blocker needing Aaron's input
+# 2. Text Chat adds numbered question here with [CONTEXT: area] tag
+# 3. Voice Chat reads QUESTIONS FOR AARON section aloud to Aaron
+# 4. Aaron answers verbally; Voice Chat captures the answer
+# 5. Voice Chat converts answer to a CODE or COWORK prompt in standard format:
+#      TYPE: CODE|COWORK
+#      SCOPE: ...
+#      GOAL: ...
+#      (includes Aaron's exact words for technique names/labels)
+# 6. Prompt goes to clipboard → "Hey Siri Send GrapplingMap Prompt" → Zapier → bridge.md
+# 7. Code/Cowork picks up from bridge.md and executes
+# 8. Voice Chat moves question to ANSWERED with results.md link
+# 9. Text Chat sees the answer on next CLAUDE.md read
+
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
