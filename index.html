@@ -95,6 +95,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .pos-count { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; margin-left: 6px; }
 .btn-track-all { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.5px; padding: 2px 6px; border: 1px solid var(--border); color: var(--text-muted); background: transparent; cursor: pointer; border-radius: 2px; margin-left: auto; text-transform: uppercase; transition: all 0.15s; }
 .btn-track-all:hover { border-color: var(--blue); color: var(--blue); }
+@keyframes builtOutPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(232,255,71,0); } 50% { box-shadow: 0 0 8px 2px rgba(232,255,71,0.25); } }
+.built-star { color: var(--accent); font-size: 10px; margin-left: 4px; display: none; }
+.show-built-star .built-star { display: inline; }
 .children { list-style: none; }
 .tree-item.collapsed > .children { display: none; }
 .inline-player { }
@@ -262,7 +265,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <button class="tab" data-filter="drilling">Drilling</button>
       <button class="tab" data-filter="learned">Learned</button>
       <button class="tab" data-filter="video">Video</button>
-      <button class="tab" data-filter="builtout">Built-out</button>
+      <button class="tab" data-filter="builtout" title="Positions with content across ≥3 headings">Built-out</button>
     </div>
     <button class="toolbar-btn" id="refCollapseAll">Collapse All</button>
     <button class="toolbar-btn" id="refExpandAll">Expand All</button>
@@ -857,6 +860,13 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   label.textContent = node.t;
   content.appendChild(label);
 
+  // Built-out star (for position nodes, visible when BUILT-OUT filter active)
+  if (depth === 0) {
+    var builtStar = document.createElement('span');
+    builtStar.className = 'built-star';
+    builtStar.textContent = '\u2605';
+    content.appendChild(builtStar);
+  }
   // Tracking dot (always visible indicator)
   var _dotProg = STATE.progress[key] || 'none';
   var trackDot = document.createElement('span');
@@ -1400,6 +1410,8 @@ document.querySelectorAll('.tab[data-filter]').forEach(tab => {
 });
 function applyRefFilter(filter) {
   STATE.currentFilter = filter;
+  // Toggle built-out stars visibility
+  document.getElementById('sections').classList.toggle('show-built-star', filter === 'builtout');
   document.querySelectorAll('.tree-item').forEach(li => {
     let show = true;
     if (filter === 'drilling') show = li.dataset.progress === 'drilling';
@@ -2456,17 +2468,17 @@ window.initGraph3D = (function() {
         NET_NODES.filter(isGraphableNode).forEach(n=>{const m=meshMap3d[n.id];if(!m||!m.visible)return;if(!n.in_network){m.material.opacity=ORPHAN_OPACITY;return;}m.material.opacity=hubOnly3d&&n._w<hubThresh3d?0.04:(n.status==='none'?0.72:0.9);});
       });
       var _boDebugOnce=false;
+      var _builtOutNodeIds=new Set();
       applyBuiltOut3d=function(){
-        // Use NET-key map (section|node) that matches NET_NODES key format
         var netMap=window._builtOutNetMap||new Map();
-        // Fail-safe: if no built-out data, don't dim anything
         if(!netMap.size){if(builtOut3d)console.warn('applyBuiltOut3d: _builtOutNetMap empty, skipping dim');return;}
         if(!_boDebugOnce){
           _boDebugOnce=true;
           var sampleNode=NET_NODES.find(function(n){return n.in_network;});
           console.log('builtOutNetMap size:',netMap.size,'| sample map key:',[...netMap.keys()][0],'| sample node key:',sampleNode?sampleNode.key:'N/A');
         }
-        NET_NODES.filter(isGraphableNode).forEach(function(n){var m=meshMap3d[n.id];if(!m||!m.visible)return;if(!n.in_network){m.material.opacity=ORPHAN_OPACITY;return;}var isBuilt=netMap.get(n.key)===true;m.material.opacity=builtOut3d&&!isBuilt?0.08:(n.status==='none'?0.72:0.9);});
+        _builtOutNodeIds.clear();
+        NET_NODES.filter(isGraphableNode).forEach(function(n){var m=meshMap3d[n.id];if(!m||!m.visible)return;if(!n.in_network){m.material.opacity=ORPHAN_OPACITY;return;}var isBuilt=netMap.get(n.key)===true;if(isBuilt)_builtOutNodeIds.add(n.id);m.material.opacity=builtOut3d&&!isBuilt?0.08:(n.status==='none'?0.72:0.9);});
       };
       const boCheckbox=document.getElementById('g3dOptBuiltOut');
       const boBtn=document.getElementById('g3dBuiltOutBtn');
@@ -2530,6 +2542,8 @@ window.initGraph3D = (function() {
         if(autoRotate3d)tRY+=0.005;
         // Animate selection pulse ring
         if(selRing3d&&selRing3d.visible){const t=Date.now()*0.003;selRing3d.material.opacity=0.35+0.25*Math.sin(t);selRing3d.quaternion.copy(camera3d.quaternion);const snd=nodeMap3d[selectedId3d];if(snd)selRing3d.position.set(snd.x,snd.y,snd.z);}
+        // Built-out pulse: subtle emissive pulse on built-out nodes when filter active
+        if(builtOut3d&&_builtOutNodeIds.size>0){const bp=Date.now()*0.002;const bv=0.15+0.12*Math.sin(bp);_builtOutNodeIds.forEach(function(nid){var m=meshMap3d[nid];if(m&&m.visible)m.material.emissiveIntensity=0.35+bv;});}
         Object.values(ringMap3d).forEach(r=>{if(r.visible)r.quaternion.copy(camera3d.quaternion);});
         renderer3d.render(scene3d,camera3d);
         drawLabels3d();
