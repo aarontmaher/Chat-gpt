@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-19 01:00:42</dateModified>
+		<dateModified>2026-03-19 06:26:42</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -2454,6 +2454,7 @@
 						<outline text="Submissions" />
 					</outline>
 					<outline text="Offensive transitions">
+						<outline text="Half guard passing to mount (knee slide) → Mount" />
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
@@ -3015,6 +3016,7 @@
 						<outline text="Submissions" />
 					</outline>
 					<outline text="Offensive transitions">
+						<outline text="Reverse de la riva inversion to crab ride → Crab ride" />
 						<outline text="Offensive transitions" />
 					</outline>
 				</outline>
