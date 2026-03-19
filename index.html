@@ -1940,57 +1940,64 @@ window.initGraph3D = (function() {
         }
       });
 
-      // Render incoming
-      if (inMap.size > 0) {
-        var inLabel = document.createElement('div');
-        inLabel.style.cssText = 'font-size:9px;color:#47c8ff;letter-spacing:1px;text-transform:uppercase;font-family:Barlow Condensed,monospace;margin-bottom:4px;margin-top:2px;';
-        inLabel.textContent = 'INCOMING';
-        cl.appendChild(inLabel);
-        inMap.forEach(function(v) {
-          var item = document.createElement('div');
-          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#8899aa;';
-          item.innerHTML = '<span style="color:#47c8ff;font-size:9px;width:12px;">←</span>'
-            + '<span style="flex:1;">'+v.src+': '+v.context+'</span>'
-            + '<span style="color:#4a5568;font-size:10px;">('+v.weight+')</span>';
-          item.style.cursor = 'pointer';
-          (function(srcLabel) {
-            item.addEventListener('click', function() {
-              var match = NET_NODES.find(function(n) { return n.depth === 1 && n.label === srcLabel; });
-              if (match) {
-                var secTitle = SECTIONS[match.section_idx] ? SECTIONS[match.section_idx].title : '';
-                switchToReferenceNode(srcLabel, secTitle);
-              }
-            });
-          })(v.src);
-          cl.appendChild(item);
-        });
+      // Total counts header
+      var totalIn = 0, totalOut = 0;
+      inMap.forEach(function(v) { totalIn += v.weight; });
+      outMap.forEach(function(v) { totalOut += v.weight; });
+      if (inMap.size > 0 || outMap.size > 0) {
+        var totalLabel = document.createElement('div');
+        totalLabel.style.cssText = 'font-size:10px;color:#4a5568;font-family:Barlow Condensed,monospace;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.04);';
+        totalLabel.textContent = 'IN: ' + inMap.size + ' connections | OUT: ' + outMap.size + ' connections';
+        cl.appendChild(totalLabel);
       }
 
-      // Render outgoing
-      if (outMap.size > 0) {
-        var outLabel = document.createElement('div');
-        outLabel.style.cssText = 'font-size:9px;color:#ff9966;letter-spacing:1px;text-transform:uppercase;font-family:Barlow Condensed,monospace;margin-bottom:4px;'+(inMap.size>0?'margin-top:10px;':'margin-top:2px;');
-        outLabel.textContent = 'OUTGOING';
-        cl.appendChild(outLabel);
-        outMap.forEach(function(v) {
+      // Helper: render connection list with sort + truncation
+      function renderConnList(map, direction, color, arrow) {
+        if (map.size === 0) return;
+        var sorted = Array.from(map.values()).sort(function(a,b) { return b.weight - a.weight; });
+        var label = document.createElement('div');
+        label.style.cssText = 'font-size:9px;color:'+color+';letter-spacing:1px;text-transform:uppercase;font-family:Barlow Condensed,monospace;margin-bottom:4px;margin-top:6px;';
+        label.textContent = direction;
+        cl.appendChild(label);
+        var MAX_SHOW = 8;
+        var container = document.createElement('div');
+        sorted.forEach(function(v, idx) {
           var item = document.createElement('div');
-          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#8899aa;';
-          item.innerHTML = '<span style="color:#ff9966;font-size:9px;width:12px;">→</span>'
-            + '<span style="flex:1;">'+v.context+' → '+v.dest+'</span>'
-            + '<span style="color:#4a5568;font-size:10px;">('+v.weight+')</span>';
-          item.style.cursor = 'pointer';
-          (function(destLabel) {
+          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#8899aa;cursor:pointer;';
+          if (idx >= MAX_SHOW) item.style.display = 'none';
+          item.dataset.connIdx = idx;
+          var text = direction === 'INCOMING' ? '← ' + v.src : v.context + ' → ' + (v.dest || '');
+          var weightStr = v.weight > 1 ? ' (×' + v.weight + ')' : '';
+          item.innerHTML = '<span style="color:'+color+';font-size:9px;width:12px;">'+arrow+'</span>'
+            + '<span style="flex:1;">'+text+'</span>'
+            + '<span style="color:#4a5568;font-size:10px;">'+weightStr+'</span>';
+          var clickLabel = direction === 'INCOMING' ? v.src : v.dest;
+          (function(lbl) {
             item.addEventListener('click', function() {
-              var match = NET_NODES.find(function(n) { return n.depth === 1 && n.label === destLabel; });
+              var match = NET_NODES.find(function(n) { return n.depth === 1 && n.label === lbl; });
               if (match) {
                 var secTitle = SECTIONS[match.section_idx] ? SECTIONS[match.section_idx].title : '';
-                switchToReferenceNode(destLabel, secTitle);
+                switchToReferenceNode(lbl, secTitle);
               }
             });
-          })(v.dest);
-          cl.appendChild(item);
+          })(clickLabel);
+          container.appendChild(item);
         });
+        cl.appendChild(container);
+        if (sorted.length > MAX_SHOW) {
+          var expBtn = document.createElement('div');
+          expBtn.style.cssText = 'font-size:10px;color:'+color+';cursor:pointer;padding:4px 0;font-family:Barlow Condensed,monospace;';
+          expBtn.textContent = 'Show all (' + sorted.length + ')';
+          expBtn.addEventListener('click', function() {
+            container.querySelectorAll('[data-conn-idx]').forEach(function(el) { el.style.display = ''; });
+            expBtn.style.display = 'none';
+          });
+          cl.appendChild(expBtn);
+        }
       }
+
+      renderConnList(inMap, 'INCOMING', '#47c8ff', '←');
+      renderConnList(outMap, 'OUTGOING', '#ff9966', '→');
 
       if (inMap.size === 0 && outMap.size === 0) {
         cl.innerHTML = '<div style="color:#4a5568;font-size:12px;font-family:Barlow Condensed,monospace;font-style:italic;padding:4px 0;">No transitions for this position</div>';
