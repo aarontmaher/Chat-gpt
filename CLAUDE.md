@@ -216,11 +216,12 @@ OT restructure: Half Guard Passing, Reverse de la riva, K guard, Grounded 50/50 
 Built-out set (11): J point, K guard, Quarter guard, Supine Guard, Mount, Turtle,
   Berimbolo, Grounded 50/50, Wrestling bodylock, Back Control, Crab ride
 Live footage: 574 folders created, sync script ready, Phase 2 (YouTube) pending
-CLAUDE.md: live, commit 50d9d9e
+CLAUDE.md: live
+Site UX: edge highlight on select, tracking dots, technique counts, built-out pulse, connection sort/weights
 ---
 ## PENDING TASKS
 # Update this section every session.
-Code: PIPE-LIVE-01B (verified — wiring correct), SITE-OVERNIGHT-06 (this)
+Code: PIPE-LIVE-01B (verified — wiring correct), SITE-BATCH-09 (complete)
 Cowork: RETIRED — patch system + Chat verification replaces Cowork for structural work.
 Aaron: SC OT nested (PATCH-002 A/B/C)
 Aaron: NS Back Control children (PATCH-003 A/B/C)
@@ -269,6 +270,9 @@ NEXT SESSION PRIORITIES:
 | OPML-only workflow | Active. grappling.opml = source of truth. Mindomo = viewer only. |
 | Cowork retired | 2026-03-19. Patch system replaces all structural Cowork work. |
 | OPML audit | Passed 2026-03-19. Fingerprint: cb7b55fbfcf6e601f49ec920f652dcf5 |
+| Tracking dots | Yellow (drilling) + green (learned) always visible on technique rows |
+| Results format | 3-line: PROMPT/SITE/NEXT (simplified from verbose CODE/STATUS format) |
+| Edge highlight | Connected edges at 1.0, unconnected at 0.05 on node select |
 ---
 ## PROMPT-ID LOG
 | ID | Task | Status |
@@ -298,7 +302,8 @@ NEXT SESSION PRIORITIES:
 | DEBRIEF-FORMAT-01 | Plain English debrief format | done |
 | SITE-OVERNIGHT-05 | Full overnight batch | done |
 | OPML-WORKFLOW-HARDEN-01 | Watcher hardened + patch system + lock file | done 9f607e3 |
-| SITE-OVERNIGHT-06 | Non-OPML polish: tooltips, DIAG, patches, CLAUDE.md | this |
+| SITE-OVERNIGHT-06 | Non-OPML polish: tooltips, DIAG, patches, CLAUDE.md | done |
+| SITE-BATCH-09 | Edge highlight, tracking dots, connection weights, built-out pulse | done |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
