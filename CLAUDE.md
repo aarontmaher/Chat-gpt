@@ -16,6 +16,7 @@
 | Pipeline converter | ~/Chat-gpt/tools/opml_to_sections.py |
 | Exports path | ~/GrapplingMap/exports/grappling.opml (single source of truth) |
 | Live footage root | ~/GrapplingMap/live-footage/ |
+| Results feed | ~/Chat-gpt/results.md (Code writes after every task via tools/write-result.sh) |
 ---
 ## MISSION
 Build a demo-ready proof of product:
@@ -28,7 +29,7 @@ Build a demo-ready proof of product:
 |------|---------------|
 | Claude Chat | Prompt writer + coordinator ONLY. Read-only monitoring allowed (refresh/scroll/read). No state-changing clicks. No JS. |
 | Cowork | Mindomo UI edits + verification checklists. UI-only. No JS ever. Does not invent technique names. |
-| Code | Repo/website implementer. Edits, commits, pushes only. Verifies localhost before pushing. |
+| Code | Repo/website implementer. Edits, commits, pushes only. Verifies localhost before pushing. Plain English paste-backs. |
 | Aaron | All decisions + all technique names + all OT context labels. |
 | ChatGPT | OPML analysis, prompt QA, technical advice. No direct edits. |
 ### Claude Chat:
@@ -36,6 +37,11 @@ Build a demo-ready proof of product:
 - No state-changing clicks, no JS, no DevTools commands.
 - Never invents BJJ technique names or OT context labels.
 - If a prompt needs technique names or labels: ask Aaron first, wait, then issue prompt.
+### Code paste-back format:
+Every paste-back must include a PLAIN ENGLISH SUMMARY section:
+- What changed (one sentence, no jargon)
+- What decisions Aaron needs to make (simple questions only)
+- What to check on the live site (one action)
 ### Cowork:
 - Mindomo UI-only. No JavaScript tools anywhere ever.
 - Does not invent technique names or content.
@@ -43,6 +49,11 @@ Build a demo-ready proof of product:
 - For verification: may access live site for binary pass/fail checklists only. No exploration, no JS.
 - Dismiss popups: prefer Cancel/close. If a popup blocks work, report it and stop.
 - Export goes to ~/Downloads/ — always report "needs pipeline copy".
+### Cowork paste-back format:
+Every paste-back must include a PLAIN ENGLISH SUMMARY section:
+- What was fixed (e.g. "Renamed 3 misplaced nodes")
+- What was flagged (e.g. "Found a node with wrong spelling — needs Aaron to confirm")
+- Nothing technical — write as if explaining to someone who doesn't code
 ### Aaron provides:
 - ALL BJJ technique names and content.
 - ALL OT context labels (left side of arrow).
@@ -149,6 +160,32 @@ Scripts:
 - ~/GrapplingMap/live-footage/live-index.json (manifest: 574 entries)
 - ~/Chat-gpt/live-playlists.json (keyed by technique path key)
 ---
+## SIRI + VOICE INTEGRATION
+
+### Siri Shortcuts (install from Shortcuts app):
+- "GrapplingMap Status" → speaks latest results.md entry
+- "Send GrapplingMap Prompt" → POSTs clipboard to Zapier webhook
+- "Run GrapplingMap Pipeline" → triggers watch-and-push.sh (future)
+- "What's Next GrapplingMap" → speaks PENDING TASKS from CLAUDE.md
+
+### Scripts:
+- ~/Chat-gpt/tools/siri/send-prompt.sh
+- ~/Chat-gpt/tools/siri/get-status.sh
+- ~/Chat-gpt/tools/siri/get-next.sh
+
+### Voice Claude workflow:
+1. "Hey Siri GrapplingMap Status" → hear what happened
+2. Open Claude voice chat → paste voice-claude-template.md → speak instructions
+3. Claude voice generates prompt → copy it
+4. "Hey Siri Send GrapplingMap Prompt" → fires to Zapier → Code runs
+5. Back to rolling/editing
+
+### .env.zapier:
+~/Chat-gpt/.env.zapier (chmod 600)
+  GITHUB_PAT=<token>
+  ZAPIER_WEBHOOK=<url after Zapier setup>
+  ZAPIER_PIPELINE_WEBHOOK=<url future>
+---
 ## OPML PIPELINE
 Single source of truth: ~/GrapplingMap/exports/grappling.opml
 Watcher copies newest Downloads OPML -> exports/ on each run.
@@ -205,6 +242,9 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | HGP Passer OT | "Half guard passing to mount (knee slide) → Mount" |
 | RDLR GP OT | "Reverse de la riva inversion to crab ride → Crab ride" |
 | Boot sequence | loadState->initDataFromSections->buildSections->markBuiltOut->updateStats->initGraph3D |
+| Results feed | results.md written after every Code task. Schema: prompt_id, timestamp, summary, edges, commit, flags. |
+| Siri integration | 4 shortcuts: Status, Send Prompt, Run Pipeline, What's Next |
+| Voice Claude template | docs/voice-claude-template.md — paste at voice chat start |
 ---
 ## PROMPT-ID LOG
 | ID | Task | Status |
@@ -227,6 +267,10 @@ Guard OT status: 17/19 positions have zero OT lines. Only HGP + RDLR have edges.
 | SITE-CLAUDE-MD | Create this file | done 50d9d9e |
 | SITE-BATCH-07 | Built-out fix + live playlists | done |
 | SITE-BATCH-08 | UX polish + DIAG + canonical logging | this |
+| RESULTS-WRITER-01 | results.md feed + write-result.sh + pipeline hook + site fetch | done |
+| SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | done |
+| SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
+| DEBRIEF-FORMAT-01 | Plain English debrief format | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT

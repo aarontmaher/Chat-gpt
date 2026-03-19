@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrapplingMap Shortcuts</title>
+<style>
+body { font-family: -apple-system, sans-serif; background: #111; color: #fff;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh; padding: 20px; gap: 20px; }
+h1 { color: #e8ff47; font-size: 1.4em; margin-bottom: 10px; }
+p { color: #888; font-size: 0.9em; text-align: center; max-width: 300px; }
+.btn { display: block; width: 280px; padding: 18px; border-radius: 14px;
+  text-align: center; text-decoration: none; font-size: 1.1em; font-weight: bold;
+  background: #e8ff47; color: #111; margin: 8px 0; }
+.btn2 { background: #333; color: #e8ff47; border: 1px solid #e8ff47; }
+.step { font-size: 0.8em; color: #555; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h1>GRAPPLING</h1>
+<p>Install these 2 Siri Shortcuts. Each takes 30 seconds to set up.</p>
+
+<a class="btn" href="shortcuts://create-shortcut">
+  ▶ Build "Status" Shortcut
+</a>
+<p class="step">Opens Shortcuts app → New shortcut → Add these actions:<br>
+1. Get contents of URL:<br>
+<small>raw.githubusercontent.com/aarontmaher/Chat-gpt/main/results.md</small><br>
+2. Get text between markers<br>
+3. Speak text<br>
+Name it: <b>Status</b></p>
+
+<a class="btn btn2" href="shortcuts://create-shortcut">
+  ▶ Build "What's Next" Shortcut
+</a>
+<p class="step">Same steps but URL:<br>
+<small>raw.githubusercontent.com/aarontmaher/Chat-gpt/main/CLAUDE.md</small><br>
+Get text between: ## PENDING TASKS and ## LOCKED<br>
+Name it: <b>What's Next</b></p>
+
+<p style="margin-top:30px; color:#444; font-size:0.75em">
+Say: "Hey Siri Status" or "Hey Siri What's Next"
+</p>
+</body>
+</html>

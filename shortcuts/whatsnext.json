@@ -1,0 +1,31 @@
+{
+  "name": "GrapplingMap What's Next",
+  "description": "Fetches PENDING TASKS from CLAUDE.md and speaks them aloud.",
+  "trigger": "Hey Siri, What's Next GrapplingMap",
+  "actions": [
+    {
+      "action": "Get Contents of URL",
+      "identifier": "is.workflow.actions.downloadurl",
+      "url": "https://raw.githubusercontent.com/aarontmaher/Chat-gpt/main/CLAUDE.md"
+    },
+    {
+      "action": "Get Text from Input",
+      "identifier": "is.workflow.actions.gettext"
+    },
+    {
+      "action": "Match Text",
+      "identifier": "is.workflow.actions.text.match",
+      "pattern": "## PENDING TASKS[\\s\\S]*?---"
+    },
+    {
+      "action": "Get First Item",
+      "identifier": "is.workflow.actions.getitemfromlist",
+      "specifier": "First Item"
+    },
+    {
+      "action": "Speak Text",
+      "identifier": "is.workflow.actions.speaktext",
+      "wait": true
+    }
+  ]
+}
