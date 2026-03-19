@@ -144,6 +144,30 @@ handle_new_opml() {
     log "Pushing to GitHub..."
     if git push; then
         log "Done! GitHub Pages will update in ~30-60 seconds."
+        # Write result to results.md feed
+        local commit_hash
+        commit_hash=$(git log -1 --format='%h')
+        local edge_count no_dest_count in_network_count
+        edge_count=$(python3 -c "
+import re, sys
+with open('${REPO_OPML}') as f: t = f.read()
+arrows = re.findall(r'.+\s*(?:->|→|â†')\s*.+', t)
+print(len([a for a in arrows if re.match(r'.+\S\s*(?:->|→|â†')\s*\S', a)]))" 2>/dev/null || echo "null")
+        no_dest_count=$(python3 -c "
+import re
+with open('${REPO_OPML}') as f: t = f.read()
+bare = [a for a in re.findall(r'(?:->|→|â†')\s*\S+', t) if not re.match(r'\S+\s*(?:->|→|â†')', a)]
+print(len(bare))" 2>/dev/null || echo "null")
+        in_network_count="null"
+        if [[ -f "${SCRIPT_DIR}/write-result.sh" ]]; then
+            bash "${SCRIPT_DIR}/write-result.sh" \
+                "PIPELINE-AUTO" \
+                "OPML pipeline auto-run: ${edge_count} edges, ${no_dest_count} NO_DEST" \
+                "${commit_hash}" \
+                "${edge_count}" \
+                "${no_dest_count}" \
+                "${in_network_count}" || true
+        fi
     else
         err "git push failed. Check credentials (see README for help)."
         return 1

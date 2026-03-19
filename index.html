@@ -2516,6 +2516,11 @@ loadState();
 initDataFromSections();
 // Live playlists — fail-soft fetch (no console errors if missing)
 fetch('./live-playlists.json').then(function(r){if(!r.ok)throw r;return r.json();}).then(function(d){window._livePlaylists=d.techniques||{};}).catch(function(){window._livePlaylists={};});
+// Results feed — fail-soft fetch (no console errors if missing)
+fetch('./results.md').then(function(r){if(!r.ok)throw r;return r.text();}).then(function(t){
+  var m=t.match(/<!-- LATEST-RESULT-START -->([\s\S]*?)<!-- LATEST-RESULT-END -->/);
+  if(m){try{window._lastResult=JSON.parse(m[1].trim());}catch(e){window._lastResult=null;}}
+}).catch(function(){window._lastResult=null;});
 buildSections();
 console.log('TechPositionMap built:', window._techPositionMap.size);
 markBuiltOut();

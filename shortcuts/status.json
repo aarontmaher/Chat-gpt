@@ -1,0 +1,31 @@
+{
+  "name": "GrapplingMap Status",
+  "description": "Fetches the latest result from results.md and speaks it aloud.",
+  "trigger": "Hey Siri, GrapplingMap Status",
+  "actions": [
+    {
+      "action": "Get Contents of URL",
+      "identifier": "is.workflow.actions.downloadurl",
+      "url": "https://raw.githubusercontent.com/aarontmaher/Chat-gpt/main/results.md"
+    },
+    {
+      "action": "Get Text from Input",
+      "identifier": "is.workflow.actions.gettext"
+    },
+    {
+      "action": "Match Text",
+      "identifier": "is.workflow.actions.text.match",
+      "pattern": "LATEST-RESULT-START -->[\\s\\S]*?<!-- LATEST-RESULT-END"
+    },
+    {
+      "action": "Get First Item",
+      "identifier": "is.workflow.actions.getitemfromlist",
+      "specifier": "First Item"
+    },
+    {
+      "action": "Speak Text",
+      "identifier": "is.workflow.actions.speaktext",
+      "wait": true
+    }
+  ]
+}

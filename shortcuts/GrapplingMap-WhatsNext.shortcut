@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WFWorkflowMinimumClientVersionString</key>
+	<string>900</string>
+	<key>WFWorkflowMinimumClientVersion</key>
+	<integer>900</integer>
+	<key>WFWorkflowImportQuestions</key>
+	<array/>
+	<key>WFWorkflowTypes</key>
+	<array>
+		<string>NCWidget</string>
+		<string>WatchKit</string>
+	</array>
+	<key>WFWorkflowIcon</key>
+	<dict>
+		<key>WFWorkflowIconStartColor</key>
+		<integer>431817727</integer>
+		<key>WFWorkflowIconGlyphNumber</key>
+		<integer>59493</integer>
+	</dict>
+	<key>WFWorkflowClientVersion</key>
+	<string>2302.0.4</string>
+	<key>WFWorkflowActions</key>
+	<array>
+		<!-- Step 1: Get contents of CLAUDE.md -->
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.downloadurl</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFURL</key>
+				<string>https://raw.githubusercontent.com/aarontmaher/Chat-gpt/main/CLAUDE.md</string>
+			</dict>
+		</dict>
+		<!-- Step 2: Get text from result -->
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<!-- Step 3: Match PENDING TASKS section -->
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.match</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFMatchTextPattern</key>
+				<string>## PENDING TASKS([\s\S]*?)---</string>
+				<key>WFMatchTextCaseSensitive</key>
+				<false/>
+			</dict>
+		</dict>
+		<!-- Step 4: Get first match -->
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getitemfromlist</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
+			</dict>
+		</dict>
+		<!-- Step 5: Speak the result -->
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.speaktext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFSpeakTextWait</key>
+				<true/>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
