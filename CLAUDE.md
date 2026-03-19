@@ -220,10 +220,12 @@ CLAUDE.md: live, commit 50d9d9e
 ---
 ## PENDING TASKS
 # Update this section every session.
-Code: PIPE-LIVE-01B (verify live button wiring), SITE-BATCH-07 (done)
+Code: PIPE-LIVE-01B (verified — wiring correct), SITE-OVERNIGHT-06 (this)
 Cowork: RETIRED — patch system + Chat verification replaces Cowork for structural work.
-Aaron decisions: Saddle canonical name TBD
-Half guard: RESOLVED — created 2026-03-19 by Cowork. Now 19 Guard canonical positions.
+Aaron: SC OT nested (PATCH-002 A/B/C)
+Aaron: NS Back Control children (PATCH-003 A/B/C)
+Aaron: Front Headlock OT labels (PATCH-004 — 78 techniques ready)
+Aaron: Saddle canonical name TBD
 Guard OT status: 16/19 positions have zero OT lines. Only HGP + RDLR have edges. Content needed from Aaron.
 OPML audit (2026-03-19): 3592 paths, 808 technique leaves, 48 canonical, 27 OT leaves,
   0 non-standard attrs, fingerprint cb7b55fb. Safe to drop Mindomo as editor: YES.
@@ -294,7 +296,9 @@ NEXT SESSION PRIORITIES:
 | SIRI-INTEGRATION-01 | Siri shortcuts + voice Claude template | done |
 | SIRI-SHORTCUTS-02 | Shortcut install page | done 8a11b9a |
 | DEBRIEF-FORMAT-01 | Plain English debrief format | done |
-| SITE-OVERNIGHT-05 | Full overnight batch | this |
+| SITE-OVERNIGHT-05 | Full overnight batch | done |
+| OPML-WORKFLOW-HARDEN-01 | Watcher hardened + patch system + lock file | done 9f607e3 |
+| SITE-OVERNIGHT-06 | Non-OPML polish: tooltips, DIAG, patches, CLAUDE.md | this |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
@@ -304,7 +308,7 @@ Aaron: -- FROM: AARON
 ChatGPT: -- FROM: CHATGPT
 
 ---
-## OPML-ONLY HARDENING (OPML-WORKFLOW-HARDEN-01)
+## OPML-ONLY HARDENING (OPML-WORKFLOW-HARDEN-01) — complete 9f607e3
 - Canonical path: ~/GrapplingMap/exports/grappling.opml (only source)
 - Fingerprint: md5 logged as OPML_FINGERPRINT on every pipeline run
 - Watcher: OPML_SOURCE + OPML_MTIME + OPML_FINGERPRINT logged; lock file prevents overlap
@@ -314,6 +318,7 @@ ChatGPT: -- FROM: CHATGPT
 - Lock file: ~/GrapplingMap/exports/.pipeline_lock (watcher + patches share)
 - Mindomo exports: optional "challenge" inputs. Never silently overwrite canonical.
   Downloads copy only if newer AND change event from Downloads.
+- patches.json: 4 entries (1 done_by_cowork, 3 pending_aaron). Status tracking only.
 ---
 ## SESSION LOG — 2026-03-19
 ### New learnings:
