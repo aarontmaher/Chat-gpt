@@ -3,7 +3,7 @@
 	<head>
 		<title>grappling</title>
 		<dateCreated>2026-03-05 02:36:15</dateCreated>
-		<dateModified>2026-03-19 06:26:42</dateModified>
+		<dateModified>2026-03-19 05:41:41</dateModified>
 		<ownerName>Aaron Maher</ownerName>
 	</head>
 	<body>
@@ -1228,7 +1228,7 @@
 						<outline text="Submissions" />
 					</outline>
 					<outline text="Offensive transitions">
-						<outline text="Offensive Transitions">
+						<outline text="Offensive transitions">
 							<outline text="Instructional video" />
 							<outline text="Live video" />
 						</outline>
@@ -2808,7 +2808,9 @@
 					<outline text="Submissions">
 						<outline text="Submissions" />
 					</outline>
-					<outline text="Offensive transitions" />
+					<outline text="Offensive transitions">
+						<outline text="Offensive transitions" />
+					</outline>
 				</outline>
 				<outline text="Guard player">
 					<outline text="Setups / Entries">
@@ -2853,7 +2855,9 @@
 						<outline text="Submissions" />
 						<outline text="Inside heel hook" />
 					</outline>
-					<outline text="Offensive transitions" />
+					<outline text="Offensive transitions">
+						<outline text="Offensive transitions" />
+					</outline>
 				</outline>
 			</outline>
 			<outline text="De la riva">
