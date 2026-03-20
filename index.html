@@ -2847,6 +2847,62 @@ updateStats();
   for (var k in dk) { if (dk[k] > 1) dups++; }
   console.log('KEY_VERSION', KEY_VERSION, 'duplicateKeys', dups);
 })();
+
+// ─── DEBUG / TEST API ─────────────────────────────────────────────────────────
+window.__APP_DEBUG__ = {
+  version: '1.0',
+  getState: function() {
+    var boCount = 0;
+    if (window._builtOutMap && window._builtOutMap.forEach) {
+      window._builtOutMap.forEach(function(v) { if (v) boCount++; });
+    }
+    return {
+      edges: typeof NET_EDGES !== 'undefined' ? NET_EDGES.length : 0,
+      nodes: typeof NET_NODES !== 'undefined' ? NET_NODES.length : 0,
+      inNetwork: typeof NET_NODES !== 'undefined' ? NET_NODES.filter(function(n){return n.in_network;}).length : 0,
+      builtOut: boCount,
+      guard: typeof SECTIONS !== 'undefined' ? (SECTIONS.find(function(s){return s.title==='Guard';})||{nodes:[]}).nodes.length : 0,
+      sections: typeof SECTIONS !== 'undefined' ? SECTIONS.length : 0,
+      selectedNode: typeof SELECTED_NODE !== 'undefined' ? SELECTED_NODE : null,
+      activeFilter: (document.querySelector('.tab.active[data-filter]') || {}).textContent || 'All',
+      totalNodes: STATE.totalNodes || 0,
+      learnedNodes: STATE.learnedNodes || 0
+    };
+  },
+  selectNodeByLabel: function(label) {
+    if (typeof window._g3dSelectByLabel === 'function') {
+      window._g3dSelectByLabel(label);
+      return 'selected: ' + label;
+    }
+    return 'select not available';
+  },
+  focusSearch: function() {
+    var s = document.getElementById('refSearch');
+    if (s) { s.focus(); return 'focused'; }
+    return 'search not found';
+  },
+  openDiag: function() {
+    var btn = document.getElementById('diagToggle');
+    if (btn) { btn.click(); return 'opened'; }
+    return 'diag button not found';
+  },
+  setFilter: function(name) {
+    var lower = name.toLowerCase().replace(/[^a-z]/g,'');
+    // Try Reference filter tabs first
+    var tab = document.querySelector('.tab[data-filter="' + lower + '"]');
+    if (tab) { tab.click(); return 'filter set: ' + name; }
+    // Try 3D toolbar buttons
+    var btn3d = document.querySelector('.g3d-tb-btn[data-status="' + lower + '"]');
+    if (btn3d) { btn3d.click(); return '3d filter set: ' + name; }
+    // Try built-out button
+    if (lower === 'builtout') {
+      var boBtn = document.getElementById('g3dBuiltOutBtn');
+      if (boBtn) { boBtn.click(); return 'built-out toggled'; }
+    }
+    return 'filter not found: ' + name;
+  }
+};
+console.log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 </script>
 
 <!-- ══ DIAGNOSTICS SCRIPT ═════════════════════════════════════════════════ -->
