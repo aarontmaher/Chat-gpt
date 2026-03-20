@@ -89,6 +89,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .progress-pill:hover { border-color: var(--text-muted); color: var(--text); }
 .progress-pill.drilling { border-color: var(--blue); color: var(--blue); }
 .progress-pill.learned { border-color: var(--accent); color: var(--accent); background: rgba(232,255,71,0.05); }
+.track-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: none; margin-right: 2px; }
+.track-dot.drilling { display: inline-block; background: var(--blue); }
+.track-dot.learned { display: inline-block; background: var(--accent); }
+.pos-stats { font-size: 10px; color: var(--text-muted); margin-left: 6px; font-family: 'DM Mono', monospace; }
+.btn-track-all { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 6px; border: 1px solid var(--border); color: var(--text-muted); background: transparent; cursor: pointer; border-radius: 2px; margin-left: 6px; transition: all 0.15s; }
+.btn-track-all:hover { border-color: var(--blue); color: var(--blue); }
 .children { list-style: none; }
 .tree-item.collapsed > .children { display: none; }
 .inline-player { }
@@ -846,6 +852,12 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     }
   }
 
+  // Tracking dot (visible when technique is tracked)
+  const _prog = STATE.progress[key] || 'none';
+  const trackDot = document.createElement('span');
+  trackDot.className = 'track-dot' + (_prog !== 'none' ? ' ' + _prog : '');
+  content.appendChild(trackDot);
+
   const label = document.createElement('span');
   label.className = (node.v || node.l) ? 'node-label has-video' : 'node-label';
   label.textContent = node.t;
@@ -922,6 +934,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     if (next === 'none') { delete STATE.progress[key]; prog.className = 'progress-pill'; prog.textContent = 'Track'; }
     else if (next === 'drilling') { STATE.progress[key] = 'drilling'; prog.className = 'progress-pill drilling'; prog.textContent = 'Drilling'; }
     else { STATE.progress[key] = 'learned'; prog.className = 'progress-pill learned'; prog.textContent = 'Learned'; }
+    trackDot.className = 'track-dot' + (next !== 'none' ? ' ' + next : '');
     li.dataset.progress = next;
     saveState(); updateStats(); refreshAllViews();
   });
@@ -952,6 +965,20 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       buildNode(child, sectionTitle, depth + 1, childUl, key, childDisambig, posEntry);
     });
     li.appendChild(childUl);
+    // Position-level stats (depth 0): "N techniques · N tracked"
+    if (depth === 0) {
+      var techCount = childUl.querySelectorAll('.tree-item').length;
+      var trackedCount = 0;
+      childUl.querySelectorAll('.tree-item[data-progress]').forEach(function(t) {
+        if (t.dataset.progress !== 'none') trackedCount++;
+      });
+      var statsSpan = document.createElement('span');
+      statsSpan.className = 'pos-stats';
+      statsSpan.textContent = techCount + ' techniques' + (trackedCount > 0 ? ' \u00b7 ' + trackedCount + ' tracked' : '');
+      content.appendChild(statsSpan);
+      li._posStats = statsSpan;
+      li._posChildUl = childUl;
+    }
     toggle.addEventListener('click', e => {
       e.stopPropagation();
       li.classList.toggle('collapsed');
@@ -963,6 +990,26 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     });
     const isHeading = SCHEMA_NAMES.has(node.t.trim());
     if (isHeading) {
+      // "Track all" button for headings
+      var trackAllBtn = document.createElement('button');
+      trackAllBtn.className = 'btn-track-all';
+      trackAllBtn.textContent = 'Track all';
+      trackAllBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        childUl.querySelectorAll('.tree-item[data-key]').forEach(function(t) {
+          var tk = t.dataset.key;
+          if (!STATE.progress[tk]) {
+            STATE.progress[tk] = 'drilling';
+            t.dataset.progress = 'drilling';
+            var dot = t.querySelector('.track-dot');
+            if (dot) dot.className = 'track-dot drilling';
+            var pill = t.querySelector('.progress-pill');
+            if (pill) { pill.className = 'progress-pill drilling'; pill.textContent = 'Drilling'; }
+          }
+        });
+        saveState(); updateStats(); refreshAllViews();
+      });
+      content.appendChild(trackAllBtn);
       // Heading click: scroll + highlight + expand only — no selection, no detail view
       nodeDiv.addEventListener('click', () => {
         // Force expand (never collapse on heading click)
