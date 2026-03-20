@@ -2291,6 +2291,7 @@ window.initGraph3D = (function() {
     if(showTopLabels3d) [...netNds].sort((a,b)=>b._w-a._w).slice(0,15).forEach(n=>showFor.add(n.id));
     if(selectedId3d) showFor.add(selectedId3d);
     if(hoveredId3d)  showFor.add(hoveredId3d);
+    if(_zoomedNodeId) showFor.add(_zoomedNodeId);
     const proj=new THREE.Vector3();
     const wrap=document.getElementById('g3dCanvas').parentElement;
     const W=wrap.clientWidth,H=wrap.clientHeight;
@@ -2534,6 +2535,39 @@ window.initGraph3D = (function() {
       canvas.addEventListener('touchmove',e=>{if(e.touches.length!==1)return;e.preventDefault();const t=e.touches[0];if(Math.abs(t.clientX-touchX)>3||Math.abs(t.clientY-touchY)>3)isTouchDrag=true;tRY+=(t.clientX-touchX)*0.004;tRX+=(t.clientY-touchY)*0.004;touchX=t.clientX;touchY=t.clientY;},{passive:false});
       canvas.addEventListener('touchend',e=>{if(isTouchDrag)return;const t=e.changedTouches[0];const rect=wrap.getBoundingClientRect(),mx=((t.clientX-rect.left)/rect.width)*2-1,my=-((t.clientY-rect.top)/rect.height)*2+1;camera3d.updateMatrixWorld();const ray=new THREE.Raycaster();ray.setFromCamera({x:mx,y:my},camera3d);const vis=Object.values(meshMap3d).filter(m=>m.visible&&m.material.opacity>0.25);const hits=ray.intersectObjects(vis);if(!hits.length){resetHL3d();closeDetail3d();return;}const id=hits[0].object.userData.id;if(id===selectedId3d){resetHL3d();closeDetail3d();return;}selectNode3d(id);});
 
+      // Double-click: zoom to node + connections
+      var _zoomedNodeId = null;
+      var _savedPivot = null;
+      var _savedZoom = null;
+      function zoomToNode3d(nd) {
+        if (!nd) return;
+        _savedPivot = { x: pivot3d.position.x, y: pivot3d.position.y, z: pivot3d.position.z };
+        _savedZoom = tZ3d;
+        _zoomedNodeId = nd.id;
+        // Center on node
+        pivot3d.position.set(-nd.x, -nd.y, -nd.z);
+        tZ3d = Math.max(80, nd._r * 12 + 60);
+        autoRotate3d = false;
+      }
+      function zoomOut3d() {
+        if (_savedPivot) { pivot3d.position.set(_savedPivot.x, _savedPivot.y, _savedPivot.z); }
+        if (_savedZoom) tZ3d = _savedZoom;
+        _zoomedNodeId = null; _savedPivot = null; _savedZoom = null;
+      }
+      window._g3dZoomOut = zoomOut3d;
+      canvas.addEventListener('dblclick', function(e) {
+        var rect = wrap.getBoundingClientRect();
+        var mx = ((e.clientX-rect.left)/rect.width)*2-1;
+        var my = -((e.clientY-rect.top)/rect.height)*2+1;
+        camera3d.updateMatrixWorld();
+        var ray = new THREE.Raycaster(); ray.setFromCamera({x:mx,y:my}, camera3d);
+        var vis = Object.values(meshMap3d).filter(function(m){return m.visible&&m.material.opacity>0.25;});
+        var hits = ray.intersectObjects(vis);
+        if (!hits.length) { zoomOut3d(); return; }
+        var nd = nodeMap3d[hits[0].object.userData.id];
+        if (nd) { selectNode3d(nd.id); zoomToNode3d(nd); }
+      });
+
       // Shared filter applier — keeps top + bottom toolbars in sync
       function applyG3dFilter(sf){
         // Sync bottom toolbar
@@ -2677,8 +2711,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('referenceView').style.display !== 'none') {
     clearTechniqueSelection();
   }
-  // Esc resets 3D graph selection
+  // Esc resets 3D graph selection + zoom
   if (e.key === 'Escape' && document.getElementById('graph3dView').style.display !== 'none') {
+    if (window._g3dZoomOut) window._g3dZoomOut();
     if (window._g3dResetHL) window._g3dResetHL();
     if (window._g3dCloseDetail) window._g3dCloseDetail();
   }
