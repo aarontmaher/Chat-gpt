@@ -965,19 +965,35 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       buildNode(child, sectionTitle, depth + 1, childUl, key, childDisambig, posEntry);
     });
     li.appendChild(childUl);
-    // Position-level stats (depth 0): "N techniques · N tracked"
+    // Position-level stats (depth 0): inline + mini stats bar
     if (depth === 0) {
       var techCount = childUl.querySelectorAll('.tree-item').length;
       var trackedCount = 0;
       childUl.querySelectorAll('.tree-item[data-progress]').forEach(function(t) {
         if (t.dataset.progress !== 'none') trackedCount++;
       });
+      // Inline stats on position header
       var statsSpan = document.createElement('span');
       statsSpan.className = 'pos-stats';
       statsSpan.textContent = techCount + ' techniques' + (trackedCount > 0 ? ' \u00b7 ' + trackedCount + ' tracked' : '');
       content.appendChild(statsSpan);
       li._posStats = statsSpan;
       li._posChildUl = childUl;
+      // Mini stats bar (visible when expanded)
+      var statsBar = document.createElement('div');
+      statsBar.className = 'pos-stats-bar';
+      statsBar.style.cssText = 'padding:3px 8px 3px '+(8+8)+'px;font-size:9px;color:var(--text-muted);font-family:DM Mono,monospace;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.015);';
+      // Count OT edges from _transitionOccurrences
+      var otCount = 0;
+      if (window._transitionOccurrences) {
+        var posNorm = normalizeSegment(node.t);
+        window._transitionOccurrences.forEach(function(occ) {
+          if (normalizeSegment(occ.srcPositionLabel) === posNorm || normalizeSegment(occ.destLabel) === posNorm) otCount++;
+        });
+      }
+      statsBar.textContent = 'Techniques: '+techCount+' \u00b7 Tracked: '+trackedCount+' \u00b7 Built-out: pending \u00b7 OT edges: '+otCount;
+      statsBar.dataset.posKey = key;
+      li.insertBefore(statsBar, childUl);
     }
     toggle.addEventListener('click', e => {
       e.stopPropagation();
@@ -1204,6 +1220,14 @@ function markBuiltOut() {
     }
   });
   window._builtOutNetMap = netKeyMap;
+
+  // Update mini stats bars with built-out status
+  document.querySelectorAll('.pos-stats-bar[data-pos-key]').forEach(function(bar) {
+    var isBuilt = builtMap.get(bar.dataset.posKey);
+    if (typeof isBuilt !== 'undefined') {
+      bar.textContent = bar.textContent.replace(/Built-out: \w+/, 'Built-out: ' + (isBuilt ? 'yes' : 'no'));
+    }
+  });
 
   // Log count and names for verification
   var count = 0;
