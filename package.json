@@ -1,0 +1,32 @@
+{
+  "name": "chat-gpt",
+  "version": "1.0.0",
+  "description": "Automatically publishes Mindomo OPML exports to GitHub Pages.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "npx playwright test tests/e2e/smoke.spec.js",
+    "test:snapshots": "npx playwright test tests/e2e/snapshots.spec.js",
+    "test:update-snapshots": "npx playwright test tests/e2e/snapshots.spec.js --update-snapshots",
+    "test:all": "npx playwright test",
+    "ready": "npm run test && echo '✓ All smoke tests passed — ready to deploy'",
+    "check": "npx playwright test tests/e2e/smoke.spec.js --reporter=line"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aarontmaher/Chat-gpt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aarontmaher/Chat-gpt/issues"
+  },
+  "homepage": "https://github.com/aarontmaher/Chat-gpt#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

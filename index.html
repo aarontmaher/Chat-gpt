@@ -2856,10 +2856,12 @@ window.__APP_DEBUG__ = {
     if (window._builtOutMap && window._builtOutMap.forEach) {
       window._builtOutMap.forEach(function(v) { if (v) boCount++; });
     }
+    var net = window._diagNet || {};
+    var nodes = net.nodes || [];
     return {
-      edges: typeof NET_EDGES !== 'undefined' ? NET_EDGES.length : 0,
-      nodes: typeof NET_NODES !== 'undefined' ? NET_NODES.length : 0,
-      inNetwork: typeof NET_NODES !== 'undefined' ? NET_NODES.filter(function(n){return n.in_network;}).length : 0,
+      edges: net.edgeCount || (net.edges ? net.edges.length : 0),
+      nodes: net.nodeCount || nodes.length,
+      inNetwork: nodes.filter ? nodes.filter(function(n){return n.in_network;}).length : 0,
       builtOut: boCount,
       guard: typeof SECTIONS !== 'undefined' ? (SECTIONS.find(function(s){return s.title==='Guard';})||{nodes:[]}).nodes.length : 0,
       sections: typeof SECTIONS !== 'undefined' ? SECTIONS.length : 0,
