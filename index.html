@@ -1744,7 +1744,7 @@ window.initGraph3D = (function() {
         // Position node: size by transition indegree + 1 (canonical existence)
         n._in=(inn[n.id]||0)+1; n._out=out[n.id]||0;
         n._w=n._in*1.5+n._out+8;
-        n._r=Math.max(2.5,2.5+Math.sqrt(n._w)*4.2);
+        n._r=Math.max(2.5,1.5+Math.pow(n._w,0.85)*1.8);
       } else {
         // Sub-position / technique node: uniform size
         n._in=inn[n.id]||0; n._out=out[n.id]||0;
@@ -2264,7 +2264,7 @@ window.initGraph3D = (function() {
     active.forEach(n=>{inn[n.id]=0;out[n.id]=0;});
     aEdges.forEach(e=>{var w=e.visibleWeight||e.weight;inn[e.target]=(inn[e.target]||0)+w;out[e.source]=(out[e.source]||0)+w;});
     active.forEach(n=>{
-      if(n.depth===1){n._in=(inn[n.id]||0)+1;n._out=out[n.id]||0;n._w=n._in*1.5+n._out+8;n._r=Math.max(2.5,2.5+Math.sqrt(n._w)*4.2);}
+      if(n.depth===1){n._in=(inn[n.id]||0)+1;n._out=out[n.id]||0;n._w=n._in*1.5+n._out+8;n._r=Math.max(2.5,1.5+Math.pow(n._w,0.85)*1.8);}
       else{n._in=inn[n.id]||0;n._out=out[n.id]||0;n._w=2;n._r=2.0;}
     });
     netNds.filter(n=>!aIds.has(n.id)).forEach(n=>{n._in=0;n._out=0;n._w=0;n._r=1.2;});
