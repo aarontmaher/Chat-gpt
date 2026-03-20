@@ -1382,29 +1382,73 @@ function revealAncestorItems() {
 
 // ─── SEARCH (Reference) ───────────────────────────────────────────────────────
 let _refSearchTimer;
-document.getElementById('refSearch').addEventListener('input', function() {
-  const self = this;
-  clearTimeout(_refSearchTimer);
-  _refSearchTimer = setTimeout(function() {
-  const q = self.value.toLowerCase().trim();
-  document.querySelectorAll('.tree-item').forEach(li => {
-    const label = li.querySelector('.node-label');
+function _refDoSearch() {
+  var q = document.getElementById('refSearch').value.toLowerCase().trim();
+  document.querySelectorAll('.tree-item').forEach(function(li) {
+    var label = li.querySelector('.node-label');
     if (!label) return;
-    const match = !q || label.textContent.toLowerCase().includes(q);
+    var text = label.textContent.replace(' \u2605', ''); // strip built-out star for search
+    var match = !q || text.toLowerCase().includes(q);
     li.style.display = match ? '' : 'none';
+    // Highlight matching text
+    if (q && match) {
+      var raw = label.textContent;
+      var idx = raw.toLowerCase().indexOf(q);
+      if (idx !== -1) {
+        label.innerHTML = _escHtml(raw.slice(0,idx)) + '<mark style="background:rgba(232,255,71,0.3);color:var(--text);border-radius:2px;padding:0 1px;">' + _escHtml(raw.slice(idx,idx+q.length)) + '</mark>' + _escHtml(raw.slice(idx+q.length));
+      }
+      // Show section > position breadcrumb
+      var posMap = window._techPositionMap;
+      var entry = posMap ? posMap.get(li.dataset.key) : null;
+      if (entry && !li.querySelector('.search-breadcrumb')) {
+        var bc = document.createElement('span');
+        bc.className = 'search-breadcrumb';
+        bc.style.cssText = 'font-size:9px;color:var(--text-muted);margin-left:6px;';
+        bc.textContent = entry.section + ' \u203a ' + entry.positionLabel;
+        label.parentElement.appendChild(bc);
+      }
+    } else {
+      // Clear highlight
+      var raw2 = label.textContent;
+      label.innerHTML = '';
+      label.textContent = raw2;
+      var bc2 = li.querySelector('.search-breadcrumb');
+      if (bc2) bc2.remove();
+    }
   });
   if (q) revealAncestorItems();
-  let anyVisible = false;
-  document.querySelectorAll('.section').forEach(sec => {
-    const visible = Array.from(sec.querySelectorAll('.tree-item')).some(li => li.style.display !== 'none');
+  var anyVisible = false;
+  document.querySelectorAll('.section').forEach(function(sec) {
+    var visible = Array.from(sec.querySelectorAll('.tree-item')).some(function(li) { return li.style.display !== 'none'; });
     sec.style.display = visible ? '' : 'none';
     if (visible) anyVisible = true;
     if (q && visible) sec.classList.remove('collapsed');
   });
-  const emptyEl = document.getElementById('refEmpty');
+  var emptyEl = document.getElementById('refEmpty');
   if (q && !anyVisible) { emptyEl.textContent = 'No results for "' + q + '"'; emptyEl.style.display = 'block'; }
   else { emptyEl.style.display = 'none'; }
-  }, 200);
+}
+function _escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+document.getElementById('refSearch').addEventListener('input', function() {
+  clearTimeout(_refSearchTimer);
+  _refSearchTimer = setTimeout(_refDoSearch, 200);
+});
+// Enter: jump to first visible result
+document.getElementById('refSearch').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    var first = document.querySelector('.tree-item:not([style*="display: none"]):not([data-schema="1"]) .node-label');
+    if (first) {
+      first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      first.closest('.tree-item').click();
+    }
+  }
+  // Escape: clear search
+  if (e.key === 'Escape') {
+    this.value = '';
+    _refDoSearch();
+    this.blur();
+  }
 });
 
 // ─── FILTER (Reference) ──────────────────────────────────────────────────────
