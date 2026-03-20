@@ -1989,9 +1989,63 @@ window.initGraph3D = (function() {
             var ct = (child.t || '').trim();
             if (!ct || SKIP_CHILDREN.has(ct) || PERSP_SET.has(ct) || SCHEMA_NAMES.has(ct)) return;
             var cItem = document.createElement('div');
-            cItem.style.cssText = 'padding:2px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:#667;cursor:default;';
+            var hasKids = child.c && child.c.filter(function(gc){return !SKIP_CHILDREN.has((gc.t||'').trim());}).length > 0;
+            var hasMedia = child.v || child.l || (child.c && child.c.some(function(gc){return gc.t==='Instructional video'||gc.t==='Live video';}));
+            cItem.style.cssText = 'padding:3px 0;font-family:Barlow Condensed,monospace;font-size:12px;color:'+(hasKids||hasMedia?'#8899aa':'#556')+';cursor:pointer;transition:color 0.1s;';
+            cItem.addEventListener('mouseenter', function(){cItem.style.color=col;});
+            cItem.addEventListener('mouseleave', function(){cItem.style.color=hasKids||hasMedia?'#8899aa':'#556';});
             cItem.textContent = ct;
+            // Detail expansion container
+            var detailEl = document.createElement('div');
+            detailEl.style.cssText = 'display:none;padding:4px 0 6px 12px;border-left:1px solid rgba(255,255,255,0.06);margin-left:4px;';
+            var detailOpen = false;
+            cItem.addEventListener('click', function() {
+              detailOpen = !detailOpen;
+              if (detailOpen) {
+                detailEl.innerHTML = '';
+                // Show sub-children (techniques, notes content)
+                var subKids = (child.c || []).filter(function(gc){
+                  var gt = (gc.t||'').trim();
+                  return gt && !SKIP_CHILDREN.has(gt);
+                });
+                if (subKids.length > 0) {
+                  subKids.forEach(function(gc) {
+                    var gcEl = document.createElement('div');
+                    gcEl.style.cssText = 'padding:1px 0;font-size:11px;color:#667;font-family:Barlow Condensed,monospace;';
+                    gcEl.textContent = gc.t;
+                    detailEl.appendChild(gcEl);
+                  });
+                }
+                // Show Notes content if present
+                var notesNode = (child.c||[]).find(function(gc){return (gc.t||'').trim()==='Notes';});
+                if (notesNode && notesNode.c) {
+                  notesNode.c.forEach(function(nc) {
+                    var nEl = document.createElement('div');
+                    nEl.style.cssText = 'padding:1px 0;font-size:10px;color:#4a5568;font-style:italic;font-family:Barlow Condensed,monospace;';
+                    nEl.textContent = '\u2014 ' + (nc.t||'');
+                    detailEl.appendChild(nEl);
+                  });
+                }
+                // Show media indicators
+                if (hasMedia) {
+                  var mediaEl = document.createElement('div');
+                  mediaEl.style.cssText = 'padding:2px 0;font-size:9px;color:'+col+';font-family:Barlow Condensed,monospace;letter-spacing:0.5px;';
+                  mediaEl.textContent = '\u25B6 has video';
+                  detailEl.appendChild(mediaEl);
+                }
+                if (detailEl.children.length === 0) {
+                  var emptyEl = document.createElement('div');
+                  emptyEl.style.cssText = 'font-size:10px;color:#4a5568;font-style:italic;font-family:Barlow Condensed,monospace;';
+                  emptyEl.textContent = 'no sub-items';
+                  detailEl.appendChild(emptyEl);
+                }
+                detailEl.style.display = 'block';
+              } else {
+                detailEl.style.display = 'none';
+              }
+            });
             childList.appendChild(cItem);
+            childList.appendChild(detailEl);
           });
         }
         wrap.appendChild(childList);
