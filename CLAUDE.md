@@ -211,7 +211,7 @@ git -C ~/Chat-gpt log -1 --format="%h %s %ci"
 Last updated: 2026-03-20
 Pipeline: stable, NO_DEST=0, HELD=1 (Knee on belly bare arrow)
 Transition edges: 36 (Python). in_network: 36.
-Schema verified: all Guard (12/12), Wrestling sub-positions, Scrambles
+Schema verified: all Guard (19/19), Wrestling sub-positions, Scrambles
 OT restructure: Half Guard Passing, Reverse de la riva, K guard, Grounded 50/50 all cleaned
 Built-out set (11): J point, K guard, Quarter guard, Supine Guard, Mount, Turtle,
   Berimbolo, Grounded 50/50, Wrestling bodylock, Back Control, Crab ride
@@ -222,10 +222,13 @@ SITE-BATCH-09 improvements: edge highlight, tracking dots, connection panel,
   built-out stars/pulse, search breadcrumbs/highlight, position stats bar,
   camera zoom, patch system hardened, results.md simplified
 SITE-OVERNIGHT-07: patch system upgraded to difflib fuzzy matching + multi-patch logging
+SITE-BATCH-10 improvements: keyboard shortcuts (/ T ? arrows), DIAG pipeline/PR panel,
+  empty SECTIONS guard, node size recalibration (pow 0.85 for ~2.1x hub ratio)
+SITE-BATCH-09 features: ALL 7 confirmed working via code audit (13/13 checks pass)
 ---
 ## PENDING TASKS
 # Update this section every session.
-Code: SITE-BATCH-09 (done), SITE-OVERNIGHT-07 (done), PIPE-LIVE-01B (verify live button wiring)
+Code: SITE-BATCH-10 (done), SITE-OVERNIGHT-07 (done), PIPE-LIVE-01B (verify live button wiring)
 Cowork: RETIRED — patch system + Chat verification replaces Cowork for structural work.
 Aaron decisions: Saddle canonical name TBD
 Half guard: RESOLVED — created 2026-03-19 by Cowork. Now 19 Guard canonical positions.
@@ -273,6 +276,8 @@ NEXT SESSION PRIORITIES:
 | OPML-only workflow | Active. grappling.opml = source of truth. Mindomo = viewer only. |
 | Cowork retired | 2026-03-19. Patch system replaces all structural Cowork work. |
 | OPML audit | Passed 2026-03-19. Fingerprint: cb7b55fbfcf6e601f49ec920f652dcf5 |
+| Keyboard shortcuts | / (search), T (track), ? (help), G (toggle view), Esc (clear/zoom out), arrows (nav results) |
+| Node size formula | pow(_w, 0.85) * 1.8 — gives ~2.1x ratio for high-indegree hubs |
 ---
 ## AUTO-MERGE (claude/** branches)
 Auto-merge is enabled for PRs opened from branches matching `claude/**`.
@@ -312,6 +317,7 @@ Auto-merge is enabled for PRs opened from branches matching `claude/**`.
 | GH-AUTOMERGE-01 | Auto-merge workflow for claude/** PRs | done 4afba62 |
 | SITE-BATCH-09 | Edge highlight + tracking + camera zoom + panel improvements | done |
 | SITE-OVERNIGHT-07 | Overnight polish: patch difflib upgrade + CLAUDE.md update | done |
+| SITE-BATCH-10 | Keyboard shortcuts, DIAG pipeline/PRs, node sizing, empty state | done |
 ---
 ## SIGN-OFF TAGS
 Claude Chat: -- FROM: CLAUDE CHAT
