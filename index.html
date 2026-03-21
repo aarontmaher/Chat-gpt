@@ -285,6 +285,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn" id="refCollapseAll">Collapse</button>
     <button class="g3d-tb-btn" id="refExpandAll">Expand</button>
+    <div id="refMediaBtns" style="display:contents;"></div>
   </div>
 </div>
 
@@ -318,6 +319,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn" id="g3dReset">Reset</button>
     <button class="g3d-tb-btn" id="g3dOptionsBtn">⚙ Options</button>
+    <div id="g3dMediaBtns" style="display:contents;"></div>
   </div>
 
   <!-- Options popover -->
@@ -498,8 +500,39 @@ const SCHEMA_NAMES = new Set(['Setups / Entries','Control','Offence','Defence / 
   'Attacker','Defender','Passer','Guard player','You','Opponent','Initiative',
   'Defensive','Entries','Passes','Notes','Subtopic','Main topic']);
 
-function setSelectedNode(key, label, section) {
-  SELECTED_NODE = key ? { key, label, section } : null;
+function setSelectedNode(key, label, section, vidUrl, liveUrl) {
+  SELECTED_NODE = key ? { key, label, section, v: vidUrl || null, l: liveUrl || null } : null;
+  updateBottomBarMedia();
+}
+function updateBottomBarMedia() {
+  var containers = [document.getElementById('refMediaBtns'), document.getElementById('g3dMediaBtns')];
+  containers.forEach(function(c) {
+    if (!c) return;
+    c.innerHTML = '';
+    if (!SELECTED_NODE || (!SELECTED_NODE.v && !SELECTED_NODE.l)) return;
+    var v = SELECTED_NODE.v;
+    var l = SELECTED_NODE.l;
+    // Separator
+    var sep = document.createElement('div');
+    sep.style.cssText = 'width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;';
+    c.appendChild(sep);
+    if (v) {
+      var btn = document.createElement('button');
+      btn.className = 'g3d-tb-btn';
+      btn.textContent = '\uD83D\uDCD6 Instructional';
+      btn.style.color = 'var(--accent)';
+      btn.addEventListener('click', function() { window.openVideoModal(v, (SELECTED_NODE.label||'') + ' \u2014 Instructional'); });
+      c.appendChild(btn);
+    }
+    if (l) {
+      var btn2 = document.createElement('button');
+      btn2.className = 'g3d-tb-btn';
+      btn2.textContent = '\uD83C\uDFA5 Live';
+      btn2.style.color = '#47c8ff';
+      btn2.addEventListener('click', function() { window.openVideoModal(l, (SELECTED_NODE.label||'') + ' \u2014 Live'); });
+      c.appendChild(btn2);
+    }
+  });
 }
 
 // Called when switching tabs - syncs the selected node into the new tab
@@ -1046,7 +1079,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       // Technique click: set selected, highlight in 3D, toggle expand
       nodeDiv.addEventListener('click', () => {
         selectTreeItem(li);
-        setSelectedNode(key, node.t, sectionTitle);
+        setSelectedNode(key, node.t, sectionTitle, node.v, node.l);
         if (window._g3dHighlightByLabel) window._g3dHighlightByLabel(node.t);
         li.classList.toggle('collapsed');
         const isNowCollapsed = li.classList.contains('collapsed');
@@ -1061,7 +1094,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     if (!SCHEMA_NAMES.has(node.t.trim())) {
       nodeDiv.addEventListener('click', () => {
         selectTreeItem(li);
-        setSelectedNode(key, node.t, sectionTitle);
+        setSelectedNode(key, node.t, sectionTitle, node.v, node.l);
         if (window._g3dHighlightByLabel) window._g3dHighlightByLabel(node.t);
       });
     }
