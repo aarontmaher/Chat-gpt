@@ -75,7 +75,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .tree-item.technique-selected > .node .node-actions { gap: 6px; }
 .node .btn-video { opacity: 0.7; transition: all 0.15s; }
 .node { display: flex; align-items: flex-start; gap: 6px; padding: 4px 16px 4px 8px; transition: background 0.1s; min-height: 32px; }
-.node:hover { background: rgba(255,255,255,0.04); }
+.node:hover { background: rgba(255,255,255,0.05); }
+.tree-item[data-schema="0"] > .node:hover .node-label { color: var(--text); }
 .node-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin-top: 2px; border-radius: 2px; transition: all 0.15s; font-family: 'DM Mono', monospace; }
 .node-toggle:hover { background: var(--border); color: var(--text); }
 .node-toggle.leaf { cursor: default; color: var(--border); }
@@ -106,6 +107,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .children { list-style: none; }
 .tree-item.collapsed > .children { display: none; }
 .inline-player { }
+/* Schema heading rows */
+.tree-item[data-schema="1"] > .node .node-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
+/* OT transition rows (contain arrow) */
+.tree-item[data-ot="1"] > .node .node-label { font-size: 11px; color: #556; font-style: italic; }
+.tree-item[data-ot="1"] > .node .node-label::before { content: '↗ '; color: #ff9966; font-style: normal; }
+/* Notes rows */
+.tree-item[data-notes="1"] > .node .node-label { font-size: 11px; color: var(--accent3); font-style: italic; }
+.tree-item[data-notes="1"] > .node .node-label::before { content: ''; display: inline-block; width: 3px; height: 3px; background: var(--accent3); border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
 /* ── 3D GRAPH VIEW ── */
 #graph3dView { position: relative; background: #0e1015; overflow: hidden; }
@@ -302,10 +311,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     </div>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn active" data-filter="all">All</button>
+    <button class="g3d-tb-btn" data-filter="mygame">My Game</button>
     <button class="g3d-tb-btn" data-filter="drilling">Drilling</button>
-    <button class="g3d-tb-btn" data-filter="learned">Learned</button>
-    <button class="g3d-tb-btn" data-filter="video">Video</button>
-    <button class="g3d-tb-btn" data-filter="builtout" title="Positions with content across 3+ headings">Developed</button>
+    <button class="g3d-tb-btn" data-filter="video">Has Video</button>
+    <button class="g3d-tb-btn" data-filter="builtout" title="Positions with content across 3+ headings">Has Content</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn" id="refCollapseAll">Collapse</button>
     <button class="g3d-tb-btn" id="refExpandAll">Expand</button>
@@ -336,7 +345,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="g3d-tb-btn" data-status="mygame">My Game</button>
     <button class="g3d-tb-btn" data-status="drilling">Drilling</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
-    <button class="g3d-tb-btn" id="g3dBuiltOutBtn">Developed</button>
+    <button class="g3d-tb-btn" id="g3dBuiltOutBtn">Has Content</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn" id="g3dOptionsBtn">Settings</button>
     <div id="g3dMediaBtns" style="display:contents;"></div>
@@ -353,7 +362,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div class="g3d-opt-row"><label>Hub rings</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptRings" checked><span class="g3d-toggle-track"></span></label></div>
     <div class="g3d-opt-row"><label>Top hub labels</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptLabels" checked><span class="g3d-toggle-track"></span></label></div>
     <div class="g3d-opt-row"><label>Top hubs only</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptHubOnly"><span class="g3d-toggle-track"></span></label></div>
-    <div class="g3d-opt-row"><label>Developed only</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptBuiltOut"><span class="g3d-toggle-track"></span></label></div>
+    <div class="g3d-opt-row"><label>Has Content only</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptBuiltOut"><span class="g3d-toggle-track"></span></label></div>
     <div class="g3d-opt-row"><label>Edge opacity</label><div style="display:flex;align-items:center;gap:8px;"><input type="range" id="g3dOptEdge" min="0" max="100" value="30" style="width:80px;accent-color:var(--accent);"><span id="g3dOptEdgeVal" style="font-size:9px;color:#4a5568;width:28px;">30%</span></div></div>
     <div class="g3d-opt-row"><label>Auto-rotate</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptRotate" checked><span class="g3d-toggle-track"></span></label></div>
     <div style="height:1px;background:rgba(255,255,255,0.04);margin:6px 0;"></div>
@@ -886,6 +895,8 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   li.dataset.key = key;
   li.dataset.hasVideo = (node.v || node.l) ? '1' : '0';
   li.dataset.schema = SCHEMA_NAMES.has(node.t.trim()) ? '1' : '0';
+  li.dataset.ot = (node.t && node.t.includes('\u2192')) ? '1' : '0';
+  li.dataset.notes = (node.t && node.t.trim() === 'Notes') ? '1' : '0';
 
   const nodeDiv = document.createElement('div');
   nodeDiv.className = 'node';
@@ -1024,6 +1035,14 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       buildNode(child, sectionTitle, depth + 1, childUl, key, childDisambig, posEntry);
     });
     li.appendChild(childUl);
+    // Hide empty schema headings (headings with no real technique children)
+    if (SCHEMA_NAMES.has(node.t.trim()) && depth > 0) {
+      var realChildren = childUl.querySelectorAll('.tree-item[data-schema="0"]');
+      if (realChildren.length === 0) {
+        li.style.display = 'none';
+        li.dataset.emptyHeading = '1';
+      }
+    }
     // Position-level stats (depth 0): inline + mini stats bar
     if (depth === 0) {
       var techCount = childUl.querySelectorAll('.tree-item').length;
@@ -1104,18 +1123,25 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
         setTimeout(() => { label.style.background = ''; label.style.padding = ''; }, 2500);
       });
     } else {
-      // Technique click: set selected, highlight in 3D, toggle expand
-      nodeDiv.addEventListener('click', () => {
+      // Technique: label click selects, chevron click toggles expand
+      label.style.cursor = 'pointer';
+      label.addEventListener('click', (e) => {
+        e.stopPropagation();
         selectTreeItem(li);
         setSelectedNode(key, node.t, sectionTitle, node.v, node.l);
         if (window._g3dHighlightByLabel) window._g3dHighlightByLabel(node.t);
-        li.classList.toggle('collapsed');
-        const isNowCollapsed = li.classList.contains('collapsed');
-        toggle.textContent = isNowCollapsed ? '+' : '−';
-        if (isNowCollapsed) EXPANDED.delete(key); else EXPANDED.add(key);
-        if(window.cmSyncExpanded) window.cmSyncExpanded();
-        if(window.g3dSyncExpanded) window.g3dSyncExpanded();
       });
+      if (hasChildren) {
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          li.classList.toggle('collapsed');
+          const isNowCollapsed = li.classList.contains('collapsed');
+          toggle.textContent = isNowCollapsed ? '+' : '−';
+          if (isNowCollapsed) EXPANDED.delete(key); else EXPANDED.add(key);
+          if(window.cmSyncExpanded) window.cmSyncExpanded();
+          if(window.g3dSyncExpanded) window.g3dSyncExpanded();
+        });
+      }
     }
   } else {
     // Leaf node (no children) — only techniques get a click handler
@@ -1547,7 +1573,7 @@ function applyRefFilter(filter) {
   document.querySelectorAll('.tree-item').forEach(li => {
     let show = true;
     if (filter === 'drilling') show = li.dataset.progress === 'drilling';
-    else if (filter === 'learned') show = li.dataset.progress === 'learned';
+    else if (filter === 'mygame') show = li.dataset.progress === 'drilling' || li.dataset.progress === 'learned';
     else if (filter === 'video') show = li.dataset.hasVideo === '1';
     else if (filter === 'builtout') show = li.dataset.builtout === '1';
     li.style.display = show ? '' : 'none';
@@ -1562,7 +1588,7 @@ function applyRefFilter(filter) {
   });
   const emptyEl = document.getElementById('refEmpty');
   if (filter !== 'all' && !anyVisible) {
-    const labels = {drilling:'No techniques marked as Drilling yet',learned:'No techniques marked as Learned yet',video:'No video content found',builtout:'No built-out positions found'};
+    const labels = {drilling:'No techniques marked as Drilling yet',mygame:'No techniques in My Game yet — track techniques to see them here',video:'No video content found',builtout:'No positions with content found'};
     emptyEl.textContent = labels[filter] || 'No matching items';
     emptyEl.style.display = 'block';
   } else { emptyEl.style.display = 'none'; }
