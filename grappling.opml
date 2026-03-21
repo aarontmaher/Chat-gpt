@@ -1385,482 +1385,223 @@
         </outline>
         <outline text="J point">
           <outline text="Passer">
-            <outline text="Setups / Entries" />
-            <outline text="Control">
-              <outline text="Maintaining Camping Control points">
-                <outline text="Instructional video">
-                  <outline text="" type="video" url="https://youtu.be/YxIJBbf55a0">
-                    <outline text="Shin pin" />
-                    <outline text="Thigh grip" />
-                    <outline text="Head positioning" />
-                    <outline text="Forearm hip control" />
-                    <outline text="Calf grip" />
-                    <outline text="Foot grip" />
-                    <outline text="Hip hinge" />
+            <outline text="Setups / Entries">
+              <outline text="Seated guard">
+                <outline text="Hip post">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/5-jZLnq4Ak8" />
                   </outline>
+                  <outline text="Live video" />
                 </outline>
-                <outline text="Live video" />
+                <outline text="Collar tie">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/ZbmUQD0lIAs" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
               </outline>
-            </outline>
-            <outline text="Offence">
-              <outline text="Entries">
-                <outline text="Seated guard">
-                  <outline text="Hip post">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/5-jZLnq4Ak8" />
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="Collar tie">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/ZbmUQD0lIAs" />
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Supine guard">
+              <outline text="Supine guard">
+                <outline text="Bullfighter">
                   <outline text="Instructional video">
                     <outline text="" type="video" url="https://youtu.be/8toccngMCZg" />
                   </outline>
                   <outline text="Live video" />
                 </outline>
               </outline>
-              <outline text="Offence" />
-              <outline text="Passes">
-                <outline text="Toerando">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/UZt7aEEds7w">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
+            </outline>
+            <outline text="Control">
+              <outline text="J point control">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/YxIJBbf55a0" />
                 </outline>
-                <outline text="Leg drag">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/OYfI4G1T4Lg">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="North South">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/Vy-66UJAySQ">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Sprawl">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/UtSsoK-66Mc">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
+                <outline text="Live video" />
+                <outline text="Notes">
+                  <outline text="Shin pin" />
+                  <outline text="Thigh grip" />
+                  <outline text="Head positioning" />
+                  <outline text="Forearm hip control" />
+                  <outline text="Calf grip" />
+                  <outline text="Foot grip" />
+                  <outline text="Hip hinge" />
                 </outline>
               </outline>
             </outline>
-            <outline text="Defence / Escapes">
-              <outline text="Defence" />
-              <outline text="Preventing and countering defences">
-                <outline text="Lasso">
-                  <outline text="Transition opposite side">
-                    <outline text="Bicep curl">
-                      <outline text="Instructional video">
-                        <outline text="" type="video" url="https://youtu.be/F4t5ba7q7Gk" />
-                      </outline>
-                      <outline text="Live video" />
-                    </outline>
-                    <outline text="Bicep ride">
-                      <outline text="Instructional video">
-                        <outline text="" type="video" url="https://youtu.be/j1Wscyup89w" />
-                      </outline>
-                      <outline text="Live video" />
-                    </outline>
-                    <outline text="C grip">
-                      <outline text="Instructional video">
-                        <outline text="" type="video" url="https://youtu.be/U2Vy92unNgE" />
-                      </outline>
-                      <outline text="Live video" />
-                    </outline>
-                    <outline text="Forearm pressure">
-                      <outline text="">
-                        <outline text="Instructional video" />
-                        <outline text="Live video" />
-                      </outline>
-                    </outline>
-                  </outline>
-                  <outline text="Back swim">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/kQ7gqbS78cI">
-                        <outline text="North South" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="Stripping lasso">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/GdsHijqF0nE">
-                        <outline text="J point" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
+            <outline text="Offence">
+              <outline text="Toreando">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/UZt7aEEds7w" />
                 </outline>
-                <outline text="Deep Lasso">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/K8s4BNprDLM">
-                      <outline text="North South" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Bottom leg reguarding">
-                  <outline text="Reverse de la riva">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/QkHNNI6OBJQ">
-                        <outline text="J point" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="K Guard">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/4hngRqXbdd0">
-                        <outline text="Side control" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Arm Frames">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/_i4wJYP-ufY">
-                      <outline text="Clearing 2 frames on left shoulder">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/TiPaf5kfSVQ" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                      <outline text="Clearing 2 frames on right shoulder">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/fIQfWXRHFOc" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                      <outline text="Clearing frames on each shoulder">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/ImHVwTUWOp0" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                      <outline text="Head frame">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/MRFVb4JBE9c" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="X guard">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/kOeZo7YOtEg" />
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Bringing far leg under arm">
-                  <outline text="Good elbow positioning">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/cf0JTjYqLaY" />
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="Smash pass">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/b030JiTk6n0">
-                        <outline text="Side control" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Foot shoulder frame">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/bTdaK2nOD8M">
-                      <outline text="J point" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Far shoulder clamp">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/gxeob3A3OzU">
-                      <outline text="J point" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Elevated hips">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/zAcqkPKfD6k">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-              </outline>
-            </outline>
-            <outline text="Submissions">
-              <outline text="Submissions" />
-            </outline>
-            <outline text="Offensive transitions">
-              <outline text="Offensive transitions">
-                <outline text="Instructional video" />
                 <outline text="Live video" />
               </outline>
+              <outline text="Leg drag">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/OYfI4G1T4Lg" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+              <outline text="North South pass">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/Vy-66UJAySQ" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+              <outline text="Sprawl">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/UtSsoK-66Mc" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+            </outline>
+            <outline text="Defence">
+              <outline text="Lasso">
+                <outline text="Transition opposite side">
+                  <outline text="Bicep curl">
+                    <outline text="Instructional video">
+                      <outline text="" type="video" url="https://youtu.be/F4t5ba7q7Gk" />
+                    </outline>
+                    <outline text="Live video" />
+                  </outline>
+                  <outline text="Bicep ride">
+                    <outline text="Instructional video">
+                      <outline text="" type="video" url="https://youtu.be/j1Wscyup89w" />
+                    </outline>
+                    <outline text="Live video" />
+                  </outline>
+                  <outline text="C grip">
+                    <outline text="Instructional video">
+                      <outline text="" type="video" url="https://youtu.be/U2Vy92unNgE" />
+                    </outline>
+                    <outline text="Live video" />
+                  </outline>
+                  <outline text="Forearm pressure">
+                    <outline text="">
+                      <outline text="Instructional video" />
+                      <outline text="Live video" />
+                    </outline>
+                  </outline>
+                </outline>
+                <outline text="Back swim">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/kQ7gqbS78cI" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+                <outline text="Stripping lasso">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/GdsHijqF0nE" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+              </outline>
+              <outline text="Deep Lasso">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/K8s4BNprDLM" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+              <outline text="Bottom leg reguarding">
+                <outline text="Reverse de la riva">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/QkHNNI6OBJQ" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+                <outline text="K Guard">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/4hngRqXbdd0" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+              </outline>
+              <outline text="Arm Frames">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/_i4wJYP-ufY" />
+                </outline>
+                <outline text="Live video" />
+                <outline text="Clearing 2 frames on left shoulder">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/TiPaf5kfSVQ" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+                <outline text="Clearing 2 frames on right shoulder">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/fIQfWXRHFOc" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+                <outline text="Clearing frames on each shoulder">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/ImHVwTUWOp0" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+                <outline text="Head frame">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/MRFVb4JBE9c" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+              </outline>
+              <outline text="X guard">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/kOeZo7YOtEg" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+              <outline text="Bringing far leg under arm">
+                <outline text="Good elbow positioning">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/cf0JTjYqLaY" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+                <outline text="Smash pass">
+                  <outline text="Instructional video">
+                    <outline text="" type="video" url="https://youtu.be/b030JiTk6n0" />
+                  </outline>
+                  <outline text="Live video" />
+                </outline>
+              </outline>
+              <outline text="Foot shoulder frame">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/bTdaK2nOD8M" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+              <outline text="Far shoulder clamp">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/gxeob3A3OzU" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+              <outline text="Elevated hips">
+                <outline text="Instructional video">
+                  <outline text="" type="video" url="https://youtu.be/zAcqkPKfD6k" />
+                </outline>
+                <outline text="Live video" />
+              </outline>
+            </outline>
+            <outline text="Submissions" />
+            <outline text="Offensive transitions">
+              <outline text="Toreando → Side control" />
+              <outline text="Leg drag → Side control" />
+              <outline text="North South pass → North South" />
+              <outline text="Sprawl → Side control" />
+              <outline text="Back swim → North South" />
+              <outline text="Stripping lasso → J point" />
+              <outline text="Deep Lasso → North South" />
+              <outline text="Reverse de la riva → J point" />
+              <outline text="K Guard → Side control" />
             </outline>
           </outline>
           <outline text="Guard player">
             <outline text="Setups / Entries" />
-            <outline text="Control">
-              <outline text="Maintaining Camping Control points">
-                <outline text="Instructional video">
-                  <outline text="" type="video" url="https://youtu.be/YxIJBbf55a0">
-                    <outline text="Shin pin" />
-                    <outline text="Thigh grip" />
-                    <outline text="Head positioning" />
-                    <outline text="Forearm hip control" />
-                    <outline text="Calf grip" />
-                    <outline text="Foot grip" />
-                    <outline text="Hip hinge" />
-                  </outline>
-                </outline>
-                <outline text="Live video" />
-              </outline>
-            </outline>
-            <outline text="Offence">
-              <outline text="Entries">
-                <outline text="Seated guard">
-                  <outline text="Hip post">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/5-jZLnq4Ak8" />
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="Collar tie">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/ZbmUQD0lIAs" />
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Supine guard">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/8toccngMCZg" />
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-              </outline>
-              <outline text="Offence" />
-              <outline text="Passes">
-                <outline text="Toerando">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/UZt7aEEds7w">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Leg drag">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/OYfI4G1T4Lg">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="North South">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/Vy-66UJAySQ">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Sprawl">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/UtSsoK-66Mc">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-              </outline>
-            </outline>
-            <outline text="Defence / Escapes">
-              <outline text="Defence" />
-              <outline text="Preventing and countering defences">
-                <outline text="Lasso">
-                  <outline text="Transition opposite side">
-                    <outline text="Bicep curl">
-                      <outline text="Instructional video">
-                        <outline text="" type="video" url="https://youtu.be/F4t5ba7q7Gk" />
-                      </outline>
-                      <outline text="Live video" />
-                    </outline>
-                    <outline text="Bicep ride">
-                      <outline text="Instructional video">
-                        <outline text="" type="video" url="https://youtu.be/j1Wscyup89w" />
-                      </outline>
-                      <outline text="Live video" />
-                    </outline>
-                    <outline text="C grip">
-                      <outline text="Instructional video">
-                        <outline text="" type="video" url="https://youtu.be/U2Vy92unNgE" />
-                      </outline>
-                      <outline text="Live video" />
-                    </outline>
-                    <outline text="Forearm pressure">
-                      <outline text="">
-                        <outline text="Instructional video" />
-                        <outline text="Live video" />
-                      </outline>
-                    </outline>
-                  </outline>
-                  <outline text="Back swim">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/kQ7gqbS78cI">
-                        <outline text="North South" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="Stripping lasso">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/GdsHijqF0nE">
-                        <outline text="J point" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Deep Lasso">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/K8s4BNprDLM">
-                      <outline text="North South" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Bottom leg reguarding">
-                  <outline text="Reverse de la riva">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/QkHNNI6OBJQ">
-                        <outline text="J point" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="K Guard">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/4hngRqXbdd0">
-                        <outline text="Side control" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Arm Frames">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/_i4wJYP-ufY">
-                      <outline text="Clearing 2 frames on left shoulder">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/TiPaf5kfSVQ" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                      <outline text="Clearing 2 frames on right shoulder">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/fIQfWXRHFOc" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                      <outline text="Clearing frames on each shoulder">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/ImHVwTUWOp0" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                      <outline text="Head frame">
-                        <outline text="Instructional video">
-                          <outline text="" type="video" url="https://youtu.be/MRFVb4JBE9c" />
-                        </outline>
-                        <outline text="Live video" />
-                      </outline>
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="X guard">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/kOeZo7YOtEg" />
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Bringing far leg under arm">
-                  <outline text="Good elbow positioning">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/cf0JTjYqLaY" />
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                  <outline text="Smash pass">
-                    <outline text="Instructional video">
-                      <outline text="" type="video" url="https://youtu.be/b030JiTk6n0">
-                        <outline text="Side control" />
-                      </outline>
-                    </outline>
-                    <outline text="Live video" />
-                  </outline>
-                </outline>
-                <outline text="Foot shoulder frame">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/bTdaK2nOD8M">
-                      <outline text="J point" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Far shoulder clamp">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/gxeob3A3OzU">
-                      <outline text="J point" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-                <outline text="Elevated hips">
-                  <outline text="Instructional video">
-                    <outline text="" type="video" url="https://youtu.be/zAcqkPKfD6k">
-                      <outline text="Side control" />
-                    </outline>
-                  </outline>
-                  <outline text="Live video" />
-                </outline>
-              </outline>
-            </outline>
-            <outline text="Submissions">
-              <outline text="Submissions" />
-            </outline>
-            <outline text="Offensive transitions">
-              <outline text="Offensive transitions">
-                <outline text="Instructional video" />
-                <outline text="Live video" />
-              </outline>
-            </outline>
+            <outline text="Control" />
+            <outline text="Offence" />
+            <outline text="Defence" />
+            <outline text="Submissions" />
+            <outline text="Offensive transitions" />
           </outline>
         </outline>
         <outline text="Closed Guard">
