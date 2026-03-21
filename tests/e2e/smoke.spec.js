@@ -59,12 +59,16 @@ test.describe('GrapplingMap smoke suite', () => {
   });
 
   test('Search input focuses on / key', async ({ page }) => {
+    // Switch to Reference view first for consistent test
+    await page.click('[data-view="reference"]');
     await page.keyboard.press('/');
     const searchInput = page.locator('#refSearch');
     await expect(searchInput).toBeFocused({ timeout: 3000 });
   });
 
   test('Search filters reference tree', async ({ page }) => {
+    // Switch to Reference view first (default is now Network)
+    await page.click('[data-view="reference"]');
     const result = await page.evaluate(() => window.__APP_DEBUG__.focusSearch());
     expect(result).toBe('focused');
     await page.keyboard.type('rear naked');
@@ -90,6 +94,8 @@ test.describe('GrapplingMap smoke suite', () => {
   });
 
   test('Section expands on click', async ({ page }) => {
+    // Switch to Reference view first (default is now Network)
+    await page.click('[data-view="reference"]');
     // Click Dominant Positions section header to expand
     await page.click('.section-title:has-text("Dominant Positions")');
     await page.waitForTimeout(300);

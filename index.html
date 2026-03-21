@@ -67,7 +67,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .section.collapsed .section-body { display: none; }
 .tree { list-style: none; padding: 0 0 8px; }
 .tree-item { }
-.tree-item.technique-selected { background: rgba(232,255,71,0.10); box-shadow: inset 3px 0 0 rgba(232,255,71,0.50); }
+.tree-item.technique-selected { background: rgba(232,255,71,0.08); box-shadow: inset 3px 0 0 var(--accent); border-radius: 0 4px 4px 0; }
+.tree-item.technique-selected > .node .node-label { color: var(--text); font-weight: 500; }
+.tree-item.technique-selected > .node .btn-video { opacity: 1; transform: scale(1); }
+.node .btn-video { opacity: 0.7; transition: all 0.15s; }
 .node { display: flex; align-items: flex-start; gap: 6px; padding: 4px 16px 4px 8px; transition: background 0.1s; min-height: 32px; }
 .node:hover { background: rgba(255,255,255,0.03); }
 .node-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin-top: 2px; border-radius: 2px; transition: all 0.15s; font-family: 'DM Mono', monospace; }
@@ -78,7 +81,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .node-label { font-size: 12px; color: var(--text-dim); cursor: default; line-height: 1.4; }
 .node-label.has-video { color: var(--text); }
 .node-actions { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-.btn-video { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 3px 7px; border: 1px solid var(--accent2); color: var(--accent2); background: transparent; cursor: pointer; border-radius: 2px; transition: all 0.15s; }
+.btn-video { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 10px; border: 1px solid var(--accent2); color: var(--accent2); background: rgba(255,107,53,0.06); cursor: pointer; border-radius: 3px; transition: all 0.15s; }
 .btn-video:hover { background: var(--accent2); color: #000; }
 .btn-live { border-color: var(--green) !important; color: var(--green) !important; }
 .btn-live:hover { background: var(--green) !important; color: #000 !important; }
@@ -229,7 +232,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .diag-val { color:#c9d1d9;margin-bottom:2px; }
 .diag-err { color:#f85149;margin-bottom:4px;white-space:pre-wrap;font-size:10px; }
 .diag-warn { color:#d29922;margin-bottom:2px;font-size:10px; }
-#diagToggle:hover { border-color:rgba(255,255,255,0.25);color:#8892a4; }
+#diagToggle:hover, #kbdHelpToggle:hover { background:rgba(255,255,255,0.04); }
+#headerMenuToggle:hover { border-color:rgba(255,255,255,0.25);color:#8892a4; }
 
 </style>
 </head>
@@ -237,13 +241,18 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <header>
   <div class="logo">Grappling</div>
-  <div class="stats">
+  <div id="headerStats" class="stats" style="display:none;">
     <div class="stat"><div class="stat-num" id="learnedCount">0</div><div class="stat-label">Learned</div></div>
     <div class="stat"><div class="stat-num" id="totalCount">0</div><div class="stat-label">Total</div></div>
   </div>
   <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
-  <button id="kbdHelpToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Keyboard shortcuts">?</button>
-  <button id="diagToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:4px;cursor:pointer;text-transform:uppercase;">Diag</button>
+  <div style="position:relative;">
+    <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu">&#8942;</button>
+    <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
+      <button id="kbdHelpToggle" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Keyboard shortcuts</button>
+      <button id="diagToggle" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Diagnostics</button>
+    </div>
+  </div>
 </header>
 <!-- ── Keyboard shortcuts help panel ── -->
 <div id="kbdHelpPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:10px;z-index:1000;font-family:'DM Mono',monospace;font-size:12px;color:#8892a4;padding:24px 28px;backdrop-filter:blur(20px);box-shadow:0 12px 48px rgba(0,0,0,0.6);min-width:280px;">
@@ -263,12 +272,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 </div>
 
 <div class="view-tabs">
-  <button class="view-tab active" data-view="reference">📋 Reference</button>
-  <button class="view-tab" data-view="graph3d">⬡ 3D Graph</button>
+  <button class="view-tab" data-view="reference">Reference</button>
+  <button class="view-tab active" data-view="graph3d">Network</button>
 </div>
 
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
-<div id="referenceView" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+<div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
   <div class="sections" id="sections" style="flex:1;overflow-y:auto;"></div>
   <div id="refEmpty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;"></div>
   <div id="refBottomBar" style="flex-shrink:0;display:flex;align-items:center;gap:2px;background:rgba(18,21,28,0.92);border-top:1px solid rgba(255,255,255,0.08);padding:5px 6px;backdrop-filter:blur(16px);flex-wrap:wrap;">
@@ -281,7 +290,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="g3d-tb-btn" data-filter="drilling">Drilling</button>
     <button class="g3d-tb-btn" data-filter="learned">Learned</button>
     <button class="g3d-tb-btn" data-filter="video">Video</button>
-    <button class="g3d-tb-btn" data-filter="builtout" title="11 positions with content across \u22653 headings">Built-out</button>
+    <button class="g3d-tb-btn" data-filter="builtout" title="Positions with content across 3+ headings">Developed</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn" id="refCollapseAll">Collapse</button>
     <button class="g3d-tb-btn" id="refExpandAll">Expand</button>
@@ -293,7 +302,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <!-- ══ 3D GRAPH ════════════════════════════════════════════════════════════ -->
 <div
-  id="graph3dView" style="display:none; flex-direction:column; position:relative; flex:1; min-height:0;">
+  id="graph3dView" style="display:flex; flex-direction:column; position:relative; flex:1; min-height:0;">
   <!-- Top toolbar removed — controls live in bottom bar -->
   <!-- Canvas fills everything -->
   <canvas id="g3dCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;"></canvas>
@@ -312,27 +321,28 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="g3d-tb-btn" data-status="mygame">My Game</button>
     <button class="g3d-tb-btn" data-status="drilling">Drilling</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
-    <button class="g3d-tb-btn" id="g3dBuiltOutBtn">Built-out</button>
+    <button class="g3d-tb-btn" id="g3dBuiltOutBtn">Developed</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
-    <button class="g3d-tb-btn" id="g3dCollapseAll">Collapse</button>
-    <button class="g3d-tb-btn" id="g3dExpandAll">Expand</button>
-    <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
-    <button class="g3d-tb-btn" id="g3dReset">Reset</button>
-    <button class="g3d-tb-btn" id="g3dOptionsBtn">⚙ Options</button>
+    <button class="g3d-tb-btn" id="g3dOptionsBtn">Settings</button>
     <div id="g3dMediaBtns" style="display:contents;"></div>
   </div>
 
   <!-- Options popover -->
   <div id="g3dOptions" style="display:none;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(18,21,28,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 18px;z-index:20;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,0.6);min-width:300px;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#4a5568;text-transform:uppercase;margin-bottom:8px;">Options</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#4a5568;text-transform:uppercase;margin-bottom:8px;">Settings</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <button class="g3d-tb-btn" id="g3dCollapseAll" style="flex:1;">Collapse</button>
+      <button class="g3d-tb-btn" id="g3dExpandAll" style="flex:1;">Expand</button>
+      <button class="g3d-tb-btn" id="g3dReset" style="flex:1;">Reset</button>
+    </div>
     <div class="g3d-opt-row"><label>Hub rings</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptRings" checked><span class="g3d-toggle-track"></span></label></div>
     <div class="g3d-opt-row"><label>Top hub labels</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptLabels" checked><span class="g3d-toggle-track"></span></label></div>
     <div class="g3d-opt-row"><label>Top hubs only</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptHubOnly"><span class="g3d-toggle-track"></span></label></div>
-    <div class="g3d-opt-row"><label>Built-out only</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptBuiltOut"><span class="g3d-toggle-track"></span></label></div>
+    <div class="g3d-opt-row"><label>Developed only</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptBuiltOut"><span class="g3d-toggle-track"></span></label></div>
     <div class="g3d-opt-row"><label>Edge opacity</label><div style="display:flex;align-items:center;gap:8px;"><input type="range" id="g3dOptEdge" min="0" max="100" value="30" style="width:80px;accent-color:var(--accent);"><span id="g3dOptEdgeVal" style="font-size:9px;color:#4a5568;width:28px;">30%</span></div></div>
     <div class="g3d-opt-row"><label>Auto-rotate</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptRotate" checked><span class="g3d-toggle-track"></span></label></div>
     <div style="height:1px;background:rgba(255,255,255,0.04);margin:6px 0;"></div>
-    <div class="g3d-opt-row"><label style="color:#4a5568;">Show orphans (debug)</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptOrphans"><span class="g3d-toggle-track"></span></label></div>
+    <div class="g3d-opt-row"><label>Show all positions</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptOrphans"><span class="g3d-toggle-track"></span></label></div>
   </div>
 
   <!-- Detail panel -->
@@ -657,6 +667,9 @@ function updateStats() {
   document.getElementById('totalCount').textContent = STATE.totalNodes;
   const pct = STATE.totalNodes > 0 ? (learned / STATE.totalNodes * 100) : 0;
   document.getElementById('progressBar').style.width = pct + '%';
+  // Show stats only when user has tracked at least one technique
+  var hasProgress = Object.keys(STATE.progress).length > 0;
+  document.getElementById('headerStats').style.display = hasProgress ? 'flex' : 'none';
 }
 
 // ─── POPUP BUILDER (shared between 2D and 3D) ─────────────────────────────
@@ -1022,7 +1035,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
           if (normalizeSegment(occ.srcPositionLabel) === posNorm || normalizeSegment(occ.destLabel) === posNorm) otCount++;
         });
       }
-      statsBar.textContent = 'Techniques: '+techCount+' \u00b7 Tracked: '+trackedCount+' \u00b7 Built-out: pending \u00b7 OT edges: '+otCount;
+      statsBar.textContent = 'Techniques: '+techCount+' \u00b7 Tracked: '+trackedCount+' \u00b7 Developed: pending \u00b7 Transitions: '+otCount;
       statsBar.dataset.posKey = key;
       li.insertBefore(statsBar, childUl);
     }
@@ -1256,7 +1269,7 @@ function markBuiltOut() {
   document.querySelectorAll('.pos-stats-bar[data-pos-key]').forEach(function(bar) {
     var isBuilt = builtMap.get(bar.dataset.posKey);
     if (typeof isBuilt !== 'undefined') {
-      bar.textContent = bar.textContent.replace(/Built-out: \w+/, 'Built-out: ' + (isBuilt ? 'yes' : 'no'));
+      bar.textContent = bar.textContent.replace(/Developed: \w+/, 'Developed: ' + (isBuilt ? 'yes' : 'no'));
     }
   });
 
@@ -2872,9 +2885,11 @@ document.addEventListener('keydown', e => {
     switchToTab(cur === 'graph3d' ? 'reference' : 'graph3d');
   }
   // /: focus search bar (Reference)
-  if (e.key === '/' && !inInput && document.getElementById('referenceView').style.display !== 'none') {
+  if (e.key === '/' && !inInput) {
     e.preventDefault();
-    document.getElementById('refSearch').focus();
+    var refVisible = document.getElementById('referenceView').style.display !== 'none';
+    var searchEl = refVisible ? document.getElementById('refSearch') : document.getElementById('g3dSearch');
+    if (searchEl) searchEl.focus();
   }
   // T: track selected technique to DRILLING
   if (e.key === 't' && !inInput) {
@@ -2922,7 +2937,18 @@ document.addEventListener('keydown', e => {
   }
 });
 // Help panel button handlers
+// Header menu toggle
+(function(){
+  var menu = document.getElementById('headerMenu');
+  var menuBtn = document.getElementById('headerMenuToggle');
+  menuBtn.addEventListener('click', function(ev) {
+    ev.stopPropagation();
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+  document.addEventListener('click', function() { menu.style.display = 'none'; });
+})();
 document.getElementById('kbdHelpToggle').addEventListener('click', function() {
+  document.getElementById('headerMenu').style.display = 'none';
   var hp = document.getElementById('kbdHelpPanel');
   hp.style.display = hp.style.display === 'none' ? 'block' : 'none';
 });
@@ -2979,6 +3005,8 @@ if (typeof SECTIONS === 'undefined' || !SECTIONS.length) {
 console.log('TechPositionMap built:', window._techPositionMap.size);
 markBuiltOut();
 updateStats();
+// Boot with Network (3D graph) as default view
+requestAnimationFrame(() => requestAnimationFrame(initGraph3D));
 // DIAG: verify NET_NODES key format for position-matching branch selection
 (function(){ var sn = typeof NET_NODES !== 'undefined' ? NET_NODES.find(function(n){return n.in_network;}) : null; if(sn) console.log('DIAG sample node:', sn.label, sn.key); })();
 (function() {
