@@ -73,13 +73,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .tree-item.technique-selected > .node .node-label { color: var(--text); font-weight: 500; font-size: 13px; }
 .tree-item.technique-selected > .node .btn-video { opacity: 1; }
 .tree-item.technique-selected > .node .node-actions { gap: 6px; }
-.technique-breadcrumb { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: #667; letter-spacing: 0.3px; padding: 2px 0 4px 28px; display: none; }
+.technique-breadcrumb { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: #556; letter-spacing: 0.3px; padding: 2px 0 4px 28px; display: none; transition: color 0.15s; }
 .tree-item.technique-selected > .technique-breadcrumb { display: block; }
+.technique-breadcrumb:hover { color: #889; }
 .node .btn-video { opacity: 0.7; transition: all 0.15s; }
 .node { display: flex; align-items: flex-start; gap: 6px; padding: 4px 16px 4px 8px; transition: background 0.1s; min-height: 32px; }
 .node:hover { background: rgba(255,255,255,0.05); }
 .tree-item[data-schema="0"] > .node:hover .node-label { color: var(--text); }
-.node-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin-top: 2px; border-radius: 2px; transition: all 0.15s; font-family: 'DM Mono', monospace; }
+.node-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin-top: 3px; border-radius: 3px; transition: all 0.15s; }
 .node-toggle:hover { background: var(--border); color: var(--text); }
 .node-toggle.leaf { cursor: default; color: var(--border); }
 .node-toggle.leaf:hover { background: transparent; color: var(--border); }
@@ -705,8 +706,8 @@ function refSyncExpanded() {
     const tog = li.querySelector(':scope > .node > .node-toggle');
     if (!tog || tog.classList.contains('leaf')) return;
     const shouldBeExpanded = EXPANDED.has(key);
-    if (shouldBeExpanded) { li.classList.remove('collapsed'); tog.textContent = '−'; }
-    else { li.classList.add('collapsed'); tog.textContent = '+'; }
+    if (shouldBeExpanded) { li.classList.remove('collapsed'); tog.textContent = '\u25BE'; }
+    else { li.classList.add('collapsed'); tog.textContent = '\u25B8'; }
   });
 }
 
@@ -939,7 +940,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   if (hasChildren) li.classList.add('collapsed');  // open one level at a time
   const toggle = document.createElement('div');
   toggle.className = hasChildren ? 'node-toggle' : 'node-toggle leaf';
-  toggle.textContent = hasChildren ? '+' : '·';
+  toggle.textContent = hasChildren ? '\u25B8' : '\u00B7';
 
   const content = document.createElement('div');
   content.className = 'node-content';
@@ -1118,7 +1119,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       e.stopPropagation();
       li.classList.toggle('collapsed');
       const isNowCollapsed = li.classList.contains('collapsed');
-      toggle.textContent = isNowCollapsed ? '+' : '−';
+      toggle.textContent = isNowCollapsed ? '\u25B8' : '\u25BE';
       if (isNowCollapsed) EXPANDED.delete(key); else EXPANDED.add(key);
       if(window.cmSyncExpanded) window.cmSyncExpanded();
       if(window.g3dSyncExpanded) window.g3dSyncExpanded();
@@ -1131,6 +1132,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       trackAllBtn.textContent = 'Track all';
       trackAllBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
+        var tracked = 0;
         childUl.querySelectorAll('.tree-item[data-key]').forEach(function(t) {
           var tk = t.dataset.key;
           if (!STATE.progress[tk]) {
@@ -1140,9 +1142,16 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
             if (dot) dot.className = 'track-dot drilling';
             var pill = t.querySelector('.progress-pill');
             if (pill) { pill.className = 'progress-pill drilling'; pill.textContent = 'Drilling'; }
+            tracked++;
           }
         });
         saveState(); updateStats(); refreshAllViews();
+        // Flash feedback
+        var origText = trackAllBtn.textContent;
+        trackAllBtn.textContent = tracked > 0 ? '\u2713 ' + tracked + ' tracked' : '\u2713 All tracked';
+        trackAllBtn.style.borderColor = 'var(--blue)';
+        trackAllBtn.style.color = 'var(--blue)';
+        setTimeout(function() { trackAllBtn.textContent = origText; trackAllBtn.style.borderColor = ''; trackAllBtn.style.color = ''; }, 1200);
       });
       content.appendChild(trackAllBtn);
       // Heading click: scroll + highlight + expand only — no selection, no detail view
@@ -1150,7 +1159,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
         // Force expand (never collapse on heading click)
         if (li.classList.contains('collapsed')) {
           li.classList.remove('collapsed');
-          toggle.textContent = '−';
+          toggle.textContent = '\u25BE';
           EXPANDED.add(key);
           if(window.cmSyncExpanded) window.cmSyncExpanded();
           if(window.g3dSyncExpanded) window.g3dSyncExpanded();
@@ -1174,7 +1183,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
         // Auto-expand children when selecting (if collapsed)
         if (hasChildren && li.classList.contains('collapsed')) {
           li.classList.remove('collapsed');
-          toggle.textContent = '−';
+          toggle.textContent = '\u25BE';
           EXPANDED.add(key);
         }
       });
@@ -1183,7 +1192,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
           e.stopPropagation();
           li.classList.toggle('collapsed');
           const isNowCollapsed = li.classList.contains('collapsed');
-          toggle.textContent = isNowCollapsed ? '+' : '−';
+          toggle.textContent = isNowCollapsed ? '\u25B8' : '\u25BE';
           if (isNowCollapsed) EXPANDED.delete(key); else EXPANDED.add(key);
           if(window.cmSyncExpanded) window.cmSyncExpanded();
           if(window.g3dSyncExpanded) window.g3dSyncExpanded();
@@ -1655,7 +1664,7 @@ document.getElementById('refCollapseAll').addEventListener('click', () => {
     if (li.querySelector(':scope > .children')) {
       li.classList.add('collapsed');
       const tog = li.querySelector(':scope > .node > .node-toggle');
-      if (tog && !tog.classList.contains('leaf')) tog.textContent = '+';
+      if (tog && !tog.classList.contains('leaf')) tog.textContent = '\u25B8';
     }
   });
   if(window.cmSyncExpanded) window.cmSyncExpanded();
@@ -2296,8 +2305,8 @@ window.initGraph3D = (function() {
                 }
                 if (detailEl.children.length === 0) {
                   var emptyEl = document.createElement('div');
-                  emptyEl.style.cssText = 'font-size:10px;color:#4a5568;font-style:italic;font-family:Barlow Condensed,monospace;';
-                  emptyEl.textContent = 'no sub-items';
+                  emptyEl.style.cssText = 'font-size:10px;color:#556;font-family:Barlow Condensed,monospace;padding:4px 0;';
+                  emptyEl.textContent = 'Content coming soon \u2014 videos and details appear here when added';
                   detailEl.appendChild(emptyEl);
                 }
                 detailEl.style.display = 'block';
