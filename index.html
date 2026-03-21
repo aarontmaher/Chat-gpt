@@ -24,6 +24,9 @@
   --green: #34d399;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
 body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ── HEADER ── */
@@ -282,7 +285,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
   <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
   <div style="position:relative;">
-    <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu">&#8942;</button>
+    <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu" aria-label="Open menu" aria-haspopup="true">&#8942;</button>
     <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
       <button id="kbdHelpToggle" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Keyboard shortcuts</button>
       <button id="diagToggle" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Diagnostics</button>
@@ -306,9 +309,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
 </div>
 
-<div class="view-tabs">
-  <button class="view-tab" data-view="reference">Reference</button>
-  <button class="view-tab active" data-view="graph3d">Network</button>
+<div class="view-tabs" role="tablist">
+  <button class="view-tab" data-view="reference" aria-label="Reference view" role="tab">Reference</button>
+  <button class="view-tab active" data-view="graph3d" aria-label="Network view" role="tab">Network</button>
 </div>
 
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
@@ -318,7 +321,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <div id="refBottomBar" style="flex-shrink:0;display:flex;align-items:center;gap:2px;background:rgba(18,21,28,0.92);border-top:1px solid rgba(255,255,255,0.08);padding:5px 6px;backdrop-filter:blur(16px);flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:6px;background:#181c26;border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:0 10px;height:30px;">
       <span style="color:#4a5568;font-size:11px;">⌕</span>
-      <input type="text" id="refSearch" placeholder="Search techniques..." style="background:none;border:none;outline:none;color:#c4cdd8;font-family:'DM Mono',monospace;font-size:11px;width:140px;">
+      <input type="text" id="refSearch" placeholder="Search techniques..." aria-label="Search techniques" style="background:none;border:none;outline:none;color:#c4cdd8;font-family:'DM Mono',monospace;font-size:11px;width:140px;">
     </div>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn active" data-filter="all">All</button>
@@ -349,7 +352,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <div id="g3dToolbar" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:rgba(18,21,28,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:5px 6px;backdrop-filter:blur(16px);z-index:10;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:calc(100vw - 24px);overflow-x:auto;">
     <div style="display:flex;align-items:center;gap:6px;background:#181c26;border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:0 10px;height:30px;">
       <span style="color:#4a5568;font-size:11px;">⌕</span>
-      <input type="text" id="g3dSearch" placeholder="Search positions..." style="background:none;border:none;outline:none;color:#c4cdd8;font-family:'DM Mono',monospace;font-size:11px;width:130px;">
+      <input type="text" id="g3dSearch" placeholder="Search positions..." aria-label="Search positions" style="background:none;border:none;outline:none;color:#c4cdd8;font-family:'DM Mono',monospace;font-size:11px;width:130px;">
     </div>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.08);margin:0 4px;"></div>
     <button class="g3d-tb-btn active" data-status="all">All</button>
@@ -3644,7 +3647,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   <div id="videoModalInner" style="position:relative;width:min(88vw,960px);max-height:90vh;">
     <div id="videoModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;color:#e8edf5;letter-spacing:0.5px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;"></div>
     <div id="videoModalPlayer" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 12px 48px rgba(0,0,0,0.6);"></div>
-    <button id="videoModalClose" style="position:absolute;top:4px;right:4px;background:rgba(14,16,21,0.9);border:1px solid rgba(255,255,255,0.12);color:#c4cdd8;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;">&#215;</button>
+    <button id="videoModalClose" aria-label="Close video" style="position:absolute;top:4px;right:4px;background:rgba(14,16,21,0.9);border:1px solid rgba(255,255,255,0.12);color:#c4cdd8;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;">&#215;</button>
   </div>
 </div>
 <script>
