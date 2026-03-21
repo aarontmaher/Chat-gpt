@@ -34,7 +34,7 @@ test.describe('GrapplingMap smoke suite', () => {
       return { edgeCount: net.edgeCount || 0, nodeCount: net.nodeCount || 0,
         inNetwork: net.nodes ? net.nodes.filter(function(n){return n.in_network;}).length : 0 };
     });
-    expect(netData.edgeCount).toBe(36);
+    expect(netData.edgeCount).toBe(57);
     expect(state.guard).toBe(19);
     expect(state.sections).toBe(4);
   });

@@ -413,8 +413,15 @@ def sections_to_network(sections):
     # Populate node_id_by_label for all canonical positions (any depth)
     # Prefer shallowest node when labels collide
     for n in nodes:
-        if n['label'] in canonical_set and n['label'] not in node_id_by_label:
-            node_id_by_label[n['label']] = n['id']
+        if n['label'] in canonical_set:
+            if n['label'] not in node_id_by_label:
+                node_id_by_label[n['label']] = n['id']
+            else:
+                # Replace with shallower node (lower depth = more canonical)
+                existing_id = node_id_by_label[n['label']]
+                existing_node = next(nd for nd in nodes if nd['id'] == existing_id)
+                if n['depth'] < existing_node['depth']:
+                    node_id_by_label[n['label']] = n['id']
 
     # Re-run edge building with populated label→ID map
     edges, warnings, canonical_set = _build_transition_edges(
