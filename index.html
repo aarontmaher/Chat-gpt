@@ -508,7 +508,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
 
   <!-- Legend — static fallback; overwritten by initGraph3D from SECTIONS -->
-  <div id="g3dLegend" style="position:absolute;top:16px;right:280px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:#667;pointer-events:none;z-index:5;line-height:2;transition:right 0.25s;background:rgba(14,16,21,0.7);border:1px solid rgba(255,255,255,0.05);border-radius:6px;padding:8px 12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);">
+  <div id="g3dLegend" style="position:absolute;top:16px;right:280px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:#667;pointer-events:none;z-index:5;line-height:2;transition:right 0.25s,opacity 0.25s;background:rgba(14,16,21,0.6);border:1px solid rgba(255,255,255,0.04);border-radius:6px;padding:6px 10px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0.8;">
     <div style="display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#f0c040;display:inline-block;"></span>Wrestling</div>
     <div style="display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#e05a30;display:inline-block;"></span>Guard</div>
     <div style="display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#9b72f5;display:inline-block;"></span>Dominant Positions</div>
@@ -2273,6 +2273,7 @@ window.initGraph3D = (function() {
     var displayLabel = nd.label.replace(/\s*\((You|Opponent|Attacker|Defender|Passer|Guard player|Initiative|Defensive)\)\s*$/,'');
     document.getElementById('g3dDetailName').textContent=displayLabel;
     document.getElementById('g3dDetailName').style.color=col;
+    document.getElementById('g3dDetail').style.borderTop='2px solid '+col;
 
     // ── Badges: keep → REF only ───────────────────────────────────────
     var b=document.getElementById('g3dDetailBadges');b.innerHTML='';
@@ -2870,11 +2871,12 @@ window.initGraph3D = (function() {
       if(sx<0||sx>W||sy<0||sy>H)return;
       const isSel=id===selectedId3d,isHov=id===hoveredId3d;
       const col=SECT_CSS3[nd.section_idx]||'#888';
-      const fs=isSel?13:isHov?12:10,alpha=isSel?1.0:isHov?0.9:0.55;
+      const fs=isSel?13:isHov?12:10,alpha=isSel?1.0:isHov?0.9:0.7;
       lctx.save();
       lctx.font=`${isSel?600:400} ${fs}px 'Barlow Condensed',sans-serif`;
       lctx.globalAlpha=alpha;
-      const tw=lctx.measureText(nd.label).width;
+      var displayLabel = nd.label.replace(/\s*\((You|Opponent|Attacker|Defender|Passer|Guard player|Initiative|Defensive)\)\s*$/,'');
+      const tw=lctx.measureText(displayLabel).width;
       const px=sx+nd._r*1.2+4,py=sy+4;
       lctx.fillStyle='rgba(14,16,21,0.75)';
       lctx.beginPath();
@@ -2882,7 +2884,7 @@ window.initGraph3D = (function() {
       else lctx.rect(px-3,py-fs+2,tw+8,fs+4);
       lctx.fill();
       lctx.fillStyle=isSel||isHov?col:'rgba(160,170,190,0.85)';
-      lctx.fillText(nd.label,px,py);
+      lctx.fillText(displayLabel,px,py);
       lctx.restore();
     });
   }
