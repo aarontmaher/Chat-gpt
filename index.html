@@ -351,6 +351,13 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <div style="position:relative;">
     <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu" aria-label="Open menu" aria-haspopup="true">&#8942;</button>
     <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
+      <button id="menuRecentBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Recent techniques</button>
+      <button id="menuDrillingBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">My Drilling list</button>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+      <button id="menuExportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Export progress</button>
+      <button id="menuImportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Import progress</button>
+      <button id="menuResetBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#f85149;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Reset all progress</button>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
       <button id="kbdHelpToggle" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Keyboard shortcuts</button>
       <button id="diagToggle" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Diagnostics</button>
     </div>
@@ -557,7 +564,21 @@ function saveState() {
   try {
     localStorage.setItem('grapplingProgress', JSON.stringify(STATE.progress));
     localStorage.setItem('grapplingNotes', JSON.stringify(STATE.notes));
+    // Save app state for resume
+    var appState = {
+      tab: document.getElementById('graph3dView').style.display !== 'none' ? 'graph3d' : 'reference',
+      selected: SELECTED_NODE || null,
+      recentViewed: STATE.recentViewed || []
+    };
+    localStorage.setItem('grapplingAppState', JSON.stringify(appState));
   } catch(e) {}
+}
+// Track recently viewed techniques
+function addRecentView(key, label, section) {
+  if (!STATE.recentViewed) STATE.recentViewed = [];
+  STATE.recentViewed = STATE.recentViewed.filter(function(r) { return r.key !== key; });
+  STATE.recentViewed.unshift({ key: key, label: label, section: section, ts: Date.now() });
+  if (STATE.recentViewed.length > 10) STATE.recentViewed = STATE.recentViewed.slice(0, 10);
 }
 
 function loadState() {
@@ -566,6 +587,14 @@ function loadState() {
     const n = localStorage.getItem('grapplingNotes');
     if (p) STATE.progress = JSON.parse(p);
     if (n) STATE.notes = JSON.parse(n);
+    // Restore app state
+    var as = localStorage.getItem('grapplingAppState');
+    if (as) {
+      var appState = JSON.parse(as);
+      STATE._resumeTab = appState.tab || null;
+      STATE._resumeSelected = appState.selected || null;
+      STATE.recentViewed = appState.recentViewed || [];
+    }
   } catch(e) {}
 }
 
@@ -630,7 +659,10 @@ const SCHEMA_NAMES = new Set(['Setups / Entries','Control','Offence','Defence / 
 
 function setSelectedNode(key, label, section, vidUrl, liveUrl) {
   SELECTED_NODE = key ? { key, label, section, v: vidUrl || null, l: liveUrl || null } : null;
+  if (key && label) { addRecentView(key, label, section); saveState(); }
   updateBottomBarMedia();
+  // Hide Reference onboarding on first selection
+  var ro = document.getElementById('refOnboarding'); if (ro) ro.style.display = 'none';
 }
 function updateBottomBarMedia() {
   var containers = [document.getElementById('refMediaBtns'), document.getElementById('g3dMediaBtns')];
@@ -1198,7 +1230,9 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
           if (normalizeSegment(occ.srcPositionLabel) === posNorm || normalizeSegment(occ.destLabel) === posNorm) otCount++;
         });
       }
-      statsBar.textContent = 'Techniques: '+techCount+' \u00b7 Tracked: '+trackedCount+(otCount > 0 ? ' \u00b7 Transitions: '+otCount : '');
+      var pctTracked = techCount > 0 ? Math.round(trackedCount / techCount * 100) : 0;
+      statsBar.innerHTML = 'Techniques: '+techCount+' \u00b7 Tracked: '+trackedCount+(otCount > 0 ? ' \u00b7 Transitions: '+otCount : '')
+        + (trackedCount > 0 ? ' <span style="display:inline-block;width:40px;height:3px;background:var(--border);border-radius:2px;vertical-align:middle;margin-left:6px;"><span style="display:block;height:3px;background:var(--blue);border-radius:2px;width:'+pctTracked+'%;"></span></span>' : '');
       statsBar.dataset.posKey = key;
       li.insertBefore(statsBar, childUl);
     }
@@ -3256,6 +3290,67 @@ document.addEventListener('keydown', e => {
   });
   document.addEventListener('click', function() { menu.style.display = 'none'; });
 })();
+// Export progress
+document.getElementById('menuExportBtn').addEventListener('click', function() {
+  var data = { progress: STATE.progress, notes: STATE.notes, recentViewed: STATE.recentViewed || [], exportedAt: new Date().toISOString() };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grappling-map-progress-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+// Import progress
+document.getElementById('menuImportBtn').addEventListener('click', function() {
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json';
+  inp.addEventListener('change', function() {
+    if (!inp.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var data = JSON.parse(reader.result);
+        if (data.progress) STATE.progress = data.progress;
+        if (data.notes) STATE.notes = data.notes;
+        if (data.recentViewed) STATE.recentViewed = data.recentViewed;
+        saveState(); updateStats(); refreshAllViews();
+        alert('Progress imported successfully.');
+      } catch(e) { alert('Could not read file. Make sure it is a valid Grappling Map export.'); }
+    };
+    reader.readAsText(inp.files[0]);
+  });
+  inp.click();
+});
+// Reset all progress
+document.getElementById('menuResetBtn').addEventListener('click', function() {
+  if (!confirm('Reset all progress, notes, and tracking data? This cannot be undone.')) return;
+  STATE.progress = {};
+  STATE.notes = {};
+  STATE.recentViewed = [];
+  saveState(); updateStats(); refreshAllViews();
+  alert('All progress has been reset.');
+});
+// Recent techniques panel
+document.getElementById('menuRecentBtn').addEventListener('click', function() {
+  var recent = STATE.recentViewed || [];
+  if (recent.length === 0) { alert('No recently viewed techniques yet.'); return; }
+  var msg = 'Recently viewed:\n\n' + recent.map(function(r, i) { return (i+1) + '. ' + r.label + ' (' + r.section + ')'; }).join('\n');
+  alert(msg);
+});
+// Drilling list
+document.getElementById('menuDrillingBtn').addEventListener('click', function() {
+  var drills = [];
+  Object.entries(STATE.progress).forEach(function(kv) {
+    if (kv[1] === 'drilling') {
+      var segments = kv[0].split('|');
+      var label = segments[segments.length - 1].replace(/_/g, ' ');
+      drills.push(label);
+    }
+  });
+  if (drills.length === 0) { alert('No techniques marked as Drilling yet.\n\nSelect techniques and click Track to start.'); return; }
+  alert('Drilling list (' + drills.length + '):\n\n' + drills.join('\n'));
+});
 document.getElementById('kbdHelpToggle').addEventListener('click', function() {
   document.getElementById('headerMenu').style.display = 'none';
   var hp = document.getElementById('kbdHelpPanel');
@@ -3321,8 +3416,16 @@ if (typeof SECTIONS === 'undefined' || !SECTIONS.length) {
 _log('TechPositionMap built:', window._techPositionMap.size);
 markBuiltOut();
 updateStats();
-// Boot with Network (3D graph) as default view
-requestAnimationFrame(() => requestAnimationFrame(initGraph3D));
+// Resume: restore last tab if available, otherwise default to Network
+if (STATE._resumeTab === 'reference') {
+  switchToTab('reference');
+  // Restore selection if available
+  if (STATE._resumeSelected && STATE._resumeSelected.label) {
+    setTimeout(function() { switchToReferenceNode(STATE._resumeSelected.label, STATE._resumeSelected.section); }, 200);
+  }
+} else {
+  requestAnimationFrame(() => requestAnimationFrame(initGraph3D));
+}
 // DIAG: verify NET_NODES key format for position-matching branch selection
 (function(){ var sn = typeof NET_NODES !== 'undefined' ? NET_NODES.find(function(n){return n.in_network;}) : null; if(sn) _log('DIAG sample node:', sn.label, sn.key); })();
 (function() {
