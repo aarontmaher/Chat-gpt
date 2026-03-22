@@ -92,7 +92,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .node .btn-video { opacity: 0.7; transition: all 0.15s; }
 .node { display: flex; align-items: flex-start; gap: 6px; padding: 4px 16px 4px 8px; transition: background 0.1s; min-height: 32px; }
 .node:hover { background: rgba(255,255,255,0.06); }
-.tree-item[data-schema="0"]:not([data-ot="1"]):not([data-notes="1"]) > .node:hover { background: rgba(255,255,255,0.07); cursor: pointer; }
+.tree-item[data-schema="0"]:not([data-ot="1"]):not([data-notes="1"]) > .node:hover { background: rgba(255,255,255,0.07); cursor: pointer; box-shadow: inset 2px 0 0 rgba(232,255,71,0.2); }
 .tree-item[data-schema="0"] > .node:hover .node-label { color: var(--text); }
 .node-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin-top: 3px; border-radius: 3px; transition: all 0.15s; }
 .node-toggle:hover { background: var(--border); color: var(--text); }
@@ -127,16 +127,19 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .inline-player > div { border-radius: 6px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
 /* Position-level rows (depth 0) */
 .tree-item[data-depth="0"] > .node .node-label { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; color: var(--text); }
-.tree-item[data-depth="0"] > .node { min-height: 36px; }
+.tree-item[data-depth="0"] > .node { min-height: 38px; padding-top: 6px; padding-bottom: 6px; }
+.tree-item[data-depth="0"] { border-top: 1px solid rgba(255,255,255,0.03); margin-top: 2px; }
 /* Schema heading rows */
 .tree-item[data-schema="1"] > .node .node-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
 .tree-item[data-schema="1"] > .node { background: rgba(255,255,255,0.015); border-radius: 3px; margin: 1px 0; }
 /* OT transition rows (contain arrow) */
-.tree-item[data-ot="1"] > .node .node-label { font-size: 11px; color: #778; font-style: italic; }
-.tree-item[data-ot="1"] > .node .node-label::before { content: '↗ '; color: #ff9966; font-style: normal; }
+.tree-item[data-ot="1"] > .node .node-label { font-size: 11px; color: #778; font-style: italic; opacity: 0.8; }
+.tree-item[data-ot="1"] > .node .node-label::before { content: '\2192 '; color: #ff9966; font-style: normal; font-size: 10px; }
+.tree-item[data-ot="1"] > .node { background: rgba(255,153,102,0.015); border-radius: 3px; }
 /* Notes rows */
-.tree-item[data-notes="1"] > .node .node-label { font-size: 11px; color: var(--accent3); font-style: italic; }
-.tree-item[data-notes="1"] > .node .node-label::before { content: ''; display: inline-block; width: 3px; height: 3px; background: var(--accent3); border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.tree-item[data-notes="1"] > .node .node-label { font-size: 11px; color: var(--accent3); font-style: italic; opacity: 0.8; }
+.tree-item[data-notes="1"] > .node .node-label::before { content: '\270E '; color: var(--accent3); font-style: normal; font-size: 10px; }
+.tree-item[data-notes="1"] > .node { background: rgba(167,139,250,0.02); border-radius: 3px; }
 
 /* ── 3D GRAPH VIEW ── */
 #graph3dView { position: relative; background: #0e1015; overflow: hidden; }
@@ -1079,6 +1082,10 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   // Progress pill
   const prog = document.createElement('div');
   prog.className = 'progress-pill';
+  prog.setAttribute('aria-label', 'Track status');
+  prog.setAttribute('role', 'button');
+  prog.setAttribute('tabindex', '0');
+  prog.addEventListener('keydown', function(e2) { if (e2.key === 'Enter' || e2.key === ' ') { e2.preventDefault(); prog.click(); } });
   const curProg = STATE.progress[key] || 'none';
   if (curProg === 'drilling') { prog.classList.add('drilling'); prog.textContent = 'Drilling'; }
   else if (curProg === 'learned') { prog.classList.add('learned'); prog.textContent = 'Learned'; }
@@ -1101,6 +1108,8 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   const noteBtn = document.createElement('button');
   noteBtn.className = STATE.notes[key] ? 'btn-note has-note' : 'btn-note';
   noteBtn.textContent = '✎';
+  noteBtn.setAttribute('aria-label', 'Add note');
+  noteBtn.title = 'Add note';
   noteBtn.addEventListener('click', e => { e.stopPropagation(); openNotePanel(key, node.t); });
   li.dataset.hasNote = STATE.notes[key] ? '1' : '0';
   actions.appendChild(noteBtn);
@@ -1183,6 +1192,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       var trackAllBtn = document.createElement('button');
       trackAllBtn.className = 'btn-track-all';
       trackAllBtn.textContent = 'Track all';
+      trackAllBtn.setAttribute('aria-label', 'Mark all techniques as Drilling');
       trackAllBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         var tracked = 0;
@@ -1263,7 +1273,10 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     }
   }
 
-  STATE.totalNodes++;
+  // Only count real techniques (not schema headings, not OT lines, not Notes)
+  if (!SCHEMA_NAMES.has(node.t.trim()) && !(node.t && node.t.includes('\u2192')) && node.t.trim() !== 'Notes') {
+    STATE.totalNodes++;
+  }
   parentUl.appendChild(li);
 }
 
@@ -1278,7 +1291,18 @@ function buildSections() {
     const header = document.createElement('div');
     header.className = 'section-header';
     var posCount = section.nodes ? section.nodes.length : 0;
-    header.innerHTML = '<div class="section-dot" style="background:'+section.color+';box-shadow:0 0 4px '+section.color+'40;"></div><div class="section-title">'+section.title+'</div><span style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">'+posCount+' positions</span><div class="section-chevron">&#9662;</div>';
+    // Count real techniques in section (recursive, excluding schema/OT/Notes)
+    function countSectionTechniques(nodes) {
+      var c = 0;
+      (nodes || []).forEach(function(n) {
+        var t = (n.t || '').trim();
+        if (t && !SCHEMA_NAMES.has(t) && !t.includes('\u2192') && t !== 'Notes') c++;
+        if (n.c) c += countSectionTechniques(n.c);
+      });
+      return c;
+    }
+    var techTotal = countSectionTechniques(section.nodes);
+    header.innerHTML = '<div class="section-dot" style="background:'+section.color+';box-shadow:0 0 4px '+section.color+'40;"></div><div class="section-title">'+section.title+'</div><span style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">'+posCount+' positions \u00b7 '+techTotal+' techniques</span><div class="section-chevron">&#9662;</div>';
     header.addEventListener('click', e => {
       div.classList.toggle('collapsed');
       const sectionKey = makeKey(section.title, section.title);
