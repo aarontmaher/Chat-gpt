@@ -3815,7 +3815,7 @@ document.getElementById('menuReadinessBtn').addEventListener('click', function()
         if (!t || SKIP_NAMES.has(t) || ARROW_CHAR in t || t === 'Notes') { if (n.c) findMissing(n.c, path); return; }
         var hasVid = !!n.v;
         if (!hasVid && n.c) n.c.forEach(function(ch) { if (ch.t === 'Instructional video' && ch.v) hasVid = true; });
-        if (!hasVid) missing.push({ label: t, meta: s.title + (path ? ' · ' + path : '') });
+        if (!hasVid) missing.push({ label: t, meta: s.title + (path ? ' · ' + path : ''), section: s.title, onClick: function() { closeListPanel(); switchToReferenceNode(t, s.title); } });
         if (n.c) findMissing(n.c, path ? path + ' › ' + t : t);
       });
     }
@@ -3823,6 +3823,41 @@ document.getElementById('menuReadinessBtn').addEventListener('click', function()
   });
   missing.slice(0, 30).forEach(function(m) { items.push(m); });
   if (missing.length > 30) items.push({ label: '... and ' + (missing.length - 30) + ' more', meta: '' });
+  // Position-level density ranking
+  items.push({ label: 'Positions by Content Density', meta: '', isHeader: true });
+  var posDensity = [];
+  SECTIONS.forEach(function(s) {
+    (s.nodes || []).forEach(function(pos) {
+      var ps = walkContent([pos]);
+      posDensity.push({ label: pos.t, section: s.title, techniques: ps.techniques, videos: ps.withVideo, empty: ps.empty,
+        onClick: function() { closeListPanel(); switchToReferenceNode(pos.t, s.title); }
+      });
+    });
+  });
+  posDensity.sort(function(a,b) { return a.techniques - b.techniques; });
+  posDensity.slice(0, 15).forEach(function(p) {
+    var vidPct = p.techniques > 0 ? Math.round(p.videos / p.techniques * 100) : 0;
+    items.push({ label: p.label, meta: p.section + ' · ' + p.techniques + ' tech · ' + p.videos + ' vid', bar: vidPct, onClick: p.onClick });
+  });
+  if (posDensity.length > 15) items.push({ label: '... and ' + (posDensity.length - 15) + ' more positions', meta: '' });
+  // Export button
+  items.push({ label: 'Export Report', meta: '', isHeader: true });
+  items.push({ label: 'Download as JSON', meta: 'readiness-report.json', onClick: function() {
+    var report = {
+      timestamp: new Date().toISOString(),
+      totals: totalStats,
+      videoCoverage: totalVidPct + '%',
+      sections: [],
+      missingVideo: missing.map(function(m) { return { technique: m.label, context: m.meta }; }),
+      positionDensity: posDensity.map(function(p) { return { position: p.label, section: p.section, techniques: p.techniques, videos: p.videos }; })
+    };
+    SECTIONS.forEach(function(s) { var st = walkContent(s.nodes); st.name = s.title; st.positions = s.nodes.length; report.sections.push(st); });
+    var blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'readiness-report-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast('Readiness report exported');
+  }});
   openListPanel('Content Readiness (' + totalStats.techniques + ' techniques, ' + totalVidPct + '% video coverage)', items);
 });
 document.getElementById('kbdHelpToggle').addEventListener('click', function() {
