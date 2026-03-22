@@ -91,7 +91,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .tree-item.search-first-result > .node { background: rgba(232,255,71,0.06); border-radius: 3px; }
 .node .btn-video { opacity: 0.7; transition: all 0.15s; }
 .node { display: flex; align-items: flex-start; gap: 6px; padding: 4px 16px 4px 8px; transition: background 0.1s; min-height: 32px; }
-.node:hover { background: rgba(255,255,255,0.05); }
+.node:hover { background: rgba(255,255,255,0.06); }
+.tree-item[data-schema="0"]:not([data-ot="1"]):not([data-notes="1"]) > .node:hover { background: rgba(255,255,255,0.07); cursor: pointer; }
 .tree-item[data-schema="0"] > .node:hover .node-label { color: var(--text); }
 .node-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; margin-top: 3px; border-radius: 3px; transition: all 0.15s; }
 .node-toggle:hover { background: var(--border); color: var(--text); }
@@ -129,6 +130,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .tree-item[data-depth="0"] > .node { min-height: 36px; }
 /* Schema heading rows */
 .tree-item[data-schema="1"] > .node .node-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
+.tree-item[data-schema="1"] > .node { background: rgba(255,255,255,0.015); border-radius: 3px; margin: 1px 0; }
 /* OT transition rows (contain arrow) */
 .tree-item[data-ot="1"] > .node .node-label { font-size: 11px; color: #778; font-style: italic; }
 .tree-item[data-ot="1"] > .node .node-label::before { content: '↗ '; color: #ff9966; font-style: normal; }
@@ -1275,7 +1277,8 @@ function buildSections() {
     div.dataset.section = section.title;
     const header = document.createElement('div');
     header.className = 'section-header';
-    header.innerHTML = '<div class="section-dot" style="background:'+section.color+';box-shadow:0 0 4px '+section.color+'40;"></div><div class="section-title">'+section.title+'</div><div class="section-chevron">&#9662;</div>';
+    var posCount = section.nodes ? section.nodes.length : 0;
+    header.innerHTML = '<div class="section-dot" style="background:'+section.color+';box-shadow:0 0 4px '+section.color+'40;"></div><div class="section-title">'+section.title+'</div><span style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">'+posCount+' positions</span><div class="section-chevron">&#9662;</div>';
     header.addEventListener('click', e => {
       div.classList.toggle('collapsed');
       const sectionKey = makeKey(section.title, section.title);
