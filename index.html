@@ -358,6 +358,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <button id="menuGapsBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Explore More</button>
       <button id="menuRandomBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Random Drill</button>
       <button id="menuTimerBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Drill Timer</button>
+      <button id="menuCircuitBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Drill Circuit</button>
       <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
       <button id="menuExportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Export progress</button>
       <button id="menuImportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Import progress</button>
@@ -578,7 +579,8 @@ function saveState() {
       tab: document.getElementById('graph3dView').style.display !== 'none' ? 'graph3d' : 'reference',
       selected: SELECTED_NODE || null,
       recentViewed: STATE.recentViewed || [],
-      lastPracticed: STATE.lastPracticed || {}
+      lastPracticed: STATE.lastPracticed || {},
+      videosWatched: STATE.videosWatched || {}
     };
     localStorage.setItem('grapplingAppState', JSON.stringify(appState));
   } catch(e) {}
@@ -618,6 +620,7 @@ function loadState() {
       STATE._resumeSelected = appState.selected || null;
       STATE.recentViewed = appState.recentViewed || [];
       STATE.lastPracticed = appState.lastPracticed || {};
+      STATE.videosWatched = appState.videosWatched || {};
     }
   } catch(e) {}
 }
@@ -3506,9 +3509,15 @@ document.getElementById('menuVideosBtn').addEventListener('click', function() {
   var items = [];
   Object.entries(grouped).forEach(function(kv) {
     items.push({ label: '— ' + kv[0] + ' (' + kv[1].length + ') —', meta: '', isHeader: true });
-    kv[1].forEach(function(v) { items.push({ label: v.label, meta: v.meta.replace(kv[0] + ' · ', ''), onClick: function() { closeListPanel(); window.openVideoModal(v.url, v.label + ' — Instructional'); } }); });
+    kv[1].forEach(function(v) {
+      var watched = STATE.videosWatched && STATE.videosWatched[v.url];
+      var metaText = v.meta.replace(kv[0] + ' · ', '');
+      if (watched) metaText = '\u2713 watched' + (metaText ? ' · ' + metaText : '');
+      items.push({ label: v.label, meta: metaText, onClick: function() { closeListPanel(); window.openVideoModal(v.url, v.label + ' — Instructional'); } });
+    });
   });
-  openListPanel('All Videos (' + videos.length + ')', items);
+  var watchedCount = videos.filter(function(v) { return STATE.videosWatched && STATE.videosWatched[v.url]; }).length;
+  openListPanel('All Videos (' + videos.length + ', ' + watchedCount + ' watched)', items);
 });
 // Progress dashboard
 document.getElementById('menuProgressBtn').addEventListener('click', function() {
@@ -3668,6 +3677,76 @@ document.getElementById('menuTimerBtn').addEventListener('click', function() {
   tip.textContent = 'Set a round length, then start drilling';
   display.appendChild(tip);
   body.appendChild(display);
+  panel.style.display = 'block';
+});
+// Drill Circuit
+document.getElementById('menuCircuitBtn').addEventListener('click', function() {
+  var drillKeys = Object.entries(STATE.progress).filter(function(kv) { return kv[1] === 'drilling'; });
+  if (drillKeys.length < 2) { showToast('Need at least 2 drills for a circuit'); return; }
+  var panel = document.getElementById('listPanel');
+  var body = document.getElementById('listPanelBody');
+  document.getElementById('listPanelTitle').textContent = 'Drill Circuit';
+  body.innerHTML = '';
+  // Shuffle and pick up to 5
+  var shuffled = drillKeys.sort(function() { return Math.random() - 0.5; }).slice(0, 5);
+  var circuitItems = shuffled.map(function(kv) {
+    var segs = kv[0].split('|');
+    return { key: kv[0], label: segs[segs.length - 1].replace(/_/g, ' '), section: segs[0].replace(/_/g, ' ') };
+  });
+  // Display circuit
+  var info = document.createElement('div');
+  info.style.cssText = 'text-align:center;padding:8px 0 12px;font-family:Barlow Condensed,sans-serif;font-size:13px;color:#667;';
+  info.textContent = circuitItems.length + ' drills · 2 min each · 30s rest';
+  body.appendChild(info);
+  circuitItems.forEach(function(d, i) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,0.03);';
+    row.innerHTML = '<span style="color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:18px;width:24px;text-align:center;">' + (i+1) + '</span>'
+      + '<span style="flex:1;font-family:Barlow Condensed,monospace;font-size:13px;color:#c4cdd8;">' + d.label + '</span>'
+      + '<span style="font-size:10px;color:#556;font-family:Barlow Condensed,monospace;">' + d.section + '</span>';
+    body.appendChild(row);
+  });
+  // Start button
+  var startWrap = document.createElement('div');
+  startWrap.style.cssText = 'text-align:center;padding:16px 0;';
+  var startBtn = document.createElement('button');
+  startBtn.className = 'g3d-tb-btn';
+  startBtn.style.cssText = 'border-radius:12px;background:var(--accent);color:#000;border:none;padding:0 24px;height:40px;font-size:14px;font-family:Barlow Condensed,sans-serif;';
+  startBtn.textContent = 'Start Circuit';
+  startBtn.addEventListener('click', function() {
+    closeListPanel();
+    // Run circuit: navigate to each drill with timer
+    var idx = 0;
+    function runDrill() {
+      if (idx >= circuitItems.length) { showToast('Circuit complete! ' + circuitItems.length + ' drills done'); return; }
+      var d = circuitItems[idx];
+      showToast('Drill ' + (idx+1) + '/' + circuitItems.length + ': ' + d.label);
+      switchToReferenceNode(d.label, d.section);
+      if (!STATE.lastPracticed) STATE.lastPracticed = {};
+      STATE.lastPracticed[d.key] = Date.now();
+      saveState();
+      idx++;
+      // Auto-advance after 2 min (user can also press S for random or D for drills)
+      setTimeout(function() {
+        if (idx < circuitItems.length) {
+          showToast('Rest 30s, then: ' + circuitItems[idx].label);
+          setTimeout(runDrill, 30000);
+        } else {
+          showToast('Circuit complete! ' + circuitItems.length + ' drills done');
+        }
+      }, 120000);
+    }
+    runDrill();
+  });
+  startWrap.appendChild(startBtn);
+  // Shuffle button
+  var shuffleBtn = document.createElement('button');
+  shuffleBtn.className = 'g3d-tb-btn';
+  shuffleBtn.style.cssText = 'border-radius:12px;margin-left:8px;font-size:12px;';
+  shuffleBtn.textContent = 'Reshuffle';
+  shuffleBtn.addEventListener('click', function() { document.getElementById('menuCircuitBtn').click(); });
+  startWrap.appendChild(shuffleBtn);
+  body.appendChild(startWrap);
   panel.style.display = 'block';
 });
 document.getElementById('kbdHelpToggle').addEventListener('click', function() {
@@ -4207,7 +4286,14 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   var titleEl = document.getElementById('videoModalTitle');
   var closeBtn = document.getElementById('videoModalClose');
 
+  // Track video as watched
+  function markVideoWatched(url) {
+    if (!STATE.videosWatched) STATE.videosWatched = {};
+    STATE.videosWatched[url] = Date.now();
+    saveState();
+  }
   window.openVideoModal = function(url, title) {
+    markVideoWatched(url);
     var vidId = url.split('/').pop().split('?')[0];
     titleEl.textContent = title || '';
     // Show spinner while iframe loads
