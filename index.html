@@ -2931,7 +2931,9 @@ window.initGraph3D = (function() {
   };
 
   return function() {
-    const wrap=document.getElementById('g3dCanvas').parentElement;
+    var canvasEl=document.getElementById('g3dCanvas');
+    if(!canvasEl||!canvasEl.parentElement){setTimeout(initGraph3D,50);return;}
+    const wrap=canvasEl.parentElement;
     const W=wrap.clientWidth,H=wrap.clientHeight;
     if(!W||!H){setTimeout(initGraph3D,50);return;}
 
@@ -3453,9 +3455,15 @@ function showToast(msg) {
   document.body.appendChild(t);
   setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 300); }, 2000);
 }
-document.getElementById('listPanelClose').addEventListener('click', closeListPanel);
-document.getElementById('listPanel').addEventListener('click', function(e) { if (e.target === this) closeListPanel(); });
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && document.getElementById('listPanel').style.display === 'block') { closeListPanel(); e.stopPropagation(); } });
+// List panel event listeners (elements may be defined later in DOM — use DOMContentLoaded-safe approach)
+(function initListPanelEvents() {
+  var cl = document.getElementById('listPanelClose');
+  var lp = document.getElementById('listPanel');
+  if (!cl || !lp) { setTimeout(initListPanelEvents, 100); return; }
+  cl.addEventListener('click', closeListPanel);
+  lp.addEventListener('click', function(e) { if (e.target === lp) closeListPanel(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && lp.style.display === 'block') { closeListPanel(); e.stopPropagation(); } });
+})();
 // Recent techniques
 document.getElementById('menuRecentBtn').addEventListener('click', function() {
   var recent = STATE.recentViewed || [];
