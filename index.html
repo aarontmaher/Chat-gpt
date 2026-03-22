@@ -568,7 +568,8 @@ function saveState() {
     var appState = {
       tab: document.getElementById('graph3dView').style.display !== 'none' ? 'graph3d' : 'reference',
       selected: SELECTED_NODE || null,
-      recentViewed: STATE.recentViewed || []
+      recentViewed: STATE.recentViewed || [],
+      lastPracticed: STATE.lastPracticed || {}
     };
     localStorage.setItem('grapplingAppState', JSON.stringify(appState));
   } catch(e) {}
@@ -579,6 +580,19 @@ function addRecentView(key, label, section) {
   STATE.recentViewed = STATE.recentViewed.filter(function(r) { return r.key !== key; });
   STATE.recentViewed.unshift({ key: key, label: label, section: section, ts: Date.now() });
   if (STATE.recentViewed.length > 10) STATE.recentViewed = STATE.recentViewed.slice(0, 10);
+  // Track last-practiced timestamp
+  if (!STATE.lastPracticed) STATE.lastPracticed = {};
+  STATE.lastPracticed[key] = Date.now();
+}
+function timeAgo(ts) {
+  var diff = Date.now() - ts;
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  var days = Math.floor(hrs / 24);
+  return days + 'd ago';
 }
 
 function loadState() {
@@ -594,6 +608,7 @@ function loadState() {
       STATE._resumeTab = appState.tab || null;
       STATE._resumeSelected = appState.selected || null;
       STATE.recentViewed = appState.recentViewed || [];
+      STATE.lastPracticed = appState.lastPracticed || {};
     }
   } catch(e) {}
 }
@@ -3299,6 +3314,7 @@ document.getElementById('menuExportBtn').addEventListener('click', function() {
   a.download = 'grappling-map-progress-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   URL.revokeObjectURL(a.href);
+  showToast('Progress exported');
 });
 // Import progress
 document.getElementById('menuImportBtn').addEventListener('click', function() {
@@ -3315,8 +3331,8 @@ document.getElementById('menuImportBtn').addEventListener('click', function() {
         if (data.notes) STATE.notes = data.notes;
         if (data.recentViewed) STATE.recentViewed = data.recentViewed;
         saveState(); updateStats(); refreshAllViews();
-        alert('Progress imported successfully.');
-      } catch(e) { alert('Could not read file. Make sure it is a valid Grappling Map export.'); }
+        showToast('Progress imported successfully');
+      } catch(e) { showToast('Could not read file — check format'); }
     };
     reader.readAsText(inp.files[0]);
   });
@@ -3329,14 +3345,58 @@ document.getElementById('menuResetBtn').addEventListener('click', function() {
   STATE.notes = {};
   STATE.recentViewed = [];
   saveState(); updateStats(); refreshAllViews();
-  alert('All progress has been reset.');
+  showToast('All progress has been reset');
 });
-// Recent techniques panel
+// List panel helpers
+function openListPanel(title, items) {
+  var panel = document.getElementById('listPanel');
+  var body = document.getElementById('listPanelBody');
+  document.getElementById('listPanelTitle').textContent = title;
+  body.innerHTML = '';
+  if (items.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:20px 0;color:#556;font-family:Barlow Condensed,sans-serif;font-size:13px;">No items yet</div>';
+  } else {
+    items.forEach(function(item) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background 0.1s;border-radius:4px;';
+      row.addEventListener('mouseenter', function() { row.style.background = 'rgba(255,255,255,0.04)'; });
+      row.addEventListener('mouseleave', function() { row.style.background = ''; });
+      var label = document.createElement('div');
+      label.style.cssText = 'flex:1;font-family:Barlow Condensed,monospace;font-size:13px;color:#c4cdd8;';
+      label.textContent = item.label;
+      row.appendChild(label);
+      if (item.meta) {
+        var meta = document.createElement('div');
+        meta.style.cssText = 'font-size:10px;color:#556;font-family:Barlow Condensed,monospace;';
+        meta.textContent = item.meta;
+        row.appendChild(meta);
+      }
+      if (item.onClick) row.addEventListener('click', item.onClick);
+      body.appendChild(row);
+    });
+  }
+  panel.style.display = 'block';
+}
+function closeListPanel() { document.getElementById('listPanel').style.display = 'none'; }
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(14,16,21,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 20px;font-family:Barlow Condensed,sans-serif;font-size:13px;color:#c4cdd8;z-index:3000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity 0.3s;pointer-events:none;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 300); }, 2000);
+}
+document.getElementById('listPanelClose').addEventListener('click', closeListPanel);
+document.getElementById('listPanel').addEventListener('click', function(e) { if (e.target === this) closeListPanel(); });
+// Recent techniques
 document.getElementById('menuRecentBtn').addEventListener('click', function() {
   var recent = STATE.recentViewed || [];
-  if (recent.length === 0) { alert('No recently viewed techniques yet.'); return; }
-  var msg = 'Recently viewed:\n\n' + recent.map(function(r, i) { return (i+1) + '. ' + r.label + ' (' + r.section + ')'; }).join('\n');
-  alert(msg);
+  openListPanel('Recent Techniques', recent.map(function(r) {
+    return {
+      label: r.label,
+      meta: r.section + (r.ts ? ' · ' + timeAgo(r.ts) : ''),
+      onClick: function() { closeListPanel(); switchToReferenceNode(r.label, r.section); }
+    };
+  }));
 });
 // Drilling list
 document.getElementById('menuDrillingBtn').addEventListener('click', function() {
@@ -3345,11 +3405,18 @@ document.getElementById('menuDrillingBtn').addEventListener('click', function() 
     if (kv[1] === 'drilling') {
       var segments = kv[0].split('|');
       var label = segments[segments.length - 1].replace(/_/g, ' ');
-      drills.push(label);
+      var section = segments[0].replace(/_/g, ' ');
+      drills.push({ key: kv[0], label: label, meta: section });
     }
   });
-  if (drills.length === 0) { alert('No techniques marked as Drilling yet.\n\nSelect techniques and click Track to start.'); return; }
-  alert('Drilling list (' + drills.length + '):\n\n' + drills.join('\n'));
+  openListPanel('My Drills (' + drills.length + ')', drills.map(function(d) {
+    var lp = STATE.lastPracticed && STATE.lastPracticed[d.key];
+    return {
+      label: d.label,
+      meta: d.meta + (lp ? ' · ' + timeAgo(lp) : ''),
+      onClick: function() { closeListPanel(); switchToReferenceNode(d.label, d.meta); }
+    };
+  }));
 });
 document.getElementById('kbdHelpToggle').addEventListener('click', function() {
   document.getElementById('headerMenu').style.display = 'none';
@@ -3863,6 +3930,17 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 })();
 </script>
 <!-- ══ VIDEO MODAL ═══════════════════════════════════════════════════════ -->
+<!-- ══ LIST PANEL (Recent / Drilling / etc) ═══════════════════════════════ -->
+<div id="listPanel" style="display:none;position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);">
+  <div id="listPanelInner" style="position:absolute;bottom:0;left:0;right:0;max-height:70vh;background:rgba(14,16,21,0.98);border-top:1px solid rgba(255,255,255,0.08);border-radius:16px 16px 0 0;padding:0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 6px;"></div>
+    <div style="display:flex;align-items:center;padding:0 18px 12px;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div id="listPanelTitle" style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:500;color:#c4cdd8;letter-spacing:0.5px;"></div>
+      <button id="listPanelClose" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;" aria-label="Close">×</button>
+    </div>
+    <div id="listPanelBody" style="flex:1;overflow-y:auto;padding:12px 18px;-webkit-overflow-scrolling:touch;"></div>
+  </div>
+</div>
 <div id="videoModal" style="display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(0,0,0,0.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);">
   <div id="videoModalInner" style="position:relative;width:min(88vw,960px);max-height:90vh;">
     <div id="videoModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;color:#e8edf5;letter-spacing:0.5px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;"></div>
