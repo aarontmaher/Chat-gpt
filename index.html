@@ -271,7 +271,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   #g3dLegend { right: 16px !important; }
 
   /* Bottom bars: compact, safe-area-aware, wrap-friendly */
-  #refBottomBar { flex-wrap: wrap; gap: 3px; padding: 4px 6px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+  #refBottomBar { flex-wrap: wrap; gap: 3px; padding: 4px 6px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); overflow-x: auto; -webkit-overflow-scrolling: touch; }
   #refBottomBar input { width: 100px; font-size: 16px; }
   #g3dToolbar { left: 8px !important; right: 8px !important; transform: none !important; bottom: calc(10px + env(safe-area-inset-bottom)) !important; max-width: 100% !important; gap: 1px !important; padding: 4px !important; flex-wrap: wrap !important; }
   #g3dToolbar input { width: 90px; font-size: 16px; }
@@ -280,10 +280,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .section-title { font-size: 15px; }
   /* Touch feedback */
   .g3d-tb-btn:active { transform: scale(0.95); }
-  .btn-video { min-height: 32px; padding: 6px 14px; font-size: 10px; }
+  .btn-video { min-height: 36px; padding: 8px 14px; font-size: 11px; }
   .btn-video:active { transform: scale(0.95); }
-  .progress-pill { min-height: 30px; padding: 5px 10px; font-size: 10px; }
+  .progress-pill { min-height: 36px; padding: 6px 12px; font-size: 11px; }
   .progress-pill:active { transform: scale(0.95); }
+  .btn-note { min-height: 36px; min-width: 36px; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .node-toggle { min-width: 28px; min-height: 28px; }
   .section-header:active { background: var(--surface2); }
   .node:active { background: rgba(255,255,255,0.06); }
 
@@ -399,7 +401,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
   <div class="sections" id="sections" style="flex:1;overflow-y:auto;"></div>
-  <div id="refOnboarding" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;display:none;">
+  <div id="refOnboarding" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;display:none;transition:opacity 0.5s;">
     <div style="background:rgba(14,16,21,0.85);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Barlow Condensed',sans-serif;color:#667;">
       <div style="font-size:14px;letter-spacing:0.5px;margin-bottom:4px;">Expand a section to browse techniques</div>
       <div style="font-size:11px;color:#556;">Click any technique to see details and video</div>
@@ -1226,6 +1228,9 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     childUl.className = 'children';
     const sibCounts = {};
     node.c.forEach(child => {
+      // Suppress ghost heading rows: schema-named children that duplicate their parent heading name
+      var ct = (child.t || '').trim();
+      if (SCHEMA_NAMES.has(ct) && ct === node.t.trim() && (!child.c || child.c.length === 0)) return;
       const seg = normalizeSegment(child.t);
       sibCounts[seg] = (sibCounts[seg] || 0) + 1;
       const childDisambig = sibCounts[seg] > 1 ? '~' + sibCounts[seg] : '';
@@ -1879,7 +1884,11 @@ function switchToTab(view) {
   // Show Reference onboarding if no technique selected yet
   if (view === 'reference') {
     var ro = document.getElementById('refOnboarding');
-    if (ro && !SELECTED_NODE) ro.style.display = 'block';
+    if (ro && !SELECTED_NODE) {
+      ro.style.display = 'block';
+      ro.style.opacity = '1';
+      setTimeout(function() { ro.style.opacity = '0'; setTimeout(function() { ro.style.display = 'none'; }, 500); }, 5000);
+    }
   }
   // Save tab state for resume
   saveState();
@@ -1970,6 +1979,7 @@ window.initGraph3D = (function() {
   const meshMap3d={}, ringMap3d={}, edgeMeshes3d=[];
   let simNodes3d=[], simByID3d={};
   let selectedId3d=null, hoveredId3d=null, selRing3d=null;
+  var _zoomedNodeId = null, _savedPivot = null, _savedZoom = null;
   const isMobile3d=()=>window.matchMedia('(max-width:768px)').matches;
   let autoRotate3d=true, showRings3d=true, showTopLabels3d=true;
   let globalEdgeOpac=0.50, hubOnly3d=false, hubThresh3d=20, builtOut3d=false, showOrphans3d=false;
@@ -2251,7 +2261,8 @@ window.initGraph3D = (function() {
   function openDetail3d(nd,inE,outE){
     var panel=document.getElementById('g3dDetail');
     panel.style.transform=isMobile3d()?'translateY(0)':'translateX(0)';
-    if(!isMobile3d())document.getElementById('g3dLegend').style.right='276px';
+    if(isMobile3d()) { document.getElementById('g3dLegend').style.display='none'; }
+    else { document.getElementById('g3dLegend').style.right='276px'; }
     // Hide onboarding hint on first node click
     var ob=document.getElementById('g3dOnboarding');if(ob)ob.style.display='none';
     var col=SECT_CSS3[nd.section_idx]||'#888';
@@ -2682,6 +2693,7 @@ window.initGraph3D = (function() {
   function closeDetail3d(){
     document.getElementById('g3dDetail').style.transform=isMobile3d()?'translateY(100%)':'translateX(100%)';
     document.getElementById('g3dLegend').style.right='16px';
+    document.getElementById('g3dLegend').style.display='';
   }
 
   // Build set of position norms + labels that have ≥1 technique with given status(es)
@@ -3050,6 +3062,8 @@ window.initGraph3D = (function() {
       // Initial force sim — auto-fit camera after simulation settles
       let initSt=0;
       const initSim=setInterval(()=>{runForce3d(simNodes3d,ACTIVE_EDGES,4);syncEdges3d(null);initSt+=4;if(initSt>=160){clearInterval(initSim);autoFitCamera3d();var obt=document.getElementById('g3dOnboardingText');if(obt)obt.textContent='Click a position to explore techniques';}},16);
+      // Auto-hide onboarding after 8 seconds regardless
+      setTimeout(function(){ var ob=document.getElementById('g3dOnboarding'); if(ob) ob.style.opacity='0'; setTimeout(function(){ if(ob) ob.style.display='none'; }, 1000); }, 8000);
 
       // Camera controls
       let downX=0,downY=0,isDrag=false;
@@ -3097,9 +3111,6 @@ window.initGraph3D = (function() {
       canvas.addEventListener('touchend',e=>{if(isTouchDrag)return;const t=e.changedTouches[0];const rect=wrap.getBoundingClientRect(),mx=((t.clientX-rect.left)/rect.width)*2-1,my=-((t.clientY-rect.top)/rect.height)*2+1;camera3d.updateMatrixWorld();const ray=new THREE.Raycaster();ray.setFromCamera({x:mx,y:my},camera3d);const vis=Object.values(meshMap3d).filter(m=>m.visible&&m.material.opacity>0.25);const hits=ray.intersectObjects(vis);if(!hits.length){resetHL3d();closeDetail3d();return;}const id=hits[0].object.userData.id;if(id===selectedId3d){resetHL3d();closeDetail3d();return;}selectNode3d(id);});
 
       // Double-click: zoom to node + connections
-      var _zoomedNodeId = null;
-      var _savedPivot = null;
-      var _savedZoom = null;
       function zoomToNode3d(nd) {
         if (!nd) return;
         _savedPivot = { x: pivot3d.position.x, y: pivot3d.position.y, z: pivot3d.position.z };
