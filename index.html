@@ -100,6 +100,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .technique-breadcrumb:hover { color: #889; }
 .technique-note-preview { display: none; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent3); padding: 4px 12px 6px 28px; line-height: 1.5; opacity: 0.85; max-height: 60px; overflow: hidden; text-overflow: ellipsis; white-space: pre-line; }
 .tree-item.technique-selected > .technique-note-preview { display: block; }
+.pos-connections { display: none; padding: 6px 12px 8px 28px; }
+.tree-item.technique-selected > .pos-connections { display: block; }
+.pos-conn-item { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; color: var(--text-muted); padding: 3px 0; cursor: pointer; transition: color 0.15s; }
+.pos-conn-item:hover { color: var(--text); }
+.pos-conn-item .conn-arrow { color: #ff9966; margin: 0 4px; font-size: 10px; }
+.pos-conn-label { font-size: 9px; color: #4a5568; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
 .tree-item.search-first-result > .node { background: rgba(232,255,71,0.06); border-radius: 3px; }
 .node .btn-video { opacity: 0.7; transition: all 0.15s; }
 .node { display: flex; align-items: flex-start; gap: 6px; padding: 4px 16px 4px 8px; transition: background 0.1s; min-height: 32px; }
@@ -379,6 +385,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
       <button id="menuRecentBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Recent techniques</button>
       <button id="menuDrillingBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">My Drills <span id="drillCountBadge" style="background:var(--blue);color:#000;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;display:none;"></span></button>
+      <button id="menuWatchedBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Recently Watched</button>
       <button id="menuVideosBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">All Videos</button>
       <button id="menuProgressBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Progress</button>
       <button id="menuGapsBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Explore More</button>
@@ -412,6 +419,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">R</kbd><span>Open Recent techniques</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">S</kbd><span>Random drill (shuffle)</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">V</kbd><span>All Videos</span>
+    <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">W</kbd><span>Recently Watched</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">G</kbd><span>Toggle Reference ↔ Network</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">?</kbd><span>Toggle this help panel</span>
   </div>
@@ -745,6 +753,22 @@ function updateBottomBarMedia() {
       });
       c.appendChild(netBtn);
     }
+    // Share button (copy deep link)
+    var shareBtn = document.createElement('button');
+    shareBtn.className = 'g3d-tb-btn';
+    shareBtn.textContent = '\u{1F517} Share';
+    shareBtn.style.cssText = 'border-radius:12px;';
+    shareBtn.addEventListener('click', function() {
+      var url = location.origin + location.pathname + '#' + (c.id === 'refMediaBtns' ? 'ref' : 'net') + '/' + encodeURIComponent(SELECTED_NODE.label) + (SELECTED_NODE.section ? '/' + encodeURIComponent(SELECTED_NODE.section) : '');
+      navigator.clipboard.writeText(url).then(function() {
+        shareBtn.textContent = '\u2713 Copied';
+        setTimeout(function() { shareBtn.textContent = '\u{1F517} Share'; }, 1500);
+      }).catch(function() {
+        // Fallback for older browsers
+        prompt('Copy this link:', url);
+      });
+    });
+    c.appendChild(shareBtn);
     if (!SELECTED_NODE.v && !SELECTED_NODE.l) return;
     var v = SELECTED_NODE.v;
     var l = SELECTED_NODE.l;
@@ -1155,9 +1179,11 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
 
   // Video buttons
   if (node.v) {
+    const vWatched = STATE.videosWatched && STATE.videosWatched[node.v];
     const vBtn = document.createElement('button');
     vBtn.className = 'btn-video';
-    vBtn.textContent = '📖 Instructional';
+    vBtn.textContent = (vWatched ? '\u2713 ' : '') + '📖 Instructional';
+    if (vWatched) vBtn.style.opacity = '0.6';
     vBtn.addEventListener('click', e => {
       e.stopPropagation();
       const vidId = node.v.split('/').pop().split('?')[0];
@@ -1322,6 +1348,41 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
         + (trackedCount > 0 ? ' <span style="display:inline-block;width:40px;height:3px;background:var(--border);border-radius:2px;vertical-align:middle;margin-left:6px;"><span style="display:block;height:3px;background:var(--blue);border-radius:2px;width:'+pctTracked+'%;"></span></span>' : '');
       statsBar.dataset.posKey = key;
       li.insertBefore(statsBar, childUl);
+      // Connection card: show inbound/outbound edges from NET_EDGES (visible when selected)
+      if (typeof NET_EDGES !== 'undefined' && NET_EDGES.length > 0) {
+        var posLabel = node.t;
+        var inbound = NET_EDGES.filter(function(e) { return e.target_label === posLabel; });
+        var outbound = NET_EDGES.filter(function(e) { return e.source_label === posLabel; });
+        if (inbound.length > 0 || outbound.length > 0) {
+          var connCard = document.createElement('div');
+          connCard.className = 'pos-connections';
+          var html = '';
+          if (inbound.length > 0) {
+            html += '<div class="pos-conn-label">Entries from</div>';
+            var seen = new Set();
+            inbound.forEach(function(e) {
+              if (seen.has(e.source_label)) return;
+              seen.add(e.source_label);
+              html += '<div class="pos-conn-item" data-nav="' + e.source_label.replace(/"/g,'&quot;') + '">' + e.source_label + ' <span class="conn-arrow">\u2192</span> ' + posLabel + '</div>';
+            });
+          }
+          if (outbound.length > 0) {
+            html += '<div class="pos-conn-label"' + (inbound.length ? ' style="margin-top:6px;"' : '') + '>Transitions to</div>';
+            var seen2 = new Set();
+            outbound.forEach(function(e) {
+              if (seen2.has(e.target_label)) return;
+              seen2.add(e.target_label);
+              html += '<div class="pos-conn-item" data-nav="' + e.target_label.replace(/"/g,'&quot;') + '">' + posLabel + ' <span class="conn-arrow">\u2192</span> ' + e.target_label + '</div>';
+            });
+          }
+          connCard.innerHTML = html;
+          connCard.addEventListener('click', function(ev) {
+            var navTarget = ev.target.closest('.pos-conn-item');
+            if (navTarget && navTarget.dataset.nav) { switchToReferenceNode(navTarget.dataset.nav); }
+          });
+          li.insertBefore(connCard, childUl);
+        }
+      }
     }
     toggle.addEventListener('click', e => {
       e.stopPropagation();
@@ -1363,16 +1424,19 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
         setTimeout(function() { trackAllBtn.textContent = origText; trackAllBtn.style.borderColor = ''; trackAllBtn.style.color = ''; }, 1200);
       });
       content.appendChild(trackAllBtn);
-      // Heading click: scroll + highlight + expand only — no selection, no detail view
+      // Heading click: toggle expand/collapse + scroll + highlight
       nodeDiv.addEventListener('click', () => {
-        // Force expand (never collapse on heading click)
         if (li.classList.contains('collapsed')) {
           li.classList.remove('collapsed');
           toggle.textContent = '\u25BE';
           EXPANDED.add(key);
-          if(window.cmSyncExpanded) window.cmSyncExpanded();
-          if(window.g3dSyncExpanded) window.g3dSyncExpanded();
+        } else {
+          li.classList.add('collapsed');
+          toggle.textContent = '\u25B8';
+          EXPANDED.delete(key);
         }
+        if(window.cmSyncExpanded) window.cmSyncExpanded();
+        if(window.g3dSyncExpanded) window.g3dSyncExpanded();
         // Scroll into view
         label.scrollIntoView({ behavior: 'smooth', block: 'start' });
         // Yellow glow highlight (~2.5s)
@@ -1471,7 +1535,18 @@ function buildSections() {
       return c;
     }
     var techTotal = countSectionTechniques(section.nodes);
-    header.innerHTML = '<div class="section-dot" style="background:'+section.color+';box-shadow:0 0 4px '+section.color+'40;"></div><div class="section-title">'+section.title+'</div><span style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">'+posCount+' positions \u00b7 '+techTotal+' techniques</span><div class="section-chevron">&#9662;</div>';
+    // Count tracked techniques in this section
+    var sectionNorm = normalizeSegment(section.title);
+    var sectionTracked = 0;
+    Object.keys(STATE.progress).forEach(function(k) {
+      if (k.split('|')[0] === sectionNorm) sectionTracked++;
+    });
+    var secPctHtml = '';
+    if (sectionTracked > 0 && techTotal > 0) {
+      var secPct = Math.round(sectionTracked / techTotal * 100);
+      secPctHtml = ' <span style="display:inline-block;width:30px;height:3px;background:var(--border);border-radius:2px;vertical-align:middle;margin-left:4px;"><span style="display:block;height:3px;background:'+section.color+';border-radius:2px;width:'+secPct+'%;"></span></span> <span style="font-size:9px;color:#556;">'+secPct+'%</span>';
+    }
+    header.innerHTML = '<div class="section-dot" style="background:'+section.color+';box-shadow:0 0 4px '+section.color+'40;"></div><div class="section-title">'+section.title+'</div><span class="section-meta" style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">'+posCount+' positions \u00b7 '+techTotal+' techniques'+secPctHtml+'</span><div class="section-chevron">&#9662;</div>';
     header.addEventListener('click', e => {
       div.classList.toggle('collapsed');
       const sectionKey = makeKey(section.title, section.title);
@@ -1898,6 +1973,9 @@ document.querySelectorAll('#refBottomBar .g3d-tb-btn[data-filter]').forEach(tab 
     tab.addEventListener('click', function() {
       document.querySelectorAll('#refBottomBar .g3d-tb-btn[data-filter]').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
+      // Clear search when switching filters to avoid confusing combined state
+      var searchInput = document.getElementById('refSearch');
+      if (searchInput && searchInput.value) { searchInput.value = ''; _refDoSearch(); }
       applyRefFilter(this.dataset.filter);
     });
 });
@@ -1980,6 +2058,12 @@ function switchToTab(view) {
   // Blur any focused search input on tab switch
   var activeEl = document.activeElement;
   if (activeEl && (activeEl.id === 'refSearch' || activeEl.id === 'g3dSearch')) activeEl.blur();
+  // Sync filter button active state on tab switch
+  if (view === 'reference' && STATE.currentFilter) {
+    document.querySelectorAll('#refBottomBar .g3d-tb-btn[data-filter]').forEach(function(t) {
+      t.classList.toggle('active', t.dataset.filter === STATE.currentFilter);
+    });
+  }
   // Sync selected node into the new tab
   syncSelectedToTab(view);
   // Scroll the correct container to top on view switch
@@ -3444,6 +3528,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 's' && !inInput) { document.getElementById('menuRandomBtn').click(); }
   // V: all videos
   if (e.key === 'v' && !inInput) { document.getElementById('menuVideosBtn').click(); }
+  // W: recently watched
+  if (e.key === 'w' && !inInput) { document.getElementById('menuWatchedBtn').click(); }
   // ?: toggle help panel
   if (e.key === '?' && !inInput) {
     var hp = document.getElementById('kbdHelpPanel');
@@ -3572,19 +3658,34 @@ function openListPanel(title, items) {
         body.appendChild(hdr);
         return;
       }
+      // Custom HTML items (e.g. sparklines)
+      if (item.customHtml) {
+        var custom = document.createElement('div');
+        custom.style.cssText = 'padding:6px 4px 10px;';
+        custom.innerHTML = item.customHtml;
+        body.appendChild(custom);
+        return;
+      }
       var row = document.createElement('div');
       row.dataset.panelItem = item.label + ' ' + (item.meta || '');
       row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background 0.1s;border-radius:4px;';
       row.addEventListener('mouseenter', function() { row.style.background = 'rgba(255,255,255,0.04)'; });
       row.addEventListener('mouseleave', function() { row.style.background = ''; });
+      // Section color dot
+      if (item.sectionDot) {
+        var dot = document.createElement('span');
+        dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:'+item.sectionDot+';';
+        row.appendChild(dot);
+      }
       var label = document.createElement('div');
       label.style.cssText = 'flex:1;font-family:Barlow Condensed,monospace;font-size:13px;color:#c4cdd8;';
       label.textContent = item.label;
       row.appendChild(label);
       if (item.bar !== undefined) {
+        var barCol = item.barColor || 'var(--blue)';
         var barWrap = document.createElement('div');
         barWrap.style.cssText = 'width:50px;height:4px;background:var(--border);border-radius:2px;flex-shrink:0;';
-        barWrap.innerHTML = '<div style="height:4px;background:var(--blue);border-radius:2px;width:'+item.bar+'%;"></div>';
+        barWrap.innerHTML = '<div style="height:4px;background:'+barCol+';border-radius:2px;width:'+item.bar+'%;"></div>';
         row.appendChild(barWrap);
       }
       if (item.meta) {
@@ -3674,6 +3775,39 @@ document.getElementById('menuDrillingBtn').addEventListener('click', function() 
     };
   }));
 });
+// Recently Watched panel
+document.getElementById('menuWatchedBtn').addEventListener('click', function() {
+  var watched = STATE.videosWatched || {};
+  var entries = Object.entries(watched).sort(function(a,b) { return b[1] - a[1]; });
+  if (entries.length === 0) {
+    openListPanel('Recently Watched', []);
+    return;
+  }
+  // Build label lookup from all videos in SECTIONS
+  var urlToInfo = {};
+  function walkForUrls(nodes, section, path) {
+    (nodes || []).forEach(function(n) {
+      var t = (n.t || '').trim();
+      if (n.v && t && t !== 'Instructional video' && t !== 'Live video') {
+        urlToInfo[n.v] = { label: t, section: section, path: path };
+      }
+      if (n.c) walkForUrls(n.c, section, path ? path + ' \u203a ' + t : t);
+    });
+  }
+  SECTIONS.forEach(function(s) { walkForUrls(s.nodes, s.title, ''); });
+  var items = entries.map(function(kv) {
+    var url = kv[0], ts = kv[1];
+    var info = urlToInfo[url];
+    var label = info ? info.label : url.split('/').pop();
+    var meta = (info ? info.section : '') + ' \u00b7 ' + timeAgo(ts);
+    return {
+      label: label,
+      meta: meta,
+      onClick: function() { closeListPanel(); window.openVideoModal(url, label + ' \u2014 Instructional'); }
+    };
+  });
+  openListPanel('Recently Watched (' + items.length + ')', items);
+});
 // All Videos panel
 document.getElementById('menuVideosBtn').addEventListener('click', function() {
   var videos = [];
@@ -3707,10 +3841,18 @@ document.getElementById('menuVideosBtn').addEventListener('click', function() {
 document.getElementById('menuProgressBtn').addEventListener('click', function() {
   var drilling = 0, learned = 0, total = Object.keys(STATE.progress).length;
   Object.values(STATE.progress).forEach(function(v) { if (v === 'drilling') drilling++; if (v === 'learned') learned++; });
-  var bySection = {};
-  Object.keys(STATE.progress).forEach(function(k) { var s = k.split('|')[0].replace(/_/g, ' '); bySection[s] = (bySection[s] || 0) + 1; });
+  // Per-section breakdown with drilling/learned split
+  var bySectionDrill = {}, bySectionLearn = {};
+  Object.entries(STATE.progress).forEach(function(kv) {
+    var s = kv[0].split('|')[0].replace(/_/g, ' ');
+    if (kv[1] === 'drilling') bySectionDrill[s] = (bySectionDrill[s] || 0) + 1;
+    if (kv[1] === 'learned') bySectionLearn[s] = (bySectionLearn[s] || 0) + 1;
+  });
+  // Section color map
+  var sectionColors = {};
+  SECTIONS.forEach(function(s) { sectionColors[s.title] = s.color; });
   // Weekly activity from lastPracticed timestamps
-  var weekBuckets = [0,0,0,0]; // last 4 weeks
+  var weekBuckets = [0,0,0,0];
   var now = Date.now();
   var weekMs = 7 * 24 * 60 * 60 * 1000;
   if (STATE.lastPracticed) {
@@ -3720,26 +3862,47 @@ document.getElementById('menuProgressBtn').addEventListener('click', function() 
     });
   }
   var maxWeek = Math.max.apply(null, weekBuckets) || 1;
-  var sparkline = weekBuckets.slice().reverse().map(function(v) {
-    var h = Math.max(2, Math.round(v / maxWeek * 20));
-    return '<div style="width:12px;height:'+h+'px;background:var(--blue);border-radius:1px;"></div>';
-  }).join('');
   var items = [
     { label: 'Total tracked: ' + total, meta: drilling + ' drilling · ' + learned + ' learned' },
     { label: 'Activity (last 4 weeks)', meta: '', isHeader: true }
   ];
-  // Add sparkline as a custom item
-  items.push({ label: weekBuckets.slice().reverse().map(function(v,i) { return ['4w ago','3w ago','2w ago','This week'][i] + ': ' + v; }).join(' · '), meta: '' });
+  // Visual sparkline
+  var sparkHtml = '<div style="display:flex;align-items:flex-end;gap:4px;height:24px;">' +
+    weekBuckets.slice().reverse().map(function(v,i) {
+      var h = Math.max(3, Math.round(v / maxWeek * 22));
+      var lbl = ['4w','3w','2w','now'][i];
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
+        '<div style="width:16px;height:'+h+'px;background:var(--blue);border-radius:2px;"></div>' +
+        '<div style="font-size:8px;color:#556;">'+lbl+'</div></div>';
+    }).join('') + '</div>';
+  items.push({ label: '', meta: '', customHtml: sparkHtml });
+  // Section breakdown with color dots + drilling/learned split
+  items.push({ label: 'By section', meta: '', isHeader: true });
+  var allSectionNames = new Set();
+  Object.keys(bySectionDrill).forEach(function(s) { allSectionNames.add(s); });
+  Object.keys(bySectionLearn).forEach(function(s) { allSectionNames.add(s); });
+  SECTIONS.forEach(function(s) { allSectionNames.add(s.title); });
   var maxBySection = 0;
-  Object.values(bySection).forEach(function(v) { if (v > maxBySection) maxBySection = v; });
-  Object.entries(bySection).sort(function(a,b) { return b[1] - a[1]; }).forEach(function(kv) {
-    var pct = maxBySection > 0 ? Math.round(kv[1] / maxBySection * 100) : 0;
-    items.push({ label: kv[0], meta: kv[1] + ' tracked', bar: pct });
-  });
-  // Untouched sections
-  SECTIONS.forEach(function(s) {
-    var norm = s.title.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '').replace(/_+/g, '_');
-    if (!bySection[s.title] && !bySection[norm]) items.push({ label: s.title, meta: 'not started yet' });
+  allSectionNames.forEach(function(s) { var t = (bySectionDrill[s]||0) + (bySectionLearn[s]||0); if (t > maxBySection) maxBySection = t; });
+  // Sort by total tracked descending, untouched last
+  Array.from(allSectionNames).sort(function(a,b) {
+    var ta = (bySectionDrill[a]||0) + (bySectionLearn[a]||0);
+    var tb = (bySectionDrill[b]||0) + (bySectionLearn[b]||0);
+    return tb - ta;
+  }).forEach(function(s) {
+    var d = bySectionDrill[s] || 0;
+    var l = bySectionLearn[s] || 0;
+    var t = d + l;
+    var col = sectionColors[s] || '#888';
+    var pct = maxBySection > 0 ? Math.round(t / maxBySection * 100) : 0;
+    if (t === 0) {
+      items.push({ label: s, meta: 'not started', sectionDot: col });
+    } else {
+      var parts = [];
+      if (l) parts.push(l + ' learned');
+      if (d) parts.push(d + ' drilling');
+      items.push({ label: s, meta: parts.join(' · '), bar: pct, barColor: col, sectionDot: col });
+    }
   });
   openListPanel('Progress', items);
 });

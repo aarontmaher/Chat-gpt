@@ -21,12 +21,21 @@ Active website/app improvement iteration loop
 - Auto-merge for claude/** branches
 - Shared memory files + zip bundles + auto-open Finder on upload
 
-## Website Improvement History (this session)
+## Website Improvement History (this session — 13 iterations)
 1. ITERATION-01: mobile touch targets, list panel swipe-to-dismiss
 2. BATCH-LEGEND-01: legend overlap fix, ★ tooltip, 3D render loop pause/resume
 3. ITERATION-02: search clear buttons, result count, mobile search expand
 4. ITERATION-03: 3D detail panel swipe-dismiss, video modal landscape, scroll-to-top fix
 5. ITERATION-04: tap-to-deselect, inline note preview, two-tone progress bar
+6. ITERATION-05: OT transition rows clickable (navigate to destination)
+7. ITERATION-06: progress dashboard visual upgrade (sparkline, section colors, drill/learn split)
+8. ITERATION-07: filter button sync on tab switch, search clears on filter change
+9. ITERATION-08: heading click toggles collapse, video watched indicator
+10. ITERATION-09: Recently Watched panel + W keyboard shortcut
+11. ITERATION-10: Share button (copy deep link to clipboard)
+12. ITERATION-11: keyboard help panel updated with W shortcut
+13. ITERATION-12: position connection card (inbound/outbound edges inline)
+14. ITERATION-13: section header progress percentage bar
 
 ## Built-out Positions (11)
 J point, K guard, Quarter guard, Supine Guard, Mount, Turtle, Berimbolo, Grounded 50/50, Wrestling bodylock, Back Control, Crab ride

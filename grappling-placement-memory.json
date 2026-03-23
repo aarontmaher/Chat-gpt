@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "description": "Grappling position/chain memory for video placement suggestions. Updated from real placements and Aaron's corrections.",
+
+  "categories": {
+    "dominant-positions": {
+      "perspectives": ["attacker", "defender"],
+      "headings": ["setups-entries", "control", "offence", "defence", "submissions", "offensive-transitions"],
+      "positions": ["back-control", "front-headlock", "mount", "north-south", "side-control", "turtle"]
+    },
+    "guard": {
+      "perspectives": ["passer", "guard-player"],
+      "headings": ["setups-entries", "control", "offence", "defence", "submissions", "offensive-transitions"],
+      "positions": ["butterfly-ashi", "butterfly-guard", "closed-guard", "de-la-riva", "half-butterfly", "half-guard", "half-guard-passing", "headquarters", "j-point", "k-guard", "knee-shield-half-guard", "octopus-guard", "outside-ashi", "quarter-guard", "reverse-de-la-riva", "seated-guard", "shin-pin", "single-leg-x", "supine-guard", "x-guard"]
+    },
+    "scrambles": {
+      "perspectives": ["initiative", "defensive"],
+      "headings": ["setups-entries", "control", "offence", "defence", "submissions", "offensive-transitions"],
+      "positions": ["berimbolo", "crab-ride", "grounded-5050"]
+    },
+    "wrestling": {
+      "perspectives_hand_fighting": ["you", "opponent"],
+      "perspectives_shots": ["attacker", "defender"],
+      "headings_wrestling": ["setups-entries", "control", "offence", "defence", "submissions", "offensive-transitions"],
+      "headings_hand_fighting": ["setups-entries", "control", "offence", "defence", "offensive-transitions"],
+      "containers": ["hand-fighting", "shots", "wrestling-bodylock"],
+      "hand_fighting_positions": ["outside-tie-you", "inside-tie-you", "collar-tie-you", "underhook-you", "overhook-you", "2-on-1-you", "overunder-you", "wrist-control-you"],
+      "shot_types": ["head-inside-single-leg", "head-outside-single-leg", "double-leg", "low-ankle"]
+    }
+  },
+
+  "locked_rules": {
+    "darce_spelling": "D'Arce (slug: darce, reverse-darce)",
+    "von_flue": "Von Flue (capitalized)",
+    "head_arm": "submission",
+    "single_arm_chest_wrap": "control sub-position AND offence family",
+    "knee_on_belly": "sub-position under Side Control, permanent hold",
+    "offence_heading": "messy attack families (chains, setups, combinations)",
+    "submissions_heading": "flat named finishes (arm bar, triangle, kimura, etc.)",
+    "offensive_transitions": "clean graph edges only, arrow format",
+    "folder_naming": "key branch points only (sub-position, approach, finish), not every spoken micro-step"
+  },
+
+  "placement_patterns": {
+    "submissions_go_under_submissions": {
+      "examples": ["arm-bar", "mounted-triangle", "kimura", "arm-triangle"],
+      "rule": "Named finishes go under position/perspective/submissions/"
+    },
+    "failed_submission_chains": {
+      "examples": ["arm-triangle/opponent-turtles/reverse-darce"],
+      "rule": "Failed submissions leading to transitions stay under submissions, chain continues"
+    },
+    "guard_passes_are_passer_offence": {
+      "examples": ["toreando", "leg-drag", "north-south-pass", "single-under-pass", "over-under-pass"],
+      "rule": "Passes go under guard-position/passer/offence/"
+    },
+    "counters_go_under_opposite_perspective": {
+      "examples": ["passer/defence/wrestle-up/dogfight/bodylock-roll"],
+      "rule": "'Counter to X' means the other perspective's defence. Dogfight counter = passer/defence, not guard-player/offence"
+    },
+    "hand_fighting_chains": {
+      "examples": ["snap-down/front-headlock", "throw-by/rear-bodylock", "arm-drag/takedown"],
+      "rule": "Hand fighting chains: position/you/offence/technique/outcome"
+    },
+    "direction_matters_in_naming": {
+      "examples": ["throw-by-to-2-on-1/ankle-pick (NOT 2-on-1/offence/ankle-pick)"],
+      "rule": "The folder name should reflect what leads to what, not where you end up"
+    },
+    "outcome_folders_usually_unnecessary": {
+      "examples": ["side-control removed from leg-drag path", "back-control-without-hooks removed from rolling-back-take"],
+      "rule": "Final destination positions as leaf folders are usually unnecessary — the technique name is enough"
+    }
+  },
+
+  "known_chains": [
+    {
+      "sequence": "Front Headlock > Head in the hole go-behind > Whip by",
+      "path": "dominant-positions/front-headlock/attacker/offence/head-in-the-hole-go-behind/whip-by",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Front Headlock > Pinch front headlock to anaconda",
+      "path": "dominant-positions/front-headlock/attacker/offence/pinch-front-headlock-to-anaconda",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Mount > S mount > Arm bar",
+      "path": "dominant-positions/mount/attacker/submissions/arm-bar",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Mount > Arm triangle > Opponent turtles > Reverse D'Arce",
+      "path": "dominant-positions/mount/attacker/submissions/arm-triangle/opponent-turtles/reverse-darce",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Mount > S mount > Mounted triangle",
+      "path": "dominant-positions/mount/attacker/submissions/mounted-triangle",
+      "confidence": "high"
+    },
+    {
+      "sequence": "North South > Top side crucifix > Kimura",
+      "path": "dominant-positions/north-south/attacker/offence/top-side-crucifix/kimura",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Turtle > Seatbelt > Rolling back take",
+      "path": "dominant-positions/turtle/attacker/offence/seatbelt/rolling-back-take",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Half butterfly > Saddle entry counter > North south pass",
+      "path": "guard/half-butterfly/passer/offence/saddle-entry-counter/north-south-pass",
+      "confidence": "high"
+    },
+    {
+      "sequence": "J point > North south pass > Reverse collar tie",
+      "path": "guard/j-point/passer/offence/north-south-pass/reverse-collar-tie",
+      "confidence": "high"
+    },
+    {
+      "sequence": "J point > Toreando pass",
+      "path": "guard/j-point/passer/offence/toreando",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Knee shield half guard > (counter) Wrestle up > Dogfight > Bodylock roll",
+      "path": "guard/knee-shield-half-guard/passer/defence/wrestle-up/dogfight/bodylock-roll",
+      "confidence": "high",
+      "note": "Passer perspective because it is a counter to guard player's wrestle-up"
+    },
+    {
+      "sequence": "Knee shield half guard > Backstep > North south pass",
+      "path": "guard/knee-shield-half-guard/passer/offence/backstep/north-south-pass",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Knee shield half guard > Over-under pass > Smash pass > J point > Toreando",
+      "path": "guard/knee-shield-half-guard/passer/offence/over-under-pass/smash-pass/j-point/toreando",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Knee shield half guard > Quarter guard > Backstep saddle > Inside ashi > Outside heel hook",
+      "path": "guard/knee-shield-half-guard/passer/offence/quarter-guard/backstep-saddle/inside-ashi/outside-heel-hook",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Seated Guard > Snap to front headlock",
+      "path": "guard/seated-guard/passer/offence/snap-to-front-headlock",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Supine Guard > J point > Bodylock > Half guard entry",
+      "path": "guard/supine-guard/passer/offence/j-point/bodylock/half-guard-entry",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Supine Guard > J point > Leg drag",
+      "path": "guard/supine-guard/passer/offence/j-point/leg-drag",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Supine Guard > Single under pass",
+      "path": "guard/supine-guard/passer/offence/single-under-pass",
+      "confidence": "high"
+    },
+    {
+      "sequence": "2-on-1 > Throw by > Rear bodylock",
+      "path": "wrestling/hand-fighting/2-on-1-you/you/offence/throw-by/rear-bodylock",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Collar tie > Feint snap > Front headlock",
+      "path": "wrestling/hand-fighting/collar-tie-you/you/offence/snap-downs/feint-snap/front-headlock",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Collar tie > Throw by to 2-on-1 > Ankle pick",
+      "path": "wrestling/hand-fighting/collar-tie-you/you/offence/throw-by-to-2-on-1/ankle-pick",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Underhook > Snap down > Front headlock",
+      "path": "wrestling/hand-fighting/underhook-you/you/offence/snap-down/front-headlock",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Wrist control > Arm drag > Takedown",
+      "path": "wrestling/hand-fighting/wrist-control-you/you/offence/arm-drag/takedown",
+      "confidence": "high"
+    },
+    {
+      "sequence": "Single leg > Shin whizzer defence > Running the pipe",
+      "path": "wrestling/shots/head-inside-single-leg/attacker/offence/shin-whizzer/running-the-pipe-counter-to-shin-whizzer",
+      "confidence": "high"
+    }
+  ],
+
+  "corrections_learned": [
+    {
+      "lesson": "Single under pass is from supine guard, not seated guard",
+      "type": "position_assignment"
+    },
+    {
+      "lesson": "Dogfight counter = passer/defence, not guard-player/offence",
+      "type": "perspective_assignment"
+    },
+    {
+      "lesson": "throw-by TO 2-on-1, not 2-on-1 offence (direction matters)",
+      "type": "folder_naming"
+    },
+    {
+      "lesson": "over-under pass (not under-over)",
+      "type": "technique_name"
+    },
+    {
+      "lesson": "Don't turn every spoken clause into a folder level",
+      "type": "folder_depth"
+    },
+    {
+      "lesson": "Final outcome positions (side-control, mount) as leaf folders usually unnecessary",
+      "type": "folder_depth"
+    }
+  ],
+
+  "suggestion_rules": {
+    "high_confidence": "Suggest one best folder. Use when sequence clearly maps to an existing chain pattern or a well-known position/heading/technique.",
+    "medium_confidence": "Suggest 2-3 likely folders. Use when the position is clear but the chain or perspective could go multiple ways.",
+    "low_confidence": "Report uncertainty. Ask Aaron. Use when the position is ambiguous (e.g. 'arm drag' without knowing which hand-fighting position).",
+    "never_guess_position": "If the starting position is unclear, always ask.",
+    "never_over_nest": "Collapse narrative mid-steps. Keep: sub-position, approach, finish."
+  }
+}

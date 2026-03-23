@@ -89,7 +89,33 @@ Do NOT prompt upload:
 
 Decision rule: if there is a clear next-best improvement in scope, the cycle is NOT finished.
 
-At end of a normal batch, report only: what was done, next-best action, memory-sync: no, stopping-point: no.
+At end of a normal batch (stopping-point: no):
+1. Print result line
+2. Do NOT prompt upload or open Finder
+3. Append exactly one machine-friendly block:
+
+NEXT_AUTOMATION_PROMPT_START
+<prompt text only, no explanation, no duplicate signatures>
+NEXT_AUTOMATION_PROMPT_END
+
+No extra commentary after the END marker. No second copy of the prompt.
+
+At a true stopping point (stopping-point: yes):
+1. Validate → update memory → refresh zips → commit → push → prompt upload → open Finder
+2. Do NOT output NEXT_AUTOMATION_PROMPT markers unless explicitly useful.
+
+Keyboard Maestro captures prompts by matching NEXT_AUTOMATION_PROMPT_START through NEXT_AUTOMATION_PROMPT_END.
+
+## Manual vs Automated Task Priority
+- **Manual/ad hoc tasks from Aaron** (video moves, folder fixes, verifications, memory corrections, direct filesystem actions) → run immediately, even if an automation loop is active.
+- **Automated tasks** (website iteration prompts, KM batch continuations) → defer to queue when interrupted by a manual task.
+
+When a manual task interrupts an active automation loop:
+1. Preserve the next automation prompt
+2. Run the manual task now
+3. After completion, re-output the saved automation prompt in KM-friendly format (NEXT_AUTOMATION_PROMPT_START/END)
+
+Do not discard the queued automation. Do not mix manual results into automation result lines.
 
 ## Upload Convenience
 - Zip bundles → open ~/Chat-gpt/shared-memory-upload/

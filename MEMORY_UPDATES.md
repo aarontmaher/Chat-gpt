@@ -39,6 +39,15 @@
 ## 2026-03-23 — Sync Rule Tightened
 - Upload prompt only at true stopping points (no more worthwhile work in scope, or Aaron input needed)
 - Normal batch endings: report only, no upload prompt, no Finder open
+- Handoff format: NEXT_AUTOMATION_PROMPT_START/END markers for Keyboard Maestro compatibility
+- No extra commentary after END marker, no duplicate signatures, no second prompt copy
+- Manual tasks run immediately, automated tasks defer to queue when interrupted
+- After manual task, re-output saved automation prompt in KM format
+
+## 2026-03-23 — Website Improvement Loop Complete
+- 14 iterations completed in one session
+- True stopping point reached — remaining candidates are marginal polish
+- All changes in index.html, ready to commit/push
 
 ## 2026-03-23 — Shared Memory Cleanup + Sync Rule
 - Cleaned stale planning/setup language from all shared memory files
