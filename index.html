@@ -2631,14 +2631,15 @@ window.initGraph3D = (function() {
         var wrap = document.createElement('div');
         var item = document.createElement('div');
         item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:Barlow Condensed,monospace;font-size:13px;';
-        var chevron = tc > 0 ? '\u25B8' : '\u00B7';
+        var chevron = tc > 0 ? (_autoExpand ? '\u25BE' : '\u25B8') : '\u00B7';
         item.innerHTML = '<span class="g3d-heading-chev" style="width:10px;color:#4a5568;font-size:9px;flex-shrink:0;transition:transform 0.15s;">'+chevron+'</span>'
           + '<span style="flex:1;color:#8899aa;">'+t+'</span>'
           + (tc > 0 ? '<span style="color:#4a5568;font-size:10px;background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:8px;">'+tc+'</span>' : '');
         wrap.appendChild(item);
-        // Child list (hidden by default)
+        // Child list (auto-expand if ≤8 techniques)
         var childList = document.createElement('div');
-        childList.style.cssText = 'display:none;padding-left:18px;';
+        var _autoExpand = tc > 0 && tc <= 8;
+        childList.style.cssText = (_autoExpand ? 'display:block;' : 'display:none;') + 'padding-left:18px;';
         var headingKey = makePathKey(parentKey, t);
         if (h.c && h.c.length > 0) {
           h.c.forEach(function(child) {
