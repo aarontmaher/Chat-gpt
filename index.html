@@ -1524,7 +1524,11 @@ function markBuiltOut() {
       if (built) {
         var lbl = li.querySelector(':scope > .node .node-label');
         if (lbl && lbl.textContent.indexOf('\u2605') === -1) {
-          lbl.textContent = lbl.textContent + ' \u2605';
+          var star = document.createElement('span');
+          star.textContent = ' \u2605';
+          star.title = 'Has content across 3+ headings';
+          star.style.cssText = 'color:var(--accent);cursor:help;';
+          lbl.appendChild(star);
         }
       }
     }
@@ -3804,7 +3808,7 @@ document.getElementById('menuReadinessBtn').addEventListener('click', function()
     (nodes || []).forEach(function(n) {
       var t = (n.t || '').trim();
       if (!t || SKIP_NAMES.has(t)) { if (n.c) { var sub = walkContent(n.c); for (var k in sub) stats[k] += sub[k]; } return; }
-      if (ARROW_CHAR in t) { stats.otLines++; return; }
+      if (t.includes(ARROW_CHAR)) { stats.otLines++; return; }
       if (t === 'Notes') return;
       stats.techniques++;
       // Check for video (on node or in Instructional video child)
@@ -3844,7 +3848,7 @@ document.getElementById('menuReadinessBtn').addEventListener('click', function()
     function findMissing(nodes, path) {
       (nodes || []).forEach(function(n) {
         var t = (n.t || '').trim();
-        if (!t || SKIP_NAMES.has(t) || ARROW_CHAR in t || t === 'Notes') { if (n.c) findMissing(n.c, path); return; }
+        if (!t || SKIP_NAMES.has(t) || t.includes(ARROW_CHAR) || t === 'Notes') { if (n.c) findMissing(n.c, path); return; }
         var hasVid = !!n.v;
         if (!hasVid && n.c) n.c.forEach(function(ch) { if (ch.t === 'Instructional video' && ch.v) hasVid = true; });
         if (!hasVid) missing.push({ label: t, meta: s.title + (path ? ' · ' + path : ''), section: s.title, onClick: function() { closeListPanel(); switchToReferenceNode(t, s.title); } });
