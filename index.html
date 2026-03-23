@@ -4087,6 +4087,49 @@ document.getElementById('menuProgressBtn').addEventListener('click', function() 
       items.push({ label: s, meta: parts.join(' · '), bar: pct, barColor: col, sectionDot: col });
     }
   });
+  // Your Game section (from success log)
+  var successLog = STATE.successLog || [];
+  if (successLog.length > 0) {
+    items.push({ label: 'Your game', meta: '', isHeader: true });
+    // Count hits per technique
+    var hitCounts = {};
+    successLog.forEach(function(e) { hitCounts[e.key] = (hitCounts[e.key] || 0) + 1; });
+    var topHits = Object.entries(hitCounts).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 8);
+    var maxHits = topHits.length > 0 ? topHits[0][1] : 1;
+    topHits.forEach(function(kv) {
+      var segs = kv[0].split('|');
+      var label = segs[segs.length - 1].replace(/_/g, ' ');
+      var section = segs[0].replace(/_/g, ' ');
+      var pct = Math.round(kv[1] / maxHits * 100);
+      items.push({
+        label: label,
+        meta: kv[1] + ' hits · ' + section,
+        bar: pct,
+        barColor: 'var(--green)',
+        onClick: function() { closeListPanel(); switchToReferenceNode(label, section); }
+      });
+    });
+    // Suggest next move from graph edges
+    if (topHits.length > 0 && typeof NET_EDGES !== 'undefined') {
+      var topLabel = topHits[0][0].split('|');
+      var topSection = topLabel[0].replace(/_/g, ' ');
+      var topPos = topLabel.length >= 2 ? topLabel[1].replace(/_/g, ' ') : '';
+      // Find outbound edges from top position
+      var suggestions = NET_EDGES.filter(function(e) {
+        return e.source_label && e.source_label.toLowerCase().includes(topPos.toLowerCase().slice(0, 10));
+      }).slice(0, 3);
+      if (suggestions.length > 0) {
+        items.push({ label: 'Next moves to build', meta: '', isHeader: true });
+        suggestions.forEach(function(e) {
+          items.push({
+            label: e.target_label,
+            meta: 'Connected from ' + e.source_label,
+            onClick: function() { closeListPanel(); switchToReferenceNode(e.target_label); }
+          });
+        });
+      }
+    }
+  }
   openListPanel('Progress', items);
 });
 // Explore More (gap finder)
