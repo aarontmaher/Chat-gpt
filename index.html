@@ -441,9 +441,11 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
-  <div id="refQuickAccess" style="display:none;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#556;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Recent</div>
-    <div id="refQuickAccessList" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  <div id="refHomePanel" style="display:none;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div id="refHomeDrills" style="display:none;margin-bottom:8px;"></div>
+    <div id="refHomeGame" style="display:none;margin-bottom:8px;"></div>
+    <div id="refHomeTrain" style="display:none;margin-bottom:8px;"></div>
+    <div id="refHomeRecent" style="display:none;"></div>
   </div>
   <div class="sections" id="sections" style="flex:1;overflow-y:auto;"></div>
   <div id="refOnboarding" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;display:none;transition:opacity 0.5s;">
@@ -2261,24 +2263,91 @@ function refreshAllViews() {
   // Update quick access bar
   updateQuickAccess();
 }
-function updateQuickAccess() {
-  var qa = document.getElementById('refQuickAccess');
-  var list = document.getElementById('refQuickAccessList');
-  if (!qa || !list) return;
+function updateQuickAccess() { updateHomePanel(); }
+function updateHomePanel() {
+  var panel = document.getElementById('refHomePanel');
+  if (!panel) return;
+  var drillsEl = document.getElementById('refHomeDrills');
+  var gameEl = document.getElementById('refHomeGame');
+  var trainEl = document.getElementById('refHomeTrain');
+  var recentEl = document.getElementById('refHomeRecent');
+  var hasAnything = false;
+
+  // ─── MY DRILLS ───
+  var drillKeys = Object.entries(STATE.progress).filter(function(kv) { return kv[1] === 'drilling'; });
+  if (drillKeys.length > 0 && drillsEl) {
+    hasAnything = true;
+    drillsEl.style.display = '';
+    drillsEl.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Your drills (' + drillKeys.length + ')</div>';
+    var dList = document.createElement('div');
+    dList.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+    drillKeys.slice(0, 6).forEach(function(kv) {
+      var segs = kv[0].split('|');
+      var label = segs[segs.length - 1].replace(/_/g, ' ');
+      var section = segs[0].replace(/_/g, ' ');
+      var chip = document.createElement('button');
+      chip.style.cssText = 'background:rgba(71,200,255,0.06);border:1px solid rgba(71,200,255,0.2);color:var(--blue);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:4px 10px;border-radius:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;';
+      chip.textContent = label;
+      chip.addEventListener('click', function() { switchToReferenceNode(label, section); });
+      dList.appendChild(chip);
+    });
+    drillsEl.appendChild(dList);
+  } else if (drillsEl) { drillsEl.style.display = 'none'; }
+
+  // ─── BUILD YOUR GAME (from success log) ───
+  var successLog = STATE.successLog || [];
+  if (successLog.length > 0 && gameEl) {
+    hasAnything = true;
+    gameEl.style.display = '';
+    var hitCounts = {};
+    successLog.forEach(function(e) { hitCounts[e.key] = (hitCounts[e.key] || 0) + 1; });
+    var topHit = Object.entries(hitCounts).sort(function(a,b) { return b[1] - a[1]; })[0];
+    var topLabel = topHit[0].split('|'); topLabel = topLabel[topLabel.length-1].replace(/_/g,' ');
+    // Find next move from graph
+    var nextMove = '';
+    if (typeof NET_EDGES !== 'undefined') {
+      var topPos = topHit[0].split('|'); topPos = topPos.length >= 2 ? topPos[1].replace(/_/g,' ') : '';
+      var edge = NET_EDGES.find(function(e) { return e.source_label && e.source_label.toLowerCase().includes(topPos.toLowerCase().slice(0,10)); });
+      if (edge) nextMove = edge.target_label;
+    }
+    var html = '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Build your game</div>';
+    html += '<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--text-dim);line-height:1.5;">';
+    html += 'You\'ve been hitting <span style="color:var(--green);font-weight:500;">' + topLabel + '</span>';
+    if (nextMove) html += '. Next best addition: <span style="color:var(--blue);font-weight:500;cursor:pointer;" onclick="switchToReferenceNode(\'' + nextMove.replace(/'/g,"\\'") + '\')">' + nextMove + '</span>';
+    html += '</div>';
+    gameEl.innerHTML = html;
+  } else if (gameEl) { gameEl.style.display = 'none'; }
+
+  // ─── START TRAINING ───
+  if (trainEl) {
+    hasAnything = true;
+    trainEl.style.display = '';
+    trainEl.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button onclick="document.getElementById(\'menuRandomBtn\').click()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.2);color:var(--accent);font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;">Random Drill</button>' +
+      '<button onclick="document.getElementById(\'menuTimerBtn\').click()" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Drill Timer</button>' +
+      '<button onclick="document.getElementById(\'menuCircuitBtn\').click()" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Drill Circuit</button>' +
+      '</div>';
+  }
+
+  // ─── RECENT ───
   var recent = (STATE.recentViewed || []).slice(0, 5);
-  if (recent.length === 0) { qa.style.display = 'none'; return; }
-  qa.style.display = '';
-  list.innerHTML = '';
-  recent.forEach(function(r) {
-    var chip = document.createElement('button');
-    chip.style.cssText = 'background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:4px 10px;border-radius:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;';
-    chip.textContent = r.label;
-    chip.title = r.section;
-    chip.addEventListener('mouseenter', function() { chip.style.borderColor = 'var(--accent)'; chip.style.color = 'var(--text)'; });
-    chip.addEventListener('mouseleave', function() { chip.style.borderColor = 'var(--border)'; chip.style.color = 'var(--text-dim)'; });
-    chip.addEventListener('click', function() { switchToReferenceNode(r.label, r.section); });
-    list.appendChild(chip);
-  });
+  if (recent.length > 0 && recentEl) {
+    hasAnything = true;
+    recentEl.style.display = '';
+    recentEl.innerHTML = '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Continue</div>';
+    var rList = document.createElement('div');
+    rList.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+    recent.forEach(function(r) {
+      var chip = document.createElement('button');
+      chip.style.cssText = 'background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:4px 10px;border-radius:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;';
+      chip.textContent = r.label;
+      chip.addEventListener('click', function() { switchToReferenceNode(r.label, r.section); });
+      rList.appendChild(chip);
+    });
+    recentEl.appendChild(rList);
+  } else if (recentEl) { recentEl.style.display = 'none'; }
+
+  panel.style.display = hasAnything ? '' : 'none';
 }
 
 // ─── 3D WEIGHTED NETWORK GRAPH ───────────────────────────────────────────────
