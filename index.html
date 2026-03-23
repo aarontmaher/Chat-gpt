@@ -2384,11 +2384,26 @@ function updateHomePanel() {
   if (trainEl) {
     hasAnything = true;
     trainEl.style.display = '';
-    trainEl.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-      '<button onclick="document.getElementById(\'menuRandomBtn\').click()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.2);color:var(--accent);font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;">Random Drill</button>' +
-      '<button onclick="document.getElementById(\'menuTimerBtn\').click()" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Drill Timer</button>' +
-      '<button onclick="document.getElementById(\'menuCircuitBtn\').click()" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Drill Circuit</button>' +
-      '</div>';
+    var _drillCount = Object.values(STATE.progress).filter(function(v){return v==='drilling';}).length;
+    var _trainHtml = '';
+    if (_drillCount > 0) {
+      // User has drills — show prominent "Start Training" as primary CTA
+      _trainHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">';
+      _trainHtml += '<button onclick="document.getElementById(\'menuRandomBtn\').click()" style="background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;box-shadow:0 2px 8px rgba(232,255,71,0.2);">Start Training</button>';
+      _trainHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:12px;color:#667;">' + _drillCount + ' technique' + (_drillCount !== 1 ? 's' : '') + ' in your drill queue</span>';
+      _trainHtml += '</div>';
+    }
+    _trainHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    if (_drillCount > 0) {
+      _trainHtml += '<button onclick="document.getElementById(\'menuDrillingBtn\').click()" style="background:rgba(71,200,255,0.06);border:1px solid rgba(71,200,255,0.2);color:var(--blue);font-family:Barlow Condensed,sans-serif;font-size:11px;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">My Drills</button>';
+    }
+    _trainHtml += '<button onclick="document.getElementById(\'menuTimerBtn\').click()" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:11px;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Timer</button>';
+    _trainHtml += '<button onclick="document.getElementById(\'menuCircuitBtn\').click()" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:11px;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Circuit</button>';
+    if (_drillCount === 0) {
+      _trainHtml += '<button onclick="document.getElementById(\'menuRandomBtn\').click()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.2);color:var(--accent);font-family:Barlow Condensed,sans-serif;font-size:11px;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">Random Drill</button>';
+    }
+    _trainHtml += '</div>';
+    trainEl.innerHTML = _trainHtml;
   }
 
   // ─── RECENT ───
