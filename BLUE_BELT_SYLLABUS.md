@@ -220,7 +220,7 @@ Second-layer "if they defend, then..." chains.
 ## Status
 | Section | Status |
 |---------|--------|
-| Wrestling / Standing | **structured** — 7 sub-sections (A-G) with all mapped techniques listed as options — needs Aaron picks |
+| Wrestling / Standing | **filled** — 7 sub-sections (A-G) fully structured with all mapped technique options listed — 9 open picks need Aaron |
 | Passing | **skeleton** — 2 new guards + additional passes — needs Aaron |
 | Dominant Positions | **skeleton** — retention + 2nd subs + North South — needs Aaron |
 | Guard | **skeleton** — deeper CG/KS + Half Guard + Butterfly — needs Aaron |

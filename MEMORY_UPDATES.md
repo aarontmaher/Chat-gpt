@@ -62,3 +62,10 @@
 - SYSTEM_OPTIMIZATION.md rewritten to reflect active state, not old setup notes
 - PROJECT_STATE.md: removed stale "not yet scripted" framing — loop is active
 - Sync rule added: only update/upload at end of complete cycle, not after micro-fixes
+
+## 2026-03-24 — BELT-SYLLABUS-BLUE-03: Wrestling / Standing Review
+- Blue belt Wrestling / Standing confirmed fully structured (7 sub-sections A-G)
+- All mapped technique options listed from OPML data
+- 9 open picks remaining — all require Aaron's selection
+- Status upgraded from "structured" to "filled" in BLUE_BELT_SYLLABUS.md
+- Covers: new ties (A), collar tie depth (B), underhook depth (C), shot finishing (D), shot defence (E), wrestling bodylock (F), head outside single (G)
