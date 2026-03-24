@@ -1260,16 +1260,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
 
   const label = document.createElement('span');
   label.className = (node.v || node.l) ? 'node-label has-video' : 'node-label';
-  var _displayNames = {'Offensive transitions':'Transitions','Setups / Entries':'Setups & Entries'};
-  var _displayText = _displayNames[node.t] || node.t;
-  // Context-aware: "Defence" under Attacker/Passer/Initiative = retention, not escapes
-  if ((node.t === 'Defence' || node.t === 'Defence / Escapes') && parentKey) {
-    var _pk = parentKey.toLowerCase();
-    if (_pk.includes('attacker') || _pk.includes('passer') || _pk.includes('initiative') || _pk.includes('you')) {
-      _displayText = 'Retention';
-    }
-  }
-  label.textContent = _displayText;
+  label.textContent = node.t;
   content.appendChild(label);
 
   const actions = document.createElement('div');
