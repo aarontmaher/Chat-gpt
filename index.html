@@ -2884,28 +2884,140 @@ function updateHomePanel() {
     drillsEl.appendChild(dList);
   } else if (drillsEl) { drillsEl.style.display = 'none'; }
 
-  // ─── BUILD YOUR GAME (from success log) ───
+  // ─── BUILD YOUR GAME (from success log + progress) ───
   var successLog = STATE.successLog || [];
-  if (successLog.length > 0 && gameEl) {
+  var hasGameContent = successLog.length > 0 || Object.keys(STATE.progress).length > 0;
+  if (hasGameContent && gameEl) {
     hasAnything = true;
     gameEl.style.display = '';
-    var hitCounts = {};
-    successLog.forEach(function(e) { hitCounts[e.key] = (hitCounts[e.key] || 0) + 1; });
-    var topHit = Object.entries(hitCounts).sort(function(a,b) { return b[1] - a[1]; })[0];
-    var topLabel = topHit[0].split('|'); topLabel = topLabel[topLabel.length-1].replace(/_/g,' ');
-    // Find next move from graph
-    var nextMove = '';
-    if (typeof NET_EDGES !== 'undefined') {
-      var topPos = topHit[0].split('|'); topPos = topPos.length >= 2 ? topPos[1].replace(/_/g,' ') : '';
-      var edge = NET_EDGES.find(function(e) { return e.source_label && e.source_label.toLowerCase().includes(topPos.toLowerCase().slice(0,10)); });
-      if (edge) nextMove = edge.target_label;
+    var gHtml = '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Build your game</div>';
+
+    // --- Most recent hit move ---
+    if (successLog.length > 0) {
+      var sorted = successLog.slice().sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+      var lastHit = sorted[0];
+      var lastSegs = lastHit.key.split('|');
+      var lastLabel = lastSegs[lastSegs.length - 1].replace(/_/g, ' ');
+      var lastSection = lastSegs[0].replace(/_/g, ' ');
+      var lastPos = lastSegs.length >= 2 ? lastSegs[1].replace(/_/g, ' ') : '';
+      var agoMs = Date.now() - (lastHit.ts || Date.now());
+      var agoText = agoMs < 3600000 ? Math.round(agoMs/60000) + 'm ago' : agoMs < 86400000 ? Math.round(agoMs/3600000) + 'h ago' : Math.round(agoMs/86400000) + 'd ago';
+      gHtml += '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">';
+      gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;">Last hit</span>';
+      gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--green);font-weight:500;cursor:pointer;" onclick="switchToReferenceNode(\'' + lastLabel.replace(/'/g,"\\'") + '\',\'' + lastSection.replace(/'/g,"\\'") + '\')">' + lastLabel + '</span>';
+      gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#445;">' + (lastPos ? lastPos + ' · ' : '') + agoText + '</span>';
+      gHtml += '</div>';
+
+      // --- Top 3 most-hit moves ---
+      var hitCounts = {};
+      successLog.forEach(function(e) { hitCounts[e.key] = (hitCounts[e.key] || 0) + 1; });
+      var topHits = Object.entries(hitCounts).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 3);
+      if (topHits.length > 0 && topHits[0][1] > 1) {
+        gHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">';
+        topHits.forEach(function(kv) {
+          var segs = kv[0].split('|');
+          var lbl = segs[segs.length - 1].replace(/_/g, ' ');
+          var sec = segs[0].replace(/_/g, ' ');
+          gHtml += '<button onclick="switchToReferenceNode(\'' + lbl.replace(/'/g,"\\'") + '\',\'' + sec.replace(/'/g,"\\'") + '\')" style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);color:var(--green);font-family:Barlow Condensed,sans-serif;font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:all 0.15s;">' + lbl + ' <span style="opacity:0.6;font-size:10px;">\u00D7' + kv[1] + '</span></button>';
+        });
+        gHtml += '</div>';
+      }
+
+      // --- Specific next move suggestion from graph edges ---
+      if (typeof NET_EDGES !== 'undefined' && NET_EDGES.length > 0) {
+        // Find positions the user has been active in (from success log)
+        var activePositions = {};
+        successLog.forEach(function(e) {
+          var s = e.key.split('|');
+          if (s.length >= 2) {
+            var pos = s[1].replace(/_/g, ' ');
+            activePositions[pos] = (activePositions[pos] || 0) + 1;
+          }
+        });
+        // Find outbound edges from most active position, prefer untracked destinations
+        var topActivePos = Object.entries(activePositions).sort(function(a,b) { return b[1] - a[1]; })[0];
+        if (topActivePos) {
+          var outEdges = NET_EDGES.filter(function(e) {
+            return e.source_label && e.source_label.toLowerCase() === topActivePos[0].toLowerCase();
+          });
+          // Prefer destinations where user has no tracked techniques
+          var trackedPositions = new Set();
+          Object.keys(STATE.progress).forEach(function(k) {
+            var s2 = k.split('|');
+            if (s2.length >= 2) trackedPositions.add(s2[1].replace(/_/g, ' ').toLowerCase());
+          });
+          var untrackedEdges = outEdges.filter(function(e) { return !trackedPositions.has(e.target_label.toLowerCase()); });
+          var bestEdge = untrackedEdges.length > 0 ? untrackedEdges[0] : outEdges[0];
+          if (bestEdge) {
+            var ctxLabel = bestEdge.context_label || '';
+            gHtml += '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;">';
+            gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;">Next move</span>';
+            gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--blue);font-weight:500;cursor:pointer;" onclick="switchToReferenceNode(\'' + bestEdge.target_label.replace(/'/g,"\\'") + '\')">' + bestEdge.target_label + '</span>';
+            if (ctxLabel) gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#445;">via ' + ctxLabel + '</span>';
+            else gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#445;">from ' + topActivePos[0] + '</span>';
+            gHtml += '</div>';
+          }
+        }
+      }
     }
-    var html = '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Build your game</div>';
-    html += '<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--text-dim);line-height:1.5;">';
-    html += 'You\'ve been hitting <span style="color:var(--green);font-weight:500;">' + topLabel + '</span>';
-    if (nextMove) html += '. Next best addition: <span style="color:var(--blue);font-weight:500;cursor:pointer;" onclick="switchToReferenceNode(\'' + nextMove.replace(/'/g,"\\'") + '\')">' + nextMove + '</span>';
-    html += '</div>';
-    gameEl.innerHTML = html;
+
+    // --- Position strength indicators ---
+    var positionStrength = {};
+    Object.entries(STATE.progress).forEach(function(kv) {
+      var s3 = kv[0].split('|');
+      if (s3.length >= 2) {
+        var posId = s3[0] + '|' + s3[1];
+        var posName = s3[1].replace(/_/g, ' ');
+        if (!positionStrength[posId]) positionStrength[posId] = { name: posName, section: s3[0].replace(/_/g, ' '), drilling: 0, learned: 0, total: 0 };
+        positionStrength[posId].total++;
+        if (kv[1] === 'drilling') positionStrength[posId].drilling++;
+        if (kv[1] === 'learned') positionStrength[posId].learned++;
+      }
+    });
+    var strengthEntries = Object.values(positionStrength).sort(function(a,b) { return (b.learned + b.drilling) - (a.learned + a.drilling); });
+    if (strengthEntries.length > 0) {
+      gHtml += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">';
+      strengthEntries.slice(0, 5).forEach(function(ps) {
+        var strength = ps.learned >= 3 ? 'Strong' : ps.learned >= 1 || ps.drilling >= 2 ? 'Building' : 'Gap';
+        var sColor = strength === 'Strong' ? 'var(--green)' : strength === 'Building' ? 'var(--blue)' : '#ff6b6b';
+        var sBg = strength === 'Strong' ? 'rgba(0,255,136,0.06)' : strength === 'Building' ? 'rgba(71,200,255,0.06)' : 'rgba(255,107,107,0.06)';
+        var sBorder = strength === 'Strong' ? 'rgba(0,255,136,0.15)' : strength === 'Building' ? 'rgba(71,200,255,0.15)' : 'rgba(255,107,107,0.15)';
+        gHtml += '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;padding:2px 8px;border-radius:8px;background:' + sBg + ';border:1px solid ' + sBorder + ';color:' + sColor + ';white-space:nowrap;" title="' + ps.name + ': ' + ps.learned + ' learned, ' + ps.drilling + ' drilling">' + ps.name + ' <span style="font-weight:600;">' + strength + '</span></span>';
+      });
+      gHtml += '</div>';
+    }
+
+    // --- Connected but untracked suggestions ---
+    if (typeof NET_EDGES !== 'undefined' && NET_EDGES.length > 0 && Object.keys(STATE.progress).length > 0) {
+      var trackedPosSet = new Set();
+      Object.keys(STATE.progress).forEach(function(k) {
+        var s4 = k.split('|');
+        if (s4.length >= 2) trackedPosSet.add(s4[1].replace(/_/g, ' ').toLowerCase());
+      });
+      var connectedUntracked = [];
+      var seenSug = new Set();
+      NET_EDGES.forEach(function(e) {
+        if (trackedPosSet.has((e.source_label||'').toLowerCase()) && !trackedPosSet.has((e.target_label||'').toLowerCase()) && !seenSug.has(e.target_label)) {
+          seenSug.add(e.target_label);
+          connectedUntracked.push({ label: e.target_label, from: e.source_label });
+        }
+        if (trackedPosSet.has((e.target_label||'').toLowerCase()) && !trackedPosSet.has((e.source_label||'').toLowerCase()) && !seenSug.has(e.source_label)) {
+          seenSug.add(e.source_label);
+          connectedUntracked.push({ label: e.source_label, from: e.target_label });
+        }
+      });
+      if (connectedUntracked.length > 0) {
+        gHtml += '<div style="margin-top:6px;">';
+        gHtml += '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:3px;">Connected — not yet tracked</div>';
+        gHtml += '<div style="display:flex;gap:5px;flex-wrap:wrap;">';
+        connectedUntracked.slice(0, 4).forEach(function(su) {
+          gHtml += '<button onclick="switchToReferenceNode(\'' + su.label.replace(/'/g,"\\'") + '\')" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--text-dim);font-family:Barlow Condensed,sans-serif;font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:all 0.15s;" title="Connected to ' + su.from + '">' + su.label + '</button>';
+        });
+        gHtml += '</div></div>';
+      }
+    }
+
+    gameEl.innerHTML = gHtml;
   } else if (gameEl) { gameEl.style.display = 'none'; }
 
   // ─── START TRAINING ───
@@ -4889,6 +5001,21 @@ document.getElementById('menuProgressBtn').addEventListener('click', function() 
   var successLog = STATE.successLog || [];
   if (successLog.length > 0) {
     items.push({ label: 'Your game', meta: '', isHeader: true });
+    // Most recent hit
+    var sortedLog = successLog.slice().sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+    var lastEntry = sortedLog[0];
+    var lastSegs2 = lastEntry.key.split('|');
+    var lastLbl2 = lastSegs2[lastSegs2.length - 1].replace(/_/g, ' ');
+    var lastSec2 = lastSegs2[0].replace(/_/g, ' ');
+    var lastPos2 = lastSegs2.length >= 2 ? lastSegs2[1].replace(/_/g, ' ') : '';
+    var ago2 = Date.now() - (lastEntry.ts || Date.now());
+    var agoStr2 = ago2 < 3600000 ? Math.round(ago2/60000) + 'm ago' : ago2 < 86400000 ? Math.round(ago2/3600000) + 'h ago' : Math.round(ago2/86400000) + 'd ago';
+    items.push({
+      label: 'Last hit: ' + lastLbl2,
+      meta: (lastPos2 ? lastPos2 + ' · ' : '') + agoStr2,
+      barColor: 'var(--green)',
+      onClick: function() { closeListPanel(); switchToReferenceNode(lastLbl2, lastSec2); }
+    });
     // Count hits per technique
     var hitCounts = {};
     successLog.forEach(function(e) { hitCounts[e.key] = (hitCounts[e.key] || 0) + 1; });
@@ -4907,22 +5034,91 @@ document.getElementById('menuProgressBtn').addEventListener('click', function() 
         onClick: function() { closeListPanel(); switchToReferenceNode(label, section); }
       });
     });
-    // Suggest next move from graph edges
+    // Position strength in progress panel
+    var posStr2 = {};
+    Object.entries(STATE.progress).forEach(function(kv) {
+      var s5 = kv[0].split('|');
+      if (s5.length >= 2) {
+        var pid = s5[0] + '|' + s5[1];
+        var pn = s5[1].replace(/_/g, ' ');
+        if (!posStr2[pid]) posStr2[pid] = { name: pn, drilling: 0, learned: 0 };
+        if (kv[1] === 'drilling') posStr2[pid].drilling++;
+        if (kv[1] === 'learned') posStr2[pid].learned++;
+      }
+    });
+    var strEntries2 = Object.values(posStr2).filter(function(p) { return p.drilling + p.learned > 0; }).sort(function(a,b) { return (b.learned + b.drilling) - (a.learned + a.drilling); });
+    if (strEntries2.length > 0) {
+      items.push({ label: 'Position strength', meta: '', isHeader: true });
+      strEntries2.slice(0, 6).forEach(function(ps) {
+        var str = ps.learned >= 3 ? 'Strong' : ps.learned >= 1 || ps.drilling >= 2 ? 'Building' : 'Gap';
+        var col2 = str === 'Strong' ? 'var(--green)' : str === 'Building' ? 'var(--blue)' : '#ff6b6b';
+        items.push({ label: ps.name + ' — ' + str, meta: ps.learned + ' learned, ' + ps.drilling + ' drilling', barColor: col2 });
+      });
+    }
+    // Suggest next move from graph edges — prefer untracked destinations
     if (topHits.length > 0 && typeof NET_EDGES !== 'undefined') {
       var topLabel = topHits[0][0].split('|');
       var topSection = topLabel[0].replace(/_/g, ' ');
       var topPos = topLabel.length >= 2 ? topLabel[1].replace(/_/g, ' ') : '';
-      // Find outbound edges from top position
-      var suggestions = NET_EDGES.filter(function(e) {
-        return e.source_label && e.source_label.toLowerCase().includes(topPos.toLowerCase().slice(0, 10));
-      }).slice(0, 3);
+      var outEdges2 = NET_EDGES.filter(function(e) {
+        return e.source_label && e.source_label.toLowerCase() === topPos.toLowerCase();
+      });
+      // Fallback to partial match if exact match fails
+      if (outEdges2.length === 0) {
+        outEdges2 = NET_EDGES.filter(function(e) {
+          return e.source_label && e.source_label.toLowerCase().includes(topPos.toLowerCase().slice(0, 10));
+        });
+      }
+      var trackedProg = new Set();
+      Object.keys(STATE.progress).forEach(function(k) {
+        var sg = k.split('|');
+        if (sg.length >= 2) trackedProg.add(sg[1].replace(/_/g, ' ').toLowerCase());
+      });
+      // Sort: untracked destinations first
+      outEdges2.sort(function(a,b) {
+        var aU = trackedProg.has((a.target_label||'').toLowerCase()) ? 1 : 0;
+        var bU = trackedProg.has((b.target_label||'').toLowerCase()) ? 1 : 0;
+        return aU - bU;
+      });
+      var suggestions = outEdges2.slice(0, 3);
       if (suggestions.length > 0) {
         items.push({ label: 'Next moves to build', meta: '', isHeader: true });
         suggestions.forEach(function(e) {
+          var isUntracked = !trackedProg.has((e.target_label||'').toLowerCase());
           items.push({
-            label: e.target_label,
-            meta: 'Connected from ' + e.source_label,
+            label: e.target_label + (isUntracked ? ' (new)' : ''),
+            meta: (e.context_label ? 'via ' + e.context_label + ' from ' : 'Connected from ') + e.source_label,
             onClick: function() { closeListPanel(); switchToReferenceNode(e.target_label); }
+          });
+        });
+      }
+    }
+    // Connected but untracked
+    if (typeof NET_EDGES !== 'undefined' && NET_EDGES.length > 0 && Object.keys(STATE.progress).length > 0) {
+      var tpSet2 = new Set();
+      Object.keys(STATE.progress).forEach(function(k) {
+        var s6 = k.split('|');
+        if (s6.length >= 2) tpSet2.add(s6[1].replace(/_/g, ' ').toLowerCase());
+      });
+      var connUnt2 = [];
+      var seen3 = new Set();
+      NET_EDGES.forEach(function(e) {
+        if (tpSet2.has((e.source_label||'').toLowerCase()) && !tpSet2.has((e.target_label||'').toLowerCase()) && !seen3.has(e.target_label)) {
+          seen3.add(e.target_label);
+          connUnt2.push({ label: e.target_label, from: e.source_label });
+        }
+        if (tpSet2.has((e.target_label||'').toLowerCase()) && !tpSet2.has((e.source_label||'').toLowerCase()) && !seen3.has(e.source_label)) {
+          seen3.add(e.source_label);
+          connUnt2.push({ label: e.source_label, from: e.target_label });
+        }
+      });
+      if (connUnt2.length > 0) {
+        items.push({ label: 'Connected — not yet tracked', meta: '', isHeader: true });
+        connUnt2.slice(0, 5).forEach(function(su) {
+          items.push({
+            label: su.label,
+            meta: 'Connected to ' + su.from,
+            onClick: function() { closeListPanel(); switchToReferenceNode(su.label); }
           });
         });
       }
