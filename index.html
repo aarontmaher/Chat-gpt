@@ -2595,8 +2595,16 @@ window.initGraph3D = (function() {
 
   // Orphan nodes (in_network===false) always render at this opacity.
   var ORPHAN_OPACITY = 0.3;
-  // True if node should have a mesh in the 3D graph (depth-1 position, not excluded).
+  // ─── SUBPOSITION TRIAL FLAG ────────────────────────────────────────
+  // Set to true to show sub-positions as separate graph nodes.
+  // Revert: set back to false. One-line change.
+  var SUBPOSITION_TRIAL = true;
+
+  // True if node should have a mesh in the 3D graph.
   function isGraphableNode(n) {
+    if (SUBPOSITION_TRIAL) {
+      return (n.depth === 1 || n.depth === 2) && !GRAPH_EXCLUDE_LABELS.has(n.label);
+    }
     return n.depth === 1 && !GRAPH_EXCLUDE_LABELS.has(n.label);
   }
 
@@ -2778,7 +2786,8 @@ window.initGraph3D = (function() {
     // get the full detail panel. Non-canonical clicks map UP to the
     // nearest canonical ancestor via parent_id. If no reliable ancestry
     // metadata exists, ignore the click silently.
-    if(nd3.depth !== 1 || GRAPH_EXCLUDE_LABELS.has(nd3.label)) {
+    var _acceptDepth = SUBPOSITION_TRIAL ? (nd3.depth === 1 || nd3.depth === 2) : nd3.depth === 1;
+    if(!_acceptDepth || GRAPH_EXCLUDE_LABELS.has(nd3.label)) {
       if(typeof nd3.parent_id === 'undefined' || nd3.parent_id === null) return;
       var anc = nd3, walk = 10;
       while(anc && walk-- > 0) {
@@ -3384,6 +3393,7 @@ window.initGraph3D = (function() {
     aEdges.forEach(e=>{var w=e.visibleWeight||e.weight;inn[e.target]=(inn[e.target]||0)+w;out[e.source]=(out[e.source]||0)+w;});
     active.forEach(n=>{
       if(n.depth===1){n._in=(inn[n.id]||0)+1;n._out=out[n.id]||0;n._w=n._in*1.5+n._out+8;n._r=Math.max(2.5,1.5+Math.pow(n._w,0.85)*1.8);}
+      if(SUBPOSITION_TRIAL&&n.depth===2){n._in=(inn[n.id]||0);n._out=out[n.id]||0;n._w=n._in+n._out+3;n._r=Math.max(1.5,1+Math.pow(n._w,0.7)*1.2);}
       else{n._in=inn[n.id]||0;n._out=out[n.id]||0;n._w=2;n._r=2.0;}
     });
     netNds.filter(n=>!aIds.has(n.id)).forEach(n=>{n._in=0;n._out=0;n._w=0;n._r=1.2;});
