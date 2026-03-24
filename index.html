@@ -554,6 +554,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div class="g3d-opt-row"><label>Auto-rotate</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptRotate" checked><span class="g3d-toggle-track"></span></label></div>
     <div style="height:1px;background:rgba(255,255,255,0.04);margin:6px 0;"></div>
     <div class="g3d-opt-row"><label>Include unconnected positions</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptOrphans"><span class="g3d-toggle-track"></span></label></div>
+    <div class="g3d-opt-row"><label>Show sub-positions (detailed)</label><label class="g3d-toggle"><input type="checkbox" id="g3dOptSubPositions"><span class="g3d-toggle-track"></span></label></div>
   </div>
 
   <!-- Detail panel -->
@@ -2598,7 +2599,7 @@ window.initGraph3D = (function() {
   // ─── SUBPOSITION TRIAL FLAG ────────────────────────────────────────
   // Set to true to show sub-positions as separate graph nodes.
   // Revert: set back to false. One-line change.
-  var SUBPOSITION_TRIAL = true;
+  var SUBPOSITION_TRIAL = false; // toggled by Settings UI
 
   // True if node should have a mesh in the 3D graph.
   function isGraphableNode(n) {
@@ -4003,6 +4004,15 @@ window.initGraph3D = (function() {
           _log('Orphan meshes created:',orphanMeshes3d.length);
         }
         orphanMeshes3d.forEach(function(m){m.visible=showOrphans3d;});
+      });
+
+      // Sub-positions toggle
+      document.getElementById('g3dOptSubPositions').addEventListener('change', function() {
+        SUBPOSITION_TRIAL = this.checked;
+        // Rebuild graph to show/hide sub-position nodes
+        if (typeof initGraph3D === 'function') {
+          requestAnimationFrame(function() { requestAnimationFrame(initGraph3D); });
+        }
       });
 
       // Search (debounced 200ms)
