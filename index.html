@@ -357,6 +357,11 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .logo { font-size: 20px !important; letter-spacing: 2px !important; }
   .logo span { font-size: 10px !important; }
 
+  /* Belt: compact on mobile */
+  #beltLabel { display: none !important; }
+  #beltIcon { width: 24px; height: 14px; }
+  #beltDropdown { right: -40px !important; }
+
   /* Inline player: full width on mobile */
   .inline-player { max-width: 100% !important; }
 
@@ -390,6 +395,23 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
   <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
   <div style="position:relative;">
+    <div id="beltArea" style="display:flex;align-items:center;gap:6px;position:relative;cursor:pointer;" title="Belt progression">
+      <svg id="beltIcon" width="28" height="16" viewBox="0 0 28 16" style="flex-shrink:0;">
+        <rect x="0" y="3" width="28" height="10" rx="2" fill="#e8e8e8" id="beltStrip"/>
+        <rect x="11" y="1" width="6" height="14" rx="1" fill="#c0c0c0" id="beltKnot"/>
+      </svg>
+      <span id="beltLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:500;color:var(--text-dim);letter-spacing:0.5px;white-space:nowrap;">White Belt</span>
+    </div>
+    <div id="beltDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 0;z-index:60;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:180px;">
+      <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:4px 14px;">Belt Progression</div>
+      <button class="belt-opt" data-belt="white" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">⬜ White Belt</button>
+      <button class="belt-opt" data-belt="blue" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">🟦 Blue Belt</button>
+      <button class="belt-opt" data-belt="purple" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">🟪 Purple Belt</button>
+      <button class="belt-opt" data-belt="brown" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">🟫 Brown Belt</button>
+      <button class="belt-opt" data-belt="black" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">⬛ Black Belt</button>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+      <button id="beltApplyBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;font-weight:500;">Apply for Next Belt →</button>
+    </div>
     <button id="authBtn" style="background:var(--accent);border:none;color:#000;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;display:none;">Create Account</button>
     <button id="authUserBtn" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;display:none;"></button>
     <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu" aria-label="Open menu" aria-haspopup="true">&#8942;</button>
@@ -5439,6 +5461,62 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 </div>
 <script>
 // ─── AUTH UI LOGIC ──────────────────────────────────────────────────────────
+// ─── BELT PROGRESSION UI ────────────────────────────────────────────────────
+(function initBeltUI() {
+  var BELT_COLORS = {
+    white: { strip: '#e8e8e8', knot: '#c0c0c0', text: '#e8e8e8' },
+    blue: { strip: '#2b6cb0', knot: '#1a4971', text: '#47a3ff' },
+    purple: { strip: '#7c3aed', knot: '#5b21b6', text: '#a78bfa' },
+    brown: { strip: '#8B4513', knot: '#5c2e0e', text: '#c4813a' },
+    black: { strip: '#1a1a1a', knot: '#000000', text: '#e8e8e8' }
+  };
+  var BELT_NAMES = { white: 'White Belt', blue: 'Blue Belt', purple: 'Purple Belt', brown: 'Brown Belt', black: 'Black Belt' };
+  var currentBelt = UserStore.load('gm_current_belt') || 'white';
+
+  function updateBeltVisual(belt) {
+    var c = BELT_COLORS[belt] || BELT_COLORS.white;
+    document.getElementById('beltStrip').setAttribute('fill', c.strip);
+    document.getElementById('beltKnot').setAttribute('fill', c.knot);
+    var lbl = document.getElementById('beltLabel');
+    lbl.textContent = BELT_NAMES[belt] || 'White Belt';
+    lbl.style.color = c.text;
+    // Highlight active option
+    document.querySelectorAll('.belt-opt').forEach(function(btn) {
+      btn.style.fontWeight = btn.dataset.belt === belt ? '600' : '400';
+      btn.style.color = btn.dataset.belt === belt ? 'var(--accent)' : '#8892a4';
+    });
+  }
+
+  function setBelt(belt) {
+    currentBelt = belt;
+    UserStore.save('gm_current_belt', belt);
+    updateBeltVisual(belt);
+    showToast(BELT_NAMES[belt] + ' selected');
+  }
+
+  // Toggle dropdown
+  var area = document.getElementById('beltArea');
+  var dd = document.getElementById('beltDropdown');
+  area.addEventListener('click', function(ev) { ev.stopPropagation(); dd.style.display = dd.style.display === 'block' ? 'none' : 'block'; });
+  dd.addEventListener('click', function(ev) { ev.stopPropagation(); });
+  document.addEventListener('click', function() { dd.style.display = 'none'; });
+
+  // Belt option clicks
+  document.querySelectorAll('.belt-opt').forEach(function(btn) {
+    btn.addEventListener('click', function() { setBelt(btn.dataset.belt); dd.style.display = 'none'; });
+  });
+
+  // Apply for Next Belt
+  document.getElementById('beltApplyBtn').addEventListener('click', function() {
+    dd.style.display = 'none';
+    showToast('Belt application — coming soon. Record your video proof!');
+  });
+
+  updateBeltVisual(currentBelt);
+  window._getCurrentBelt = function() { return currentBelt; };
+  window._setBelt = setBelt;
+})();
+
 (function initAuthUI() {
   var authBtn = document.getElementById('authBtn');
   var authUserBtn = document.getElementById('authUserBtn');
