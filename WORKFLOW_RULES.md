@@ -161,6 +161,19 @@ After meaningful repo updates, Code sets `suggestion_pass_needed: yes` in AUTOMA
 
 **Direct Cowork → Claude Chat triggering: NOT possible** in the current setup. No automation bridge exists between Cowork and Claude Chat sessions. Cross-agent triggering requires Aaron to manually start sessions or check the trigger. The practical version is file-based coordination — each agent checks the trigger at session start.
 
+## Multi-Lane Automation (LOCKED)
+Do not sit idle if one lane pauses or blocks. Immediately switch to the next approved lane.
+
+**Lanes:** syllabus, product/website, accounts/access, suggestion/review, live-footage
+
+**Rule:**
+- If current lane is unblocked and worthwhile → continue it
+- If current lane is blocked (needs Aaron, waiting on credentials, external check) → immediately move to next approved lane
+- Only stop if ALL approved lanes are blocked or at a true stopping point
+- At batch end: state what lane ran, whether it's active/blocked/done, what's next
+
+**Do not:** wait idly, invent approval for blocked items, do tiny filler work
+
 ## Manual vs Automated Task Priority
 - **Manual/ad hoc tasks from Aaron** (video moves, folder fixes, verifications, memory corrections, direct filesystem actions) → run immediately, even if an automation loop is active.
 - **Automated tasks** (website iteration prompts, KM batch continuations) → defer to queue when interrupted by a manual task.
