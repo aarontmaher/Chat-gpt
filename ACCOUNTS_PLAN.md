@@ -7,23 +7,22 @@ Prompt-ID: ACCESS-AND-ACCOUNTS-BUILD-01
 ## 1. ACCESS SPLIT
 
 ### PUBLIC / GUEST (no account)
+**Key rule: lock the depth of content, not the basic tool experience.**
+Guests should genuinely experience how the product works.
+
 | Feature | Access |
 |---------|--------|
 | 3D Position Map (full graph) | ✅ Full — rotate, zoom, click all nodes |
 | Node names + structure | ✅ Full |
 | Section list + position list | ✅ Full |
-| Limited technique preview | ✅ 2–3 sample techniques per position |
+| Limited technique preview | ✅ Up to 3 sample techniques per heading |
 | Start Here / onboarding | ✅ Full |
 | "What is this product" understanding | ✅ Full |
 | Locked-content indicators | ✅ Shown — "X more techniques — create account" |
-
-### PREVIEW-ONLY (guest can see but not use)
-| Feature | Access |
-|---------|--------|
-| Technique depth beyond preview | 🔒 Teaser visible, content locked |
-| Video thumbnails | 🔒 Visible but playback locked |
-| Progress indicators | 🔒 Visible (shows what tracking looks like) but non-functional |
-| Drill mode | 🔒 Visible in UI but triggers signup prompt |
+| Progress tracking (within preview) | ✅ Can mark/track preview techniques |
+| Filters (within preview) | ✅ Can filter preview techniques |
+| Drills (within preview) | ✅ Can drill preview techniques |
+| Success logging (within preview) | ✅ Can log success on preview techniques |
 
 ### MEMBER-ONLY (paid account required)
 | Feature | Access |
@@ -31,16 +30,12 @@ Prompt-ID: ACCESS-AND-ACCOUNTS-BUILD-01
 | Full technique depth (all nodes) | 🔓 |
 | Full reference library | 🔓 |
 | Full video library (instructional + live) | 🔓 |
-| Saved progress (drilling/learned/want) | 🔓 |
-| Success logging | 🔓 |
-| Build Your Game recommendations | 🔓 |
-| Drill mode + timer | 🔓 |
 | Notes on techniques | 🔓 |
-| Recently viewed | 🔓 |
-| Filters (MY GAME, DRILLING, LEARNED) | 🔓 |
+| Build Your Game recommendations | 🔓 |
 | White/Blue belt syllabus (full) | 🔓 |
 | Personalized next-move suggestions | 🔓 |
 | Export/import data | 🔓 |
+| Full progress / filters / drills / success (all content) | 🔓 |
 
 ### FUTURE (needs billing — NOT yet)
 | Feature | Access |

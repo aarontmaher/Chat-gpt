@@ -371,6 +371,41 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 #diagToggle:hover, #kbdHelpToggle:hover { background:rgba(255,255,255,0.04); }
 #headerMenuToggle:hover { border-color:rgba(255,255,255,0.25);color:#8892a4; }
 
+/* ── AUTH UI ── */
+.auth-buttons { display:flex; gap:6px; align-items:center; margin-right:8px; }
+.auth-btn { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:500; letter-spacing:0.5px; padding:6px 14px; border-radius:6px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.auth-btn-login { background:transparent; border:1px solid rgba(232,255,71,0.25); color:var(--accent); }
+.auth-btn-login:hover { border-color:var(--accent); background:rgba(232,255,71,0.06); }
+.auth-btn-signup { background:var(--accent); border:1px solid var(--accent); color:#0a0c10; font-weight:600; }
+.auth-btn-signup:hover { background:#d4eb3a; }
+.auth-user-menu { display:flex; align-items:center; gap:8px; }
+.auth-user-name { font-family:'Barlow Condensed',sans-serif; font-size:12px; color:var(--text-dim); letter-spacing:0.5px; }
+
+/* ── LOCKED CONTENT ── */
+.locked-indicator { padding:8px 12px; margin:4px 0 4px 28px; background:rgba(232,255,71,0.03); border:1px dashed rgba(232,255,71,0.15); border-radius:6px; font-family:'Barlow Condensed',sans-serif; font-size:12px; color:var(--text-muted); cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:8px; }
+.locked-indicator:hover { background:rgba(232,255,71,0.06); border-color:rgba(232,255,71,0.3); color:var(--text-dim); }
+.locked-indicator .lock-icon { font-size:14px; opacity:0.5; }
+.locked-indicator .lock-text { flex:1; }
+.locked-indicator .lock-cta { color:var(--accent); font-weight:500; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; }
+
+/* ── SIGNUP MODAL ── */
+.auth-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; display:flex; align-items:center; justify-content:center; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+.auth-modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:32px 28px; max-width:380px; width:90%; box-shadow:0 16px 64px rgba(0,0,0,0.6); }
+.auth-modal h2 { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:2px; color:var(--accent); margin-bottom:4px; }
+.auth-modal .auth-subtitle { font-family:'Barlow Condensed',sans-serif; font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.4; }
+.auth-modal .auth-features { list-style:none; padding:0; margin:0 0 20px; }
+.auth-modal .auth-features li { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-dim); padding:4px 0; display:flex; align-items:center; gap:8px; }
+.auth-modal .auth-features li::before { content:'\2713'; color:var(--accent); font-weight:bold; }
+.auth-modal .auth-form-group { margin-bottom:12px; }
+.auth-modal .auth-form-group label { display:block; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+.auth-modal .auth-form-group input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:8px 10px; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; }
+.auth-modal .auth-form-group input:focus { outline:none; border-color:var(--accent); }
+.auth-modal .auth-submit { width:100%; background:var(--accent); border:none; color:#0a0c10; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:600; letter-spacing:1px; padding:10px; border-radius:6px; cursor:pointer; margin-top:8px; }
+.auth-modal .auth-submit:hover { background:#d4eb3a; }
+.auth-modal .auth-switch { text-align:center; margin-top:12px; font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); }
+.auth-modal .auth-switch a { color:var(--accent); cursor:pointer; text-decoration:none; }
+.auth-modal .auth-close { position:absolute; top:12px; right:14px; background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; }
+
 </style>
 </head>
 <body>
@@ -385,6 +420,13 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div class="stat"><div class="stat-num" id="totalCount">0</div><div class="stat-label">Techniques</div></div>
   </div>
   <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div id="authButtons" class="auth-buttons" style="display:none;">
+    <button class="auth-btn auth-btn-login" onclick="showAuthModal('login')">Log in</button>
+    <button class="auth-btn auth-btn-signup" onclick="showAuthModal('signup')">Create Account</button>
+  </div>
+  <div id="authUserMenu" class="auth-user-menu" style="display:none;">
+    <span class="auth-user-name" id="authUserName"></span>
+  </div>
   <div style="position:relative;">
     <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu" aria-label="Open menu" aria-haspopup="true">&#8942;</button>
     <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
@@ -412,6 +454,48 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     </div>
   </div>
 </header>
+<!-- ── Auth Modal (signup/login shell) ── -->
+<div id="authModal" class="auth-modal-backdrop" style="display:none;" onclick="if(event.target===this)closeAuthModal();">
+  <div class="auth-modal" style="position:relative;">
+    <button class="auth-close" onclick="closeAuthModal();">&times;</button>
+    <div id="authModalSignup">
+      <h2>Unlock the Full Map</h2>
+      <div class="auth-subtitle">Create your account to access all techniques, videos, and personalized training tools.</div>
+      <ul class="auth-features">
+        <li>Full technique library (800+ techniques)</li>
+        <li>Instructional and live footage videos</li>
+        <li>Track your progress across all positions</li>
+        <li>Build Your Game recommendations</li>
+        <li>Drill timer and training circuits</li>
+        <li>Personal notes on every technique</li>
+      </ul>
+      <div class="auth-form-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-form-group">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="Choose a password" autocomplete="new-password">
+      </div>
+      <button class="auth-submit" id="authSubmitBtn" onclick="handleAuthSubmit();">Create Account</button>
+      <div class="auth-switch">Already have an account? <a onclick="switchAuthMode('login');">Log in</a></div>
+    </div>
+    <div id="authModalLogin" style="display:none;">
+      <h2>Welcome Back</h2>
+      <div class="auth-subtitle">Log in to access your full training map and progress.</div>
+      <div class="auth-form-group">
+        <label>Email</label>
+        <input type="email" id="authLoginEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-form-group">
+        <label>Password</label>
+        <input type="password" id="authLoginPassword" placeholder="Your password" autocomplete="current-password">
+      </div>
+      <button class="auth-submit" onclick="handleAuthSubmit();">Log In</button>
+      <div class="auth-switch">Don't have an account? <a onclick="switchAuthMode('signup');">Create one</a></div>
+    </div>
+  </div>
+</div>
 <!-- ── Keyboard shortcuts help panel ── -->
 <div id="kbdHelpPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:10px;z-index:1000;font-family:'DM Mono',monospace;font-size:12px;color:#8892a4;padding:24px 28px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 12px 48px rgba(0,0,0,0.6);min-width:280px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -626,12 +710,12 @@ function isMember() { return AUTH_STATE === 'member'; }
 
 const ACCESS_CONFIG = {
   GUEST_TECHNIQUE_LIMIT: 3,       // max techniques shown per heading for guests
-  GUEST_CAN_USE_FILTERS: false,
-  GUEST_CAN_SAVE_PROGRESS: false,
-  GUEST_CAN_DRILL: false,
-  GUEST_CAN_LOG_SUCCESS: false,
-  GUEST_CAN_USE_NOTES: false,
-  GUEST_CAN_EXPORT: false
+  GUEST_CAN_USE_FILTERS: true,    // guests can filter within preview content
+  GUEST_CAN_SAVE_PROGRESS: true,  // guests can mark preview techniques
+  GUEST_CAN_DRILL: true,          // guests can drill preview techniques
+  GUEST_CAN_LOG_SUCCESS: true,    // guests can log success on preview techniques
+  GUEST_CAN_USE_NOTES: false,     // notes are member-only
+  GUEST_CAN_EXPORT: false         // export is member-only
 };
 
 // ─── USER STORE (abstraction over localStorage, future Supabase) ────────────
@@ -671,6 +755,52 @@ const UserStore = {
     this.remove('grapplingAppState');
   }
 };
+
+// ─── AUTH UI FUNCTIONS ──────────────────────────────────────────────────────
+function updateAuthUI() {
+  var authBtns = document.getElementById('authButtons');
+  var userMenu = document.getElementById('authUserMenu');
+  var userName = document.getElementById('authUserName');
+  if (!authBtns || !userMenu) return;
+  if (isGuest()) {
+    authBtns.style.display = 'flex';
+    userMenu.style.display = 'none';
+  } else {
+    authBtns.style.display = 'none';
+    userMenu.style.display = AUTH_USER ? 'flex' : 'none';
+    if (AUTH_USER && userName) userName.textContent = AUTH_USER.displayName || AUTH_USER.email || 'Member';
+  }
+}
+
+var _authModalMode = 'signup';
+function showAuthModal(mode) {
+  _authModalMode = mode || 'signup';
+  var modal = document.getElementById('authModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  switchAuthMode(_authModalMode);
+}
+function closeAuthModal() {
+  var modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'none';
+}
+function switchAuthMode(mode) {
+  _authModalMode = mode;
+  var signup = document.getElementById('authModalSignup');
+  var login = document.getElementById('authModalLogin');
+  if (signup) signup.style.display = mode === 'signup' ? 'block' : 'none';
+  if (login) login.style.display = mode === 'login' ? 'block' : 'none';
+}
+function handleAuthSubmit() {
+  // Shell only — will be wired to Supabase in Batch 3
+  showToast('Account system coming soon — full access is currently enabled');
+  closeAuthModal();
+}
+
+function showAuthPrompt(context) {
+  // Context-aware upgrade prompt — shows modal with relevant messaging
+  showAuthModal('signup');
+}
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 const STATE = {
@@ -1349,8 +1479,8 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   actions.appendChild(prog);
   } // end !isSchemaHeading
 
-  // Note button (skip for schema headings)
-  if (!isSchemaHeading) {
+  // Note button (skip for schema headings, member-only)
+  if (!isSchemaHeading && (isMember() || ACCESS_CONFIG.GUEST_CAN_USE_NOTES)) {
   const noteBtn = document.createElement('button');
   noteBtn.className = STATE.notes[key] ? 'btn-note has-note' : 'btn-note';
   noteBtn.textContent = '✎';
@@ -1422,13 +1552,30 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       buildNode(child, sectionTitle, depth + 1, childUl, key, childDisambig, posEntry);
     });
     li.appendChild(childUl);
-    // Schema headings: show technique count, dim if empty
+    // Schema headings: show technique count, dim if empty, gate for guests
     if (SCHEMA_NAMES.has(node.t.trim()) && depth > 0) {
       var realChildren = childUl.querySelectorAll('.tree-item[data-schema="0"]');
       var countBadge = document.createElement('span');
       countBadge.style.cssText = 'font-size:9px;color:#556;margin-left:6px;font-family:DM Mono,monospace;';
       if (realChildren.length > 0) {
         countBadge.textContent = '(' + realChildren.length + ')';
+        // Guest content gating: hide techniques beyond preview limit
+        if (isGuest() && realChildren.length > ACCESS_CONFIG.GUEST_TECHNIQUE_LIMIT) {
+          var hiddenCount = 0;
+          for (var gi = 0; gi < realChildren.length; gi++) {
+            if (gi >= ACCESS_CONFIG.GUEST_TECHNIQUE_LIMIT) {
+              realChildren[gi].style.display = 'none';
+              realChildren[gi].dataset.guestLocked = '1';
+              hiddenCount++;
+            }
+          }
+          if (hiddenCount > 0) {
+            var lockRow = document.createElement('li');
+            lockRow.className = 'tree-item';
+            lockRow.innerHTML = '<div class="locked-indicator" onclick="showAuthPrompt(\'content\');"><span class="lock-icon">&#128274;</span><span class="lock-text">' + hiddenCount + ' more technique' + (hiddenCount !== 1 ? 's' : '') + '</span><span class="lock-cta">Create account &rarr;</span></div>';
+            childUl.appendChild(lockRow);
+          }
+        }
       } else {
         countBadge.textContent = '— coming soon';
         li.style.opacity = '0.4';
@@ -4829,6 +4976,7 @@ if (typeof SECTIONS === 'undefined' || !SECTIONS.length) {
 _log('TechPositionMap built:', window._techPositionMap.size);
 markBuiltOut();
 updateStats();
+updateAuthUI();
 if (typeof updateQuickAccess === 'function') updateQuickAccess();
 // Deep linking + resume
 (function() {
