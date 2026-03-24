@@ -144,7 +144,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .btn-track-all:hover { border-color: var(--blue); color: var(--blue); background: rgba(71,200,255,0.06); }
 .children { list-style: none; }
 .tree-item.collapsed > .children { display: none; }
-.inline-player { margin: 6px 0 4px; max-width: 480px; }
+.inline-player { margin: 6px 0 4px; max-width: 480px; position: sticky; bottom: 60px; z-index: 20; }
 .inline-player > div { border-radius: 6px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
 .inline-player iframe { border-radius: 4px; }
 /* Position-level rows (depth 0) */
@@ -2762,6 +2762,8 @@ window.initGraph3D = (function() {
       if(activeIds&&(!activeIds.has(e.source)||!activeIds.has(e.target)))return;
       const pos=e.line.geometry.attributes.position;
       pos.setXYZ(0,src.x,src.y,src.z);pos.setXYZ(1,tgt.x,tgt.y,tgt.z);pos.needsUpdate=true;
+      // Position direction arrow at 80% from source to target
+      if(e._arrow){var ax=src.x+(tgt.x-src.x)*0.8,ay=src.y+(tgt.y-src.y)*0.8,az=src.z+(tgt.z-src.z)*0.8;e._arrow.position.set(ax,ay,az);e._arrow.visible=e.line.visible;if(e._arrowMat)e._arrowMat.opacity=e._mat.opacity*0.8;}
     });
     Object.entries(ringMap3d).forEach(([id,r])=>{const n=nodeMap3d[id];if(n)r.position.set(n.x,n.y,n.z);});
   }
@@ -3754,7 +3756,13 @@ window.initGraph3D = (function() {
         const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(1,1,1)]);
         const line=new THREE.Line(geo,mat);pivot3d.add(line);
         var ek=e.edgeKey || (normalizeSegment((nodeMap3d[e.source]||{}).label||'')+'|'+normalizeSegment((nodeMap3d[e.target]||{}).label||''));
-        edgeMeshes3d.push({line,source:e.source,target:e.target,weight:e.weight,edgeKey:ek,_mat:mat,_base:base});
+        // Direction indicator: small sphere at 80% towards target
+        var arrowGeo = new THREE.SphereGeometry(0.8, 6, 6);
+        var arrowMat = new THREE.MeshBasicMaterial({color:cs,transparent:true,opacity:base*0.8});
+        var arrow = new THREE.Mesh(arrowGeo, arrowMat);
+        arrow.visible = true;
+        pivot3d.add(arrow);
+        edgeMeshes3d.push({line,source:e.source,target:e.target,weight:e.weight,edgeKey:ek,_mat:mat,_base:base,_arrow:arrow,_arrowMat:arrowMat});
       });
 
       // Auto-fit camera to show all nodes centred (initial load only)
