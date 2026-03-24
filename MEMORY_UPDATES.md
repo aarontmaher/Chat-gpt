@@ -86,3 +86,13 @@
 - 7 open picks in Guard all need Aaron — no structural work remaining
 - 4 OPML gaps flagged (CG sweeps, BG GP offence, Half guard empty, Half butterfly sparse)
 - Wrestling picks confirmed blocked — Guard work proceeded independently as instructed
+
+## 2026-03-24 — BELT-SYLLABUS-BLUE-PASSING-01: Passing Expanded
+- Blue belt Passing expanded from 6 to 9 sub-sections (A-I)
+- G) J-point passing: dedicated hub with entries, control, 2 connected passes, defence retention
+- H) North-south passing concept: passing toward NS from J point, Shin pin, De la riva positions
+- I) Under-the-legs passing concept: double unders / over-under across HGP, Headquarters, Butterfly
+- D) Half guard passing deepened: mandatory control (chest to chest) + pass pick separated
+- F) Headquarters refined: J point removed as line item (now its own full section G)
+- All options sourced from OPML mapped content with exact paths
+- Open picks in Passing: 11 (up from 6). Total across all sections: 56 (up from 51)

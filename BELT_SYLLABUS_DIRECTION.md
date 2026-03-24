@@ -63,12 +63,12 @@ The guard section expands from White belt's 2 positions to 5 positions with deep
 | Section | Structure | Open Picks |
 |---------|-----------|------------|
 | Wrestling / Standing | filled (7 sub-sections A-G) | 9 -- **blocked, needs Aaron** |
-| Passing | filled (6 sub-sections A-F) | 6 -- needs Aaron |
+| Passing | filled (9 sub-sections A-I) | 11 -- needs Aaron |
 | Dominant Positions | filled (6 sub-sections A-F) | 17 -- needs Aaron |
 | Guard / Bottom | filled (5 sub-sections A-E) | 7 -- needs Aaron + 4 OPML gaps |
 | Defence / Escapes | filled (6 sub-sections A-F) | 9 -- needs Aaron + 1 OPML gap |
 | Chains / Follow-ups | filled (4 sub-sections A-D) | 3 -- needs Aaron |
-| **Total** | **all sections structured** | **51 picks + 5 OPML gaps** |
+| **Total** | **all sections structured** | **56 picks + 5 OPML gaps** |
 
 ---
 

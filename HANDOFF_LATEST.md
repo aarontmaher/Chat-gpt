@@ -39,7 +39,18 @@ ITERATION-13: Section header progress percentage bar
 - Position/chain memory improvement (grappling placement understanding)
 - Or: content filling when Aaron supplies content
 
+## BELT-SYLLABUS-BLUE-PASSING-01 (2026-03-24)
+- Blue belt Passing expanded from 6 sub-sections (A-F) to 9 sub-sections (A-I)
+- New: G) J-point as dedicated passing hub (entry, control, 2 connected passes, defence retention)
+- New: H) North-south passing concept (passing toward NS from J point, Shin pin, De la riva)
+- New: I) Under-the-legs passing concept (double unders, over/under across multiple guards)
+- Half guard passing (D) deepened: mandatory control concept + pass pick
+- Headquarters (F) refined: removed J point as line item (now its own section G)
+- Open picks in Passing: 11 (was 6)
+- Total open picks across all sections: 56 (was 51)
+
 ## Input-limited (needs Aaron)
 - Octopus Guard OPML decision
 - Guard OT content (16/19 positions)
 - Saddle canonical name
+- Blue belt: 56 technique picks across all sections (11 in Passing alone)

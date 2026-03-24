@@ -53,7 +53,8 @@ J point, K guard, Quarter guard, Supine Guard, Mount, Turtle, Berimbolo, Grounde
 
 ## Belt Syllabus
 - White belt: COMPLETE (all slots filled)
-- Blue belt: all 6 sections structured, 51 open picks need Aaron, 5 OPML gaps flagged
+- Blue belt: all 6 sections structured, 56 open picks need Aaron, 5 OPML gaps flagged
+- Blue belt Passing: expanded to 9 sub-sections (A-I) with J-point hub, north-south passing, under-the-legs concept
 - Blue belt Guard / Bottom: fully structured (5 sub-sections), 7 picks need Aaron
 - BELT_SYLLABUS_DIRECTION.md created with guard direction + overall status
 

@@ -136,7 +136,8 @@ Pick 2 — *needs Aaron selection:*
 
 ## 2. Passing
 White belt gave: 4 situations × 1 pass each (Supine, Seated, Knee Shield, Closed Guard opening).
-Blue belt adds: a second pass from each White belt situation, plus 2 new passing positions.
+Blue belt adds: a second pass from each White belt situation, 4 new passing positions,
+plus J-point as a dedicated passing hub with connected passes and defences.
 
 ### A) Supine guard passing — second pass
 White belt had 1 core pass. Blue belt adds 1 more from mapped content.
@@ -166,9 +167,12 @@ Pick 1 — *needs Aaron selection:*
 ### D) Half guard passing (NEW for Blue belt)
 Not covered in White belt. Mapped under Half Guard Passing > Passer.
 
-Pick 1 passing approach — *needs Aaron selection:*
-- Chest to chest > Upper body controls (mapped under HGP > Passer > Control)
-- Chest to chest > Passes (mapped under HGP > Passer > Control)
+**Control concept** — mandatory:
+- Chest to chest upper body controls (mapped under HGP > Passer > Control — includes Crossface, Double unders, Near side underhook, Head positioning)
+
+**Pass** — pick 1 — *needs Aaron selection:*
+- Windshield wiper > Three quarter mount > Mount (mapped under HGP > Passer > Control > Chest to chest > Passes)
+- Windshield wiper > Knee cut (mapped under HGP > Passer > Control > Chest to chest > Passes)
 - Knee slide to mount (mapped as OT: Half guard passing to mount)
 
 ### E) Butterfly guard passing (NEW for Blue belt)
@@ -181,14 +185,94 @@ Pick 1 — *needs Aaron selection:*
 
 ### F) Headquarters passing (NEW for Blue belt)
 Not covered in White belt. Mapped under Headquarters > Passer > Offence.
+Headquarters is the crossroads position — student learns 2 connected passes from here.
 
 Pick 2 — *needs Aaron selection:*
 - Leg drag > Side control (mapped)
-- Over/under > Control points (mapped)
+- Over/under > Control points (mapped — includes Head pressure into hip, Straight arms)
 - Smash pass > Side control (mapped)
-- J point (mapped)
-- Throwing leg through > Three quarter mount (mapped)
+- Throwing leg through > Three quarter mount > Mount (mapped)
 - High tripod (mapped)
+
+### G) J-point passing (NEW for Blue belt — dedicated hub)
+J point is a richly mapped passing position with entries, control, offence, and defences.
+Blue belt treats it as a full passing hub — not just a line item under Headquarters.
+Mapped under J point > Passer.
+
+**Entries** — pick 1 — *needs Aaron selection:*
+- Seated guard > Hip post (mapped under J point > Passer > Setups / Entries — has instructional video)
+- Seated guard > Collar tie (mapped — has instructional video)
+- Supine guard > Bullfighter (mapped — has instructional video)
+
+**Control** — mandatory:
+- J point control (mapped under J point > Passer > Control — includes Notes: Shin pin, Thigh grip, Head positioning, Forearm hip control, Calf grip, Foot grip, Hip hinge — has instructional video)
+
+**Connected passes** — pick 2 — *needs Aaron selection:*
+These are the passes executed FROM J point. Each has an instructional video mapped.
+- Toreando (mapped under J point > Passer > Offence — OT: Toreando -> Side Control)
+- Leg drag (mapped — OT: Leg drag -> Side Control)
+- North South pass (mapped — OT: North South pass -> North South)
+- Sprawl (mapped — OT: Sprawl -> Side Control)
+
+**Defences (passer retaining J point)** — pick 1 — *needs Aaron selection:*
+When the guard player tries to reguard from J point, how to deal with it:
+- Lasso > Back swim (mapped under J point > Passer > Defence — has instructional video)
+- Lasso > Stripping lasso (mapped — has instructional video)
+- Lasso > Transition opposite side > Bicep curl (mapped — has instructional video)
+- Lasso > Transition opposite side > Bicep ride (mapped — has instructional video)
+- Lasso > Transition opposite side > C grip (mapped — has instructional video)
+- Deep Lasso (mapped — has instructional video)
+- Bottom leg reguarding > Reverse de la riva (mapped — has instructional video)
+- Bottom leg reguarding > K Guard (mapped — has instructional video)
+- Arm Frames (mapped — multiple sub-techniques with instructional videos)
+- X guard (mapped — has instructional video)
+- Foot shoulder frame (mapped — has instructional video)
+- Far shoulder clamp (mapped — has instructional video)
+- Elevated hips (mapped — has instructional video)
+- Bringing far leg under arm > Good elbow positioning (mapped — has instructional video)
+- Bringing far leg under arm > Smash pass (mapped — has instructional video)
+
+### H) North-south passing concept (NEW for Blue belt)
+North-south passing appears as a passing direction from multiple guard positions in the OPML.
+Blue belt introduces the concept of passing toward North South (rather than always to Side Control).
+
+**From J point:**
+- North South pass (mapped under J point > Passer > Offence — OT: North South pass -> North South)
+- Back swim (mapped — OT: Back swim -> North South)
+- Deep Lasso (mapped — OT: Deep Lasso -> North South)
+
+**From Shin pin:**
+- Arm weave > Overback > North South (mapped under Shin pin > Passer > Offence)
+- Arm weave > Reverse collar tie > North south passing (mapped under Shin pin > Passer > Offence)
+
+**From De la riva / foot fight positions:**
+- Hips low on foot fight feet > North south passing (mapped under De la riva > Passer > Offence)
+
+Pick 1 primary north-south passing path — *needs Aaron selection from above mapped options.*
+The student learns that passing doesn't always end in Side Control — North South is a valid
+passing destination that connects to the North South position learned in Dominant Positions (section 3F).
+
+### I) Under-the-legs passing concept (NEW for Blue belt)
+"Under the legs" passing (double unders / over-under) appears across multiple positions.
+Blue belt introduces this as a passing concept that applies in several guards.
+
+**Double unders in Half Guard Passing:**
+- Double unders (mapped under HGP > Passer > Control > Chest to chest > Upper body controls)
+
+**Over/under in Headquarters:**
+- Over/under > Control points > Head pressure into hip (mapped under Headquarters > Passer > Offence)
+- Over/under > Control points > Straight arms (mapped)
+
+**Double unders in Butterfly guard defence:**
+- Double unders (mapped under Butterfly guard > Passer > Offence > Shoulder crunch > Double unders)
+
+**Bodylock passing (related — both arms under/around):**
+- Seated Guard > Bodylock (mapped — includes Bodylock positioning, Entries, Passes with multiple sub-options)
+- Butterfly guard > Bodylock (mapped under Butterfly guard > Passer > Offence)
+
+Pick 1 primary under-the-legs position — *needs Aaron selection:*
+The student learns the concept of controlling underneath the opponent's legs, applied to
+whichever guard position Aaron selects as the best teaching context.
 
 ## 3. Dominant Positions
 White belt gave: subs + transitions from 5 positions.
@@ -485,15 +569,15 @@ This slot counts as filled by Section 1D.
 | Section | Status |
 |---------|--------|
 | Wrestling / Standing | **filled** — 7 sub-sections (A-G) with all mapped options listed — 9 open picks need Aaron |
-| Passing | **filled** — 6 sub-sections (A-F) with all mapped options listed — 6 open picks need Aaron |
+| Passing | **filled** — 9 sub-sections (A-I) with all mapped options listed — 11 open picks need Aaron |
 | Dominant Positions | **filled** — 6 sub-sections (A-F) with all mapped options listed — 17 open picks need Aaron |
 | Guard | **filled** — 5 sub-sections (A-E) with all mapped options listed — 7 open picks need Aaron + OPML gaps flagged |
 | Defence / Escapes | **filled** — 6 sub-sections (A-F) with all mapped options listed — 9 open picks need Aaron + 1 OPML gap flagged |
 | Chains / Follow-ups | **filled** — 4 sub-sections (A-D), D auto-filled from Wrestling 1D — 3 open picks need Aaron |
 
-## Summary of Open Picks (51 total)
+## Summary of Open Picks (56 total)
 - Wrestling: 9 picks
-- Passing: 6 picks
+- Passing: 11 picks (was 6, added 5 from J-point + north-south + under-the-legs)
 - Dominant Positions: 17 picks
 - Guard: 7 picks + 3 OPML gaps (CG sweeps, BG guard player offence, Half guard content)
 - Defence / Escapes: 9 picks + 1 OPML gap (Back Control defender detail)
