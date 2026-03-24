@@ -625,7 +625,14 @@ const COLORS = ['#e8ff47','#ff6b35','#a78bfa','#47c8ff','#34d399'];
 var SUPABASE_URL = 'https://rejalrfmievikabgsakf.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_VvDqA9y0pmsGIApca-wxCw_M80FNpc_';
 var _supabase = null;
-try { _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch(e) { console.warn('Supabase init failed:', e); }
+try {
+  if (window.supabase && window.supabase.createClient) {
+    _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase client initialized');
+  } else {
+    console.warn('Supabase SDK not loaded — auth will not work');
+  }
+} catch(e) { console.warn('Supabase init failed:', e); }
 
 var AUTH_STATE = 'guest'; // 'guest' or 'member' — now starts as guest, set to member on auth
 var AUTH_USER = null;      // Will hold { id, email, displayName } when logged in
@@ -5472,16 +5479,27 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     if (!email || !password) { status.style.display = ''; status.textContent = 'Enter email and password'; status.style.color = '#f85149'; return; }
     if (password.length < 6) { status.style.display = ''; status.textContent = 'Password must be at least 6 characters'; status.style.color = '#f85149'; return; }
     status.style.display = ''; status.textContent = 'Creating account...'; status.style.color = '#667';
+    if (!_supabase) { status.textContent = 'Auth service not available — check Supabase config'; status.style.color = '#f85149'; return; }
     try {
       var result = await _supabase.auth.signUp({ email: email, password: password });
-      if (result.error) { status.textContent = result.error.message; status.style.color = '#f85149'; return; }
+      if (result.error) {
+        var errMsg = result.error.message || result.error.msg || (typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+        status.textContent = errMsg; status.style.color = '#f85149'; return;
+      }
       if (result.data && result.data.user) {
         if (result.data.user.identities && result.data.user.identities.length === 0) {
           status.textContent = 'An account with this email already exists. Try logging in.'; status.style.color = '#f85149'; return;
         }
-        status.textContent = 'Check your email to confirm, then log in.'; status.style.color = 'var(--green)';
+        status.textContent = 'Account created! Check your email to confirm, then log in.'; status.style.color = 'var(--green)';
+      } else {
+        status.textContent = 'Unexpected response — check console'; status.style.color = '#f85149';
+        console.warn('Supabase signUp response:', result);
       }
-    } catch(e) { status.textContent = 'Error: ' + e.message; status.style.color = '#f85149'; }
+    } catch(e) {
+      var catchMsg = e && e.message ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
+      status.textContent = 'Error: ' + catchMsg; status.style.color = '#f85149';
+      console.error('Signup error:', e);
+    }
   });
 
   // Login button
@@ -5491,11 +5509,20 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     var password = document.getElementById('authPassword').value;
     if (!email || !password) { status.style.display = ''; status.textContent = 'Enter email and password'; status.style.color = '#f85149'; return; }
     status.style.display = ''; status.textContent = 'Logging in...'; status.style.color = '#667';
+    if (!_supabase) { status.textContent = 'Auth service not available — check Supabase config'; status.style.color = '#f85149'; return; }
     try {
       var result = await _supabase.auth.signInWithPassword({ email: email, password: password });
-      if (result.error) { status.textContent = result.error.message; status.style.color = '#f85149'; return; }
+      if (result.error) {
+        var errMsg = result.error.message || result.error.msg || (typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+        status.textContent = errMsg; status.style.color = '#f85149'; return;
+      }
       if (result.data && result.data.user) { setAuthMember(result.data.user); }
-    } catch(e) { status.textContent = 'Error: ' + e.message; status.style.color = '#f85149'; }
+      else { status.textContent = 'Login failed — unexpected response'; status.style.color = '#f85149'; console.warn('Login response:', result); }
+    } catch(e) {
+      var catchMsg = e && e.message ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
+      status.textContent = 'Error: ' + catchMsg; status.style.color = '#f85149';
+      console.error('Login error:', e);
+    }
   });
 
   // Logout (add to user button)
