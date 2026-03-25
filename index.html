@@ -3071,7 +3071,7 @@ window.initGraph3D = (function() {
         // Heading row (clickable to expand/collapse)
         var wrap = document.createElement('div');
         var item = document.createElement('div');
-        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:Barlow Condensed,monospace;font-size:13px;';
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 5px;cursor:pointer;font-family:Barlow Condensed,monospace;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);';
         var _autoExpand = tc > 0 && tc <= 8;
         var chevron = tc > 0 ? (_autoExpand ? '\u25BE' : '\u25B8') : '\u00B7';
         item.innerHTML = '<span class="g3d-heading-chev" style="width:10px;color:#4a5568;font-size:9px;flex-shrink:0;transition:transform 0.15s;">'+chevron+'</span>'
@@ -3595,6 +3595,21 @@ window.initGraph3D = (function() {
       if(SUBPOSITION_TRIAL&&n.depth===2){n._in=(inn[n.id]||0);n._out=out[n.id]||0;n._w=n._in+n._out+3;n._r=Math.max(1.5,1+Math.pow(n._w,0.7)*1.2);}
       else{n._in=inn[n.id]||0;n._out=out[n.id]||0;n._w=2;n._r=2.0;}
     });
+    // Belt-relative node scaling: when belt filter shrinks the node set,
+    // rescale _r so the filtered graph feels like its own readable map
+    if (beltPosSet && active.length > 0 && active.length < netNds.length) {
+      var posNodes = active.filter(function(n){return n.depth===1;});
+      if (posNodes.length > 0) {
+        var minW = Infinity, maxW = -Infinity;
+        posNodes.forEach(function(n){if(n._w<minW)minW=n._w;if(n._w>maxW)maxW=n._w;});
+        var R_MIN = 8, R_MAX = 28; // readable range for filtered view
+        var wRange = maxW - minW || 1;
+        posNodes.forEach(function(n){
+          var t = (n._w - minW) / wRange; // 0..1
+          n._r = R_MIN + t * (R_MAX - R_MIN);
+        });
+      }
+    }
     netNds.filter(n=>!aIds.has(n.id)).forEach(n=>{n._in=0;n._out=0;n._w=0;n._r=1.2;});
     var isEmpty = isPositionFilter && aIds.size === 0;
     // Update meshes for in_network nodes
