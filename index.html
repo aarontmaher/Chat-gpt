@@ -755,8 +755,57 @@ const UserStore = {
     return null;
   },
 
-  saveNotes: function(notes) { this.save('grapplingNotes', notes); },
+  saveNotes: function(notes) {
+    this.save('grapplingNotes', notes);
+    // Async API sync for members
+    if (isMember() && _supabase) {
+      Object.entries(notes).forEach(function(kv) {
+        UserStore._apiPost('notes', { technique_key: kv[0], note_text: kv[1] });
+      });
+    }
+  },
   loadNotes: function() { return this.loadJSON('grapplingNotes', {}); },
+
+  syncNotesFromAPI: async function() {
+    var data = await this._apiGet('notes');
+    if (data && data.items) {
+      var local = this.loadNotes();
+      data.items.forEach(function(item) { if (item.note_text) local[item.technique_key] = item.note_text; });
+      this.save('grapplingNotes', local);
+      return local;
+    }
+    return null;
+  },
+
+  // First-login migration: push all local data to cloud
+  migrateLocalToCloud: async function() {
+    if (!isMember() || !_supabase) return;
+    var progress = this.loadProgress();
+    var notes = this.loadNotes();
+    var successLog = this.loadJSON('grapplingAppState', {}).successLog || [];
+    var migrated = 0;
+    // Sync progress
+    for (var key in progress) {
+      if (progress[key] && progress[key] !== 'none') {
+        await this._apiPost('progress', { technique_key: key, status: progress[key] });
+        migrated++;
+      }
+    }
+    // Sync notes
+    for (var nkey in notes) {
+      if (notes[nkey]) {
+        await this._apiPost('notes', { technique_key: nkey, note_text: notes[nkey] });
+        migrated++;
+      }
+    }
+    // Sync success log
+    for (var i = 0; i < successLog.length; i++) {
+      await this._apiPost('success-log', { technique_key: successLog[i].key });
+      migrated++;
+    }
+    if (migrated > 0) showToast('Synced ' + migrated + ' items to your account');
+    this.save('gm_migrated', '1');
+  },
 
   saveAppState: function(appState) { this.save('grapplingAppState', appState); },
   loadAppState: function() { return this.loadJSON('grapplingAppState', null); },
@@ -5795,14 +5844,21 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     updateAuthUI();
     hideAuthModal();
     showToast('Welcome, ' + (AUTH_USER.displayName || AUTH_USER.email));
-    // Sync progress from API (merge cloud → local)
-    UserStore.syncProgressFromAPI().then(function(merged) {
-      if (merged) { STATE.progress = merged; }
-      // Rebuild sections with synced data
+    // First-login migration: push local data to cloud if not done
+    var alreadyMigrated = UserStore.load('gm_migrated') === '1';
+    if (!alreadyMigrated) {
+      UserStore.migrateLocalToCloud();
+    }
+    // Sync from API (merge cloud → local)
+    Promise.all([
+      UserStore.syncProgressFromAPI(),
+      UserStore.syncNotesFromAPI()
+    ]).then(function(results) {
+      if (results[0]) STATE.progress = results[0];
+      if (results[1]) STATE.notes = results[1];
       if (typeof buildSections === 'function') { buildSections(); markBuiltOut(); updateStats(); }
       if (typeof updateHomePanel === 'function') updateHomePanel();
     }).catch(function() {
-      // Fallback: just rebuild with local data
       if (typeof buildSections === 'function') { buildSections(); markBuiltOut(); updateStats(); }
       if (typeof updateHomePanel === 'function') updateHomePanel();
     });
