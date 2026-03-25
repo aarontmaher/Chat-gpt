@@ -5889,18 +5889,24 @@ var AIActions = {
     var gaps = [];
     SECTIONS.forEach(function(s) {
       (s.nodes || []).forEach(function(n) {
-        if (!tracked.has(normalizeSegment(n.t))) gaps.push(n.t + ' (' + s.title + ')');
+        if (!tracked.has(normalizeSegment(n.t))) gaps.push({ label: n.t, section: s.title });
       });
     });
     if (gaps.length === 0) return { title: 'No gaps found', body: 'You\'ve started tracking in every position!' };
-    return { title: gaps.length + ' untouched positions', body: gaps.slice(0, 8).join('\n') + (gaps.length > 8 ? '\n...and ' + (gaps.length - 8) + ' more' : '') };
+    var items = gaps.slice(0, 10).map(function(g) {
+      return { label: g.label, meta: g.section, onClick: function() { switchToReferenceNode(g.label, g.section); } };
+    });
+    return { title: gaps.length + ' untouched positions', items: items, body: gaps.length > 10 ? '...and ' + (gaps.length - 10) + ' more' : '' };
   },
   buildSession: function() {
     var drilling = Object.entries(STATE.progress).filter(function(kv) { return kv[1] === 'drilling'; }).map(function(kv) { return kv[0]; });
     if (drilling.length === 0) return { title: 'No drills queued', body: 'Track techniques as Drilling to build a session.' };
     var shuffled = drilling.sort(function() { return Math.random() - 0.5; }).slice(0, 5);
-    var names = shuffled.map(function(k) { var s = k.split('|'); return s[s.length - 1].replace(/_/g, ' '); });
-    return { title: 'Drill session (' + names.length + ' techniques)', body: names.map(function(n, i) { return (i + 1) + '. ' + n; }).join('\n') };
+    var items = shuffled.map(function(k) {
+      var s = k.split('|'); var label = s[s.length - 1].replace(/_/g, ' '); var section = s[0].replace(/_/g, ' ');
+      return { label: label, meta: section, onClick: function() { switchToReferenceNode(label, section); } };
+    });
+    return { title: 'Drill session (' + items.length + ' techniques)', items: items };
   },
   myGame: function() {
     var log = STATE.successLog || [];
@@ -5908,8 +5914,11 @@ var AIActions = {
     var counts = {};
     log.forEach(function(e) { counts[e.key] = (counts[e.key] || 0) + 1; });
     var top = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5);
-    var lines = top.map(function(kv) { var s = kv[0].split('|'); return s[s.length - 1].replace(/_/g, ' ') + ' — ' + kv[1] + ' hits'; });
-    return { title: 'Your strongest moves', body: lines.join('\n') };
+    var items = top.map(function(kv) {
+      var s = kv[0].split('|'); var label = s[s.length - 1].replace(/_/g, ' '); var section = s[0].replace(/_/g, ' ');
+      return { label: label, meta: kv[1] + ' hits', onClick: function() { switchToReferenceNode(label, section); } };
+    });
+    return { title: 'Your strongest moves', items: items };
   },
   connections: function() {
     if (!SELECTED_NODE) return { title: 'Select a position first', body: 'Click a position in the Reference or Position Map, then ask me about connections.' };
@@ -5939,15 +5948,47 @@ var AIActions = {
   closeBtn.addEventListener('click', hideAI);
 
   function renderResponse(result) {
-    var html = '<div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:500;color:var(--accent);margin-bottom:6px;">' + result.title + '</div>';
-    html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text-dim);line-height:1.6;white-space:pre-line;">' + result.body + '</div>';
-    if (result.action) {
-      html += '<button onclick="this.closest(\'#aiPanel\').style.display=\'none\'" style="margin-top:10px;background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;cursor:pointer;">Go there →</button>';
-      responseEl._pendingAction = result.action;
+    responseEl.innerHTML = '';
+    // Title
+    var titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:500;color:var(--accent);margin-bottom:8px;';
+    titleEl.textContent = result.title;
+    responseEl.appendChild(titleEl);
+    // Items (clickable list)
+    if (result.items && result.items.length) {
+      result.items.forEach(function(item) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background 0.15s;margin-bottom:2px;';
+        row.addEventListener('mouseenter', function() { row.style.background = 'rgba(255,255,255,0.04)'; });
+        row.addEventListener('mouseleave', function() { row.style.background = ''; });
+        var label = document.createElement('span');
+        label.style.cssText = 'flex:1;font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--text-dim);';
+        label.textContent = item.label;
+        row.appendChild(label);
+        if (item.meta) {
+          var meta = document.createElement('span');
+          meta.style.cssText = 'font-size:10px;color:#556;font-family:DM Mono,monospace;';
+          meta.textContent = item.meta;
+          row.appendChild(meta);
+        }
+        if (item.onClick) row.addEventListener('click', function() { hideAI(); item.onClick(); });
+        responseEl.appendChild(row);
+      });
     }
-    responseEl.innerHTML = html;
+    // Body text (fallback)
+    if (result.body) {
+      var bodyEl = document.createElement('div');
+      bodyEl.style.cssText = 'font-family:DM Mono,monospace;font-size:12px;color:var(--text-dim);line-height:1.6;white-space:pre-line;margin-top:4px;';
+      bodyEl.textContent = result.body;
+      responseEl.appendChild(bodyEl);
+    }
+    // Action button
     if (result.action) {
-      responseEl.querySelector('button').addEventListener('click', function() { if (responseEl._pendingAction) responseEl._pendingAction(); });
+      var btn = document.createElement('button');
+      btn.style.cssText = 'margin-top:10px;background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;cursor:pointer;';
+      btn.textContent = 'Go there →';
+      btn.addEventListener('click', function() { hideAI(); result.action(); });
+      responseEl.appendChild(btn);
     }
   }
 
