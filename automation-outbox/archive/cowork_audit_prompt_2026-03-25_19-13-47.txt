@@ -1,0 +1,22 @@
+Read and align to PROJECT_STATE.md, DECISIONS.md, WORKFLOW_RULES.md, AUTOMATION_NEXT.md.
+
+GOAL: Audit the new compact AI Coach widget on the live site at aarontmaher.github.io/Chat-gpt/
+
+LATEST CHANGE: AI Coach moved from full-width bottom sheet to compact 320px docked widget in bottom-right corner. Toggle button is 🤖 in bottom-right.
+
+TEST AS:
+1. GUEST (no account)
+2. MEMBER (logged in)
+
+FOCUS ON:
+- Does the compact widget feel right or too small?
+- Does it overlap graph/reference content?
+- Is it easy to find?
+- Does it work on mobile?
+- Does it fight with bottom toolbar or quick-drill FAB?
+- Does it feel premium or like an afterthought?
+- Should it stay compact or go back to full-width?
+
+OUTPUT: Write suggestions to ~/Chat-gpt/AUTOMATION_SUGGESTIONS_INBOX.md in standard format. Source: Cowork. Status: pending.
+
+Include: keep/revert judgment on compact layout, top 5 improvements.

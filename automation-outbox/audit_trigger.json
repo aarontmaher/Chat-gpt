@@ -1,8 +1,6 @@
 {
-  "audit_needed": true,
+  "status": "ready",
   "timestamp": "2026-03-25",
-  "commit": "ece984d",
-  "summary": "Batch J game intelligence: strength indicators, connected-but-untracked suggestions, drill from graph. Plus sub-positions toggle, belt UI, auth working.",
-  "cowork_prompt_ready": true,
-  "chat_prompt_ready": true
+  "commit": "f49f0f5",
+  "summary": "AI Coach compact docked widget + real Supabase APIs live"
 }

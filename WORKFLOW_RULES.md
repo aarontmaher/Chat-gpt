@@ -159,7 +159,17 @@ After meaningful repo updates, Code sets `suggestion_pass_needed: yes` in AUTOMA
 4. Code ingests inbox into AUTOMATION_SUGGESTIONS.md / AUTOMATION_NEXT.md on next review pass
 5. Trigger is reset to `suggestion_pass_needed: no`
 
-**Direct Cowork → Claude Chat triggering: NOT possible** in the current setup. No automation bridge exists between Cowork and Claude Chat sessions. Cross-agent triggering requires Aaron to manually start sessions or check the trigger. The practical version is file-based coordination — each agent checks the trigger at session start.
+**Direct Cowork → Claude Chat triggering: NOT possible** in the current setup. File-based coordination only.
+
+## Audit Outbox (LOCKED)
+State model for `automation-outbox/audit_trigger.json`:
+- `"status": "ready"` → prompts written, KM should send. Code MUST write .txt files before setting this.
+- `"status": "sent"` → KM archived prompts and sent them. Code should not touch.
+- `"status": "idle"` → nothing pending.
+
+**Code's rule:** NEVER set status to "ready" without also writing both .txt prompt files.
+**KM's rule:** NEVER archive without setting status to "sent".
+**Debug:** run `bash automation-outbox/check-status.sh` to verify state consistency.
 
 ## Multi-Lane Automation (LOCKED)
 Do not sit idle if one lane pauses or blocks. Immediately switch to the next approved lane.
@@ -173,6 +183,16 @@ Do not sit idle if one lane pauses or blocks. Immediately switch to the next app
 - At batch end: state what lane ran, whether it's active/blocked/done, what's next
 
 **Do not:** wait idly, invent approval for blocked items, do tiny filler work
+
+## Cross-Device Testing (LOCKED)
+Do not treat a fix as verified only because it works on one device.
+
+When a change affects mobile, touch, graph, auth, layout, video, scrolling, or modals:
+- Consider: iPhone/iOS Safari, Android/Chrome, Mac, Windows, different screen sizes
+- Report honestly: "Verified on X. Not yet verified on Y."
+- Do not say "mobile fixed" if only tested on one device type
+- Treat iPhone Safari and Android Chrome as separate test classes
+- If real-device testing unavailable, state what remains unverified
 
 ## Manual vs Automated Task Priority
 - **Manual/ad hoc tasks from Aaron** (video moves, folder fixes, verifications, memory corrections, direct filesystem actions) → run immediately, even if an automation loop is active.

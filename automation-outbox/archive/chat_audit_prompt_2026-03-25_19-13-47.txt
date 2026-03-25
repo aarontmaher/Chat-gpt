@@ -1,0 +1,34 @@
+Review the current GrapplingMap product at aarontmaher.github.io/Chat-gpt/ focusing on the new compact AI Coach widget.
+
+LATEST CHANGE:
+The AI Coach panel was redesigned from a full-width bottom sheet to a compact docked widget in the bottom-right corner (320px wide, 400px max height). Toggle button is a small 🤖 square in bottom-right.
+
+AUDIT THESE:
+
+1. AI COACH LAYOUT:
+- Does the compact docked widget feel right? Too small? Too big?
+- Does it overlap the graph or reference content?
+- Is it easy to find and use?
+- Does it feel premium or cheap?
+- Is it too hidden or too intrusive?
+
+2. AI COACH FUNCTIONALITY:
+- Do the quick action buttons work well in the smaller space?
+- Are responses readable in the compact panel?
+- Does the widget feel useful or decorative?
+
+3. DESKTOP vs MOBILE:
+- Desktop: does the 320px widget sit well in the bottom-right?
+- Mobile: does the near-full-width expansion work?
+- Does it fight with other bottom controls (toolbar, FAB)?
+
+4. GUEST vs MEMBER:
+- Does the AI Coach make a guest want to sign up?
+- Does it add clear value for members?
+
+5. KEEP/REVERT:
+- Should the compact layout stay or should it go back to full-width?
+- Any quick fixes that would make it significantly better?
+
+OUTPUT: Top 5 improvements, keep/revert judgment, any bugs found.
+Be practical, opinionated, and human-centered.

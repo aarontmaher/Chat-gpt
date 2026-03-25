@@ -1,15 +1,6 @@
-Read and align to PROJECT_STATE.md, DECISIONS.md, WORKFLOW_RULES.md, AUTOMATION_NEXT.md.
+Audit the compact AI Coach widget on the live site at aarontmaher.github.io/Chat-gpt/
 
-GOAL: Fresh broad audit of the current live product at aarontmaher.github.io/Chat-gpt/
+Test as GUEST and MEMBER. Focus on: compact layout, overlap, mobile, usability.
 
-Review as beginner, intermediate, and advanced grapplers. Test guest and member states.
-
-Focus on:
-- What feels genuinely good now
-- What still feels confusing or weak
-- Whether the new features work well: belt UI, sub-positions toggle, game strength indicators, connected-but-untracked suggestions, drill-from-graph, auth/signup flow
-- What helps real training vs what is noise
-- Guest experience vs member experience
-- What makes someone want to create an account
-
-Output: suggestions in the standard format for AUTOMATION_SUGGESTIONS_INBOX.md. Source: Cowork. Status: pending.
+Output suggestions to ~/Chat-gpt/AUTOMATION_SUGGESTIONS_INBOX.md. Source: Cowork. Status: pending.
+Include keep/revert judgment on compact layout.
