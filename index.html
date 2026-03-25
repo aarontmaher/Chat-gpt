@@ -5728,7 +5728,11 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     <button id="aiPanelClose" style="background:none;border:none;color:#556;font-size:14px;cursor:pointer;padding:0 4px;">×</button>
   </div>
   <div id="aiQuickActions" style="display:flex;gap:4px;flex-wrap:wrap;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);flex-shrink:0;"></div>
-  <div id="aiResponse" style="flex:1;overflow-y:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;min-height:80px;max-height:260px;"></div>
+  <div id="aiResponse" style="flex:1;overflow-y:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;min-height:80px;max-height:200px;"></div>
+  <div style="display:flex;gap:6px;padding:8px 14px 10px;border-top:1px solid rgba(255,255,255,0.04);flex-shrink:0;">
+    <input id="aiChatInput" type="text" placeholder="Ask me anything..." style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;border-radius:6px;outline:none;" autocomplete="off">
+    <button id="aiChatSend" style="background:var(--accent3);border:none;color:#000;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;padding:0 14px;border-radius:6px;cursor:pointer;flex-shrink:0;">Send</button>
+  </div>
 </div>
 <!-- AI Assistant Toggle Button -->
 <button id="aiToggleBtn" style="position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;width:40px;height:40px;border-radius:10px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.25);color:var(--accent3);font-size:16px;cursor:pointer;z-index:1000;box-shadow:0 2px 8px rgba(167,139,250,0.15);transition:all 0.2s;display:flex;align-items:center;justify-content:center;" title="AI Coach">🤖</button>
@@ -6161,6 +6165,70 @@ var AIActions = {
   });
 
   responseEl.innerHTML = '<div style="text-align:center;padding:20px;color:#556;font-family:Barlow Condensed,sans-serif;font-size:13px;">Ask me anything about your training.</div>';
+
+  // ─── TYPED CHAT INPUT ─────────────────────────────────────────
+  var chatInput = document.getElementById('aiChatInput');
+  var chatSend = document.getElementById('aiChatSend');
+
+  function routeChat(text) {
+    var q = text.toLowerCase().trim();
+    if (!q) return;
+
+    // Route to existing AI actions based on keywords
+    if (q.includes('drill') && (q.includes('next') || q.includes('what') || q.includes('should'))) {
+      return renderResponse(AIActions.whatToDrill());
+    }
+    if (q.includes('weak') || q.includes('gap') || q.includes('missing')) {
+      return renderResponse(AIActions.weakAreas());
+    }
+    if (q.includes('build') && q.includes('session') || q.includes('session') && q.includes('today')) {
+      return renderResponse(AIActions.buildSession());
+    }
+    if (q.includes('my game') || q.includes('strongest') || q.includes('success') || q.includes('hitting')) {
+      return renderResponse(AIActions.myGame());
+    }
+    if (q.includes('connect') || q.includes('path') || q.includes('from') && q.includes('to')) {
+      return renderResponse(AIActions.connections());
+    }
+    if (q.includes('week') || q.includes('summary') || q.includes('recent')) {
+      return renderResponse(AIActions.weeklySummary());
+    }
+    // Search for a technique/position by name
+    if (q.includes('find') || q.includes('show') || q.includes('search') || q.includes('where')) {
+      var searchTerm = q.replace(/find|show|search|where|is|the|me|for/gi, '').trim();
+      if (searchTerm.length > 2) {
+        hideAI();
+        document.getElementById('refSearch').value = searchTerm;
+        if (typeof _refDoSearch === 'function') _refDoSearch();
+        switchToTab('reference');
+        return;
+      }
+    }
+    // Belt filter
+    if (q.includes('white belt') || q.includes('blue belt') || q.includes('purple belt') || q.includes('brown belt') || q.includes('black belt')) {
+      var belt = q.includes('white') ? 'white' : q.includes('blue') ? 'blue' : q.includes('purple') ? 'purple' : q.includes('brown') ? 'brown' : 'black';
+      if (window._setBelt) window._setBelt(belt);
+      return renderResponse({ title: belt.charAt(0).toUpperCase() + belt.slice(1) + ' Belt selected', body: 'Your belt has been set. The syllabus and recommendations will reflect this.' });
+    }
+    // Fallback: try searching
+    hideAI();
+    document.getElementById('refSearch').value = q;
+    if (typeof _refDoSearch === 'function') _refDoSearch();
+    switchToTab('reference');
+  }
+
+  function handleChatSubmit() {
+    var text = chatInput.value.trim();
+    if (!text) return;
+    if (!isMember()) { requireAuth('use AI Coach'); return; }
+    chatInput.value = '';
+    routeChat(text);
+  }
+
+  chatSend.addEventListener('click', handleChatSubmit);
+  chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleChatSubmit(); }
+  });
 })();
 
 // Quick-drill FAB
