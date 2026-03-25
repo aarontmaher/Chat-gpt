@@ -470,7 +470,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 </div>
 
 <nav aria-label="Views"><div class="view-tabs" role="tablist">
-  <button class="view-tab" data-view="reference" aria-label="Reference view" role="tab">Reference</button>
+  <button class="view-tab" data-view="reference" aria-label="Reference view" role="tab">Reference <span id="refDrillBadge" style="display:none;background:var(--blue);color:#000;font-size:8px;padding:1px 5px;border-radius:8px;vertical-align:super;margin-left:2px;font-weight:700;"></span></button>
   <button class="view-tab active" data-view="graph3d" aria-label="Position Map view" role="tab">Position Map</button>
 </div></nav>
 
@@ -1183,6 +1183,8 @@ function updateStats() {
   for (var v2 of Object.values(STATE.progress)) { if (v2 === 'drilling') drillCount++; }
   var badge = document.getElementById('drillCountBadge');
   if (badge) { badge.textContent = drillCount; badge.style.display = drillCount > 0 ? 'inline' : 'none'; }
+  var refBadge = document.getElementById('refDrillBadge');
+  if (refBadge) { refBadge.textContent = drillCount; refBadge.style.display = drillCount > 0 ? 'inline' : 'none'; }
 }
 
 // ─── POPUP BUILDER (shared between 2D and 3D) ─────────────────────────────
