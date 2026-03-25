@@ -5609,6 +5609,18 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 </script>
 <!-- Quick-drill FAB (mobile) -->
 <button id="quickDrillFab" style="display:none;position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:16px;width:48px;height:48px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:20px;cursor:pointer;z-index:1000;box-shadow:0 4px 16px rgba(232,255,71,0.3);transition:all 0.2s;" title="Random Drill">▶</button>
+<!-- AI Assistant Panel -->
+<div id="aiPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:70vh;background:rgba(14,16,21,0.98);border-top:1px solid rgba(255,255,255,0.08);border-radius:16px 16px 0 0;z-index:1200;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 24px rgba(0,0,0,0.5);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 6px;"></div>
+  <div style="display:flex;align-items:center;padding:0 18px 8px;border-bottom:1px solid rgba(255,255,255,0.04);">
+    <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:500;color:var(--accent);letter-spacing:0.5px;">AI Coach</div>
+    <button id="aiPanelClose" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+  </div>
+  <div id="aiQuickActions" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04);"></div>
+  <div id="aiResponse" style="flex:1;overflow-y:auto;padding:14px 18px;-webkit-overflow-scrolling:touch;min-height:120px;"></div>
+</div>
+<!-- AI Assistant Toggle Button -->
+<button id="aiToggleBtn" style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:16px;width:44px;height:44px;border-radius:50%;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:var(--accent3);font-size:18px;cursor:pointer;z-index:1000;box-shadow:0 2px 12px rgba(167,139,250,0.2);transition:all 0.2s;display:flex;align-items:center;justify-content:center;" title="AI Coach">🤖</button>
 <!-- Auth / Signup Modal -->
 <div id="authModal" style="display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
   <div style="position:relative;width:min(90vw,380px);background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:28px;box-shadow:0 16px 64px rgba(0,0,0,0.6);">
@@ -5853,6 +5865,112 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   };
 
   updateAuthUI();
+})();
+
+// ─── AI ACTIONS (local-only smart assistant) ────────────────────────────────
+var AIActions = {
+  whatToDrill: function() {
+    var drilling = Object.entries(STATE.progress).filter(function(kv) { return kv[1] === 'drilling'; });
+    if (drilling.length === 0) return { title: 'Nothing to drill', body: 'Mark some techniques as Drilling first, then I can suggest what to focus on.' };
+    // Find least recently practiced
+    var sorted = drilling.sort(function(a, b) {
+      var ta = (STATE.lastPracticed && STATE.lastPracticed[a[0]]) || 0;
+      var tb = (STATE.lastPracticed && STATE.lastPracticed[b[0]]) || 0;
+      return ta - tb;
+    });
+    var top = sorted[0][0].split('|');
+    var label = top[top.length - 1].replace(/_/g, ' ');
+    var section = top[0].replace(/_/g, ' ');
+    return { title: 'Focus on: ' + label, body: 'This is your least recently practiced drill (' + section + '). Tap to go there.', action: function() { switchToReferenceNode(label, section); } };
+  },
+  weakAreas: function() {
+    var tracked = new Set();
+    Object.keys(STATE.progress).forEach(function(k) { tracked.add(k.split('|')[1]); });
+    var gaps = [];
+    SECTIONS.forEach(function(s) {
+      (s.nodes || []).forEach(function(n) {
+        if (!tracked.has(normalizeSegment(n.t))) gaps.push(n.t + ' (' + s.title + ')');
+      });
+    });
+    if (gaps.length === 0) return { title: 'No gaps found', body: 'You\'ve started tracking in every position!' };
+    return { title: gaps.length + ' untouched positions', body: gaps.slice(0, 8).join('\n') + (gaps.length > 8 ? '\n...and ' + (gaps.length - 8) + ' more' : '') };
+  },
+  buildSession: function() {
+    var drilling = Object.entries(STATE.progress).filter(function(kv) { return kv[1] === 'drilling'; }).map(function(kv) { return kv[0]; });
+    if (drilling.length === 0) return { title: 'No drills queued', body: 'Track techniques as Drilling to build a session.' };
+    var shuffled = drilling.sort(function() { return Math.random() - 0.5; }).slice(0, 5);
+    var names = shuffled.map(function(k) { var s = k.split('|'); return s[s.length - 1].replace(/_/g, ' '); });
+    return { title: 'Drill session (' + names.length + ' techniques)', body: names.map(function(n, i) { return (i + 1) + '. ' + n; }).join('\n') };
+  },
+  myGame: function() {
+    var log = STATE.successLog || [];
+    if (log.length === 0) return { title: 'No successes logged yet', body: 'Use the ✔ button on techniques to log when you hit them in training.' };
+    var counts = {};
+    log.forEach(function(e) { counts[e.key] = (counts[e.key] || 0) + 1; });
+    var top = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5);
+    var lines = top.map(function(kv) { var s = kv[0].split('|'); return s[s.length - 1].replace(/_/g, ' ') + ' — ' + kv[1] + ' hits'; });
+    return { title: 'Your strongest moves', body: lines.join('\n') };
+  },
+  connections: function() {
+    if (!SELECTED_NODE) return { title: 'Select a position first', body: 'Click a position in the Reference or Position Map, then ask me about connections.' };
+    var label = SELECTED_NODE.label;
+    var inbound = NET_EDGES.filter(function(e) { return e.target_label === label; }).map(function(e) { return e.source_label; });
+    var outbound = NET_EDGES.filter(function(e) { return e.source_label === label; }).map(function(e) { return e.target_label; });
+    var body = '';
+    if (inbound.length) body += 'Entries from: ' + [...new Set(inbound)].join(', ') + '\n';
+    if (outbound.length) body += 'Leads to: ' + [...new Set(outbound)].join(', ');
+    if (!body) body = 'No connections mapped for ' + label;
+    return { title: label + ' connections', body: body };
+  }
+};
+
+// AI Panel UI
+(function initAIPanel() {
+  var panel = document.getElementById('aiPanel');
+  var toggle = document.getElementById('aiToggleBtn');
+  var closeBtn = document.getElementById('aiPanelClose');
+  var actionsEl = document.getElementById('aiQuickActions');
+  var responseEl = document.getElementById('aiResponse');
+
+  function showAI() { panel.style.display = 'flex'; }
+  function hideAI() { panel.style.display = 'none'; }
+
+  toggle.addEventListener('click', function() { panel.style.display === 'flex' ? hideAI() : showAI(); });
+  closeBtn.addEventListener('click', hideAI);
+
+  function renderResponse(result) {
+    var html = '<div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:500;color:var(--accent);margin-bottom:6px;">' + result.title + '</div>';
+    html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text-dim);line-height:1.6;white-space:pre-line;">' + result.body + '</div>';
+    if (result.action) {
+      html += '<button onclick="this.closest(\'#aiPanel\').style.display=\'none\'" style="margin-top:10px;background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;cursor:pointer;">Go there →</button>';
+      responseEl._pendingAction = result.action;
+    }
+    responseEl.innerHTML = html;
+    if (result.action) {
+      responseEl.querySelector('button').addEventListener('click', function() { if (responseEl._pendingAction) responseEl._pendingAction(); });
+    }
+  }
+
+  var actions = [
+    { label: 'What to drill?', fn: function() { renderResponse(AIActions.whatToDrill()); } },
+    { label: 'Weak areas', fn: function() { renderResponse(AIActions.weakAreas()); } },
+    { label: 'Build session', fn: function() { renderResponse(AIActions.buildSession()); } },
+    { label: 'My game', fn: function() { renderResponse(AIActions.myGame()); } },
+    { label: 'Connections', fn: function() { renderResponse(AIActions.connections()); } }
+  ];
+
+  actions.forEach(function(a) {
+    var btn = document.createElement('button');
+    btn.style.cssText = 'background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);color:var(--accent3);font-family:Barlow Condensed,sans-serif;font-size:12px;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;';
+    btn.textContent = a.label;
+    btn.addEventListener('click', function() {
+      if (!isMember() && a.label !== 'Connections') { requireAuth('use AI Coach'); return; }
+      a.fn();
+    });
+    actionsEl.appendChild(btn);
+  });
+
+  responseEl.innerHTML = '<div style="text-align:center;padding:20px;color:#556;font-family:Barlow Condensed,sans-serif;font-size:13px;">Ask me anything about your training.</div>';
 })();
 
 // Quick-drill FAB
