@@ -2172,6 +2172,8 @@ function initDataFromSections() {
 
 // ─── NOTE PANEL ───────────────────────────────────────────────────────────────
 function openNotePanel(key, title) {
+  // B5: close auth modal if open
+  var am = document.getElementById('authModal'); if (am) am.style.display = 'none';
   STATE.currentNoteKey = key;
   document.getElementById('notePanelTitle').textContent = title;
   document.getElementById('noteTextarea').value = STATE.notes[key] || '';
@@ -4668,8 +4670,12 @@ document.getElementById('menuProgressBtn').addEventListener('click', function() 
   Object.values(STATE.progress).forEach(function(v) { if (v === 'drilling') drilling++; if (v === 'learned') learned++; });
   // Per-section breakdown with drilling/learned split
   var bySectionDrill = {}, bySectionLearn = {};
+  // B6: build a lowercase→title lookup so dashboard doesn't duplicate sections
+  var _secTitleLookup = {};
+  SECTIONS.forEach(function(s) { _secTitleLookup[s.title.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '').replace(/_+/g, '_')] = s.title; });
   Object.entries(STATE.progress).forEach(function(kv) {
-    var s = kv[0].split('|')[0].replace(/_/g, ' ');
+    var raw = kv[0].split('|')[0];
+    var s = _secTitleLookup[raw] || raw.replace(/_/g, ' ');
     if (kv[1] === 'drilling') bySectionDrill[s] = (bySectionDrill[s] || 0) + 1;
     if (kv[1] === 'learned') bySectionLearn[s] = (bySectionLearn[s] || 0) + 1;
   });
@@ -5906,7 +5912,13 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   var authModal = document.getElementById('authModal');
   var authModalClose = document.getElementById('authModalClose');
 
-  function showAuthModal() { authModal.style.display = 'flex'; }
+  function showAuthModal() {
+    // B4/B5: close stacking panels before opening auth
+    if (typeof closeNotePanel === 'function') try { document.getElementById('notePanel').classList.remove('open'); document.getElementById('overlay').classList.remove('active'); } catch(e){}
+    var lp = document.getElementById('listPanel'); if (lp) lp.classList.remove('open');
+    var cp = document.getElementById('connectionPanel'); if (cp) cp.style.display = 'none';
+    authModal.style.display = 'flex';
+  }
   function hideAuthModal() { authModal.style.display = 'none'; }
   window.showAuthModal = showAuthModal;
 
@@ -5981,6 +5993,9 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
           status.textContent = 'An account with this email already exists. Try logging in.'; status.style.color = '#f85149'; return;
         }
         status.textContent = 'Account created! Check your email to confirm, then log in.'; status.style.color = 'var(--green)';
+      } else if (result.data && !result.data.user && !result.data.session) {
+        // B9: Supabase returns null user when email exists (confirm-email enabled)
+        status.textContent = 'An account with this email may already exist. Try logging in.'; status.style.color = '#f85149';
       } else {
         status.textContent = 'Unexpected response — check console'; status.style.color = '#f85149';
         console.warn('Supabase signUp response:', result);
