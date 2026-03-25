@@ -679,9 +679,12 @@ const ACCESS_CONFIG = {
 };
 
 // ─── USER STORE (abstraction over localStorage, future Supabase) ────────────
-const UserStore = {
-  _backend: 'localStorage', // 'localStorage' or 'supabase' (future)
+var SUPABASE_FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
 
+const UserStore = {
+  _backend: 'localStorage', // 'localStorage' or 'supabase'
+
+  // ─── Local storage helpers ────────────────────────────────────
   save: function(key, value) {
     try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)); }
     catch(e) { if (!window._storageFailed) { window._storageFailed = true; showToast('Could not save — storage may be full'); } }
@@ -697,8 +700,60 @@ const UserStore = {
     try { localStorage.removeItem(key); } catch(e) {}
   },
 
-  saveProgress: function(progress) { this.save('grapplingProgress', progress); },
+  // ─── API helpers ──────────────────────────────────────────────
+  _getAuthHeaders: async function() {
+    if (!_supabase) return null;
+    try {
+      var session = await _supabase.auth.getSession();
+      if (session.data && session.data.session) {
+        return { 'Authorization': 'Bearer ' + session.data.session.access_token, 'Content-Type': 'application/json' };
+      }
+    } catch(e) {}
+    return null;
+  },
+
+  _apiGet: async function(endpoint) {
+    var headers = await this._getAuthHeaders();
+    if (!headers) return null;
+    try {
+      var resp = await fetch(SUPABASE_FUNCTIONS_URL + '/' + endpoint, { headers: headers });
+      if (resp.ok) return await resp.json();
+    } catch(e) { console.warn('API GET failed:', endpoint, e); }
+    return null;
+  },
+
+  _apiPost: async function(endpoint, body) {
+    var headers = await this._getAuthHeaders();
+    if (!headers) return false;
+    try {
+      var resp = await fetch(SUPABASE_FUNCTIONS_URL + '/' + endpoint, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+      return resp.ok;
+    } catch(e) { console.warn('API POST failed:', endpoint, e); return false; }
+  },
+
+  // ─── Progress (localStorage + API sync for members) ───────────
+  saveProgress: function(progress) {
+    this.save('grapplingProgress', progress);
+    // Async API sync for members (fire-and-forget)
+    if (isMember() && _supabase) {
+      Object.entries(progress).forEach(function(kv) {
+        UserStore._apiPost('progress', { technique_key: kv[0], status: kv[1] });
+      });
+    }
+  },
   loadProgress: function() { return this.loadJSON('grapplingProgress', {}); },
+
+  // Async: load from API and merge into local (called after login)
+  syncProgressFromAPI: async function() {
+    var data = await this._apiGet('progress');
+    if (data && data.items) {
+      var local = this.loadProgress();
+      data.items.forEach(function(item) { local[item.technique_key] = item.status; });
+      this.save('grapplingProgress', local);
+      return local;
+    }
+    return null;
+  },
 
   saveNotes: function(notes) { this.save('grapplingNotes', notes); },
   loadNotes: function() { return this.loadJSON('grapplingNotes', {}); },
@@ -708,6 +763,11 @@ const UserStore = {
 
   getKeyVersion: function() { return parseInt(this.load('grapplingmap_key_version') || '0', 10); },
   setKeyVersion: function(v) { this.save('grapplingmap_key_version', String(v)); },
+
+  // Sync success log to API (fire-and-forget)
+  syncSuccessToAPI: function(key) {
+    if (isMember() && _supabase) { this._apiPost('success-log', { technique_key: key }); }
+  },
 
   clearUserData: function() {
     this.remove('grapplingProgress');
@@ -1433,6 +1493,7 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
       if (!ACCESS_CONFIG.GUEST_CAN_LOG_SUCCESS && isGuest()) { requireAuth('log your successes'); return; }
       if (!STATE.successLog) STATE.successLog = [];
       STATE.successLog.push({ key: key, ts: Date.now() });
+      UserStore.syncSuccessToAPI(key);
       _hitCount++;
       hitBtn.textContent = '\u2714 ' + _hitCount;
       hitBtn.style.color = 'var(--green)';
@@ -5734,9 +5795,17 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     updateAuthUI();
     hideAuthModal();
     showToast('Welcome, ' + (AUTH_USER.displayName || AUTH_USER.email));
-    // Rebuild sections to remove guest gating
-    if (typeof buildSections === 'function') { buildSections(); markBuiltOut(); updateStats(); }
-    if (typeof updateHomePanel === 'function') updateHomePanel();
+    // Sync progress from API (merge cloud → local)
+    UserStore.syncProgressFromAPI().then(function(merged) {
+      if (merged) { STATE.progress = merged; }
+      // Rebuild sections with synced data
+      if (typeof buildSections === 'function') { buildSections(); markBuiltOut(); updateStats(); }
+      if (typeof updateHomePanel === 'function') updateHomePanel();
+    }).catch(function() {
+      // Fallback: just rebuild with local data
+      if (typeof buildSections === 'function') { buildSections(); markBuiltOut(); updateStats(); }
+      if (typeof updateHomePanel === 'function') updateHomePanel();
+    });
   }
   function setAuthGuest() {
     AUTH_STATE = 'guest';
