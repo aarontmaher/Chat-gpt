@@ -3496,6 +3496,16 @@ window.initGraph3D = (function() {
 
     // --- Determine active nodes based on filter ---
     var active;
+
+    // Belt syllabus filter (applies alongside other filters)
+    var beltPosSet = (window._beltFilterActive && window._getCurrentBelt) ? BELT_POSITIONS[window._getCurrentBelt()] : null;
+    function isBeltAllowed(n) {
+      if (!beltPosSet) return true; // no belt filter or Black belt = show all
+      if (n.depth !== 1) return true; // sub-positions follow parent
+      var posNorm = n.key ? n.key.split('|')[1] : normalizeSegment(n.label);
+      return beltPosSet.has(posNorm);
+    }
+
     var isPositionFilter = (sf === 'drilling' || sf === 'learned' || sf === 'mygame');
     if (isPositionFilter) {
       // Build set of position norms/labels that have ≥1 matching technique
@@ -3516,14 +3526,14 @@ window.initGraph3D = (function() {
       });
       // Active = matched depth-1 positions + their depth-2 children
       active = netNds.filter(function(n) {
-        return matchedPosIds.has(n.id) || (n.depth === 2 && matchedPosIds.has(n.parent_id));
+        return (matchedPosIds.has(n.id) || (n.depth === 2 && matchedPosIds.has(n.parent_id))) && isBeltAllowed(n);
       });
       // Show empty state if no matches
       if (matched.labels.size === 0) {
         showEmptyState3d(sf);
       }
     } else {
-      active = netNds.filter(n => sf === 'all' || n.status === sf);
+      active = netNds.filter(n => (sf === 'all' || n.status === sf) && isBeltAllowed(n));
     }
 
     const aIds=new Set(active.map(n=>n.id));
@@ -4272,6 +4282,7 @@ window.initGraph3D = (function() {
       function _g3dPause(){_g3dPaused=true;if(_g3dRafId){cancelAnimationFrame(_g3dRafId);_g3dRafId=0;}}
       document.addEventListener('visibilitychange',function(){document.hidden?_g3dPause():_g3dResume();});
       window._g3dPause=_g3dPause;window._g3dResume=_g3dResume;
+      window._g3dRebuildFilter=function(){ rebuildFilter3d(statusFilter3d); };
       _g3dLoop();
 
       window.addEventListener('resize',()=>{
@@ -5852,11 +5863,15 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     showToast('Showing ' + BELT_NAMES[currentBelt] + ' syllabus');
   }
   window._applyBeltFilter = applyBeltFilter;
+  window._beltFilterActive = false;
 
   beltFilterBtnEl.addEventListener('click', function() {
     dd.style.display = 'none';
     beltFilterActive = !beltFilterActive;
+    window._beltFilterActive = beltFilterActive;
     applyBeltFilter();
+    // Also rebuild graph with belt filter
+    if (window._g3dRebuildFilter) window._g3dRebuildFilter();
   });
 
   // Apply for Next Belt
