@@ -95,6 +95,90 @@ POST /api/success-log      → log a success
 2. Auth via Supabase JWT
 3. Tool definitions matching Phase 2 API shape
 
+---
+
+## DATA INTELLIGENCE LAYERS
+
+### Layer 1 — Private User Data
+Per-user, auth-protected, never exposed cross-user.
+
+| Resource | Current Location | Future Location |
+|----------|-----------------|----------------|
+| Profile | AUTH_USER in memory | Supabase profiles table |
+| Belt state | localStorage (gm_current_belt) | Supabase user_preferences |
+| Progress (track/want/drilling/learned) | localStorage | Supabase user_progress |
+| Success log | localStorage (successLog[]) | Supabase success_log |
+| Drilling started timestamps | localStorage (drillingStarted{}) | Supabase user_progress.started_at |
+| Notes | localStorage (notes{}) | Supabase user_notes |
+| Recent viewed | localStorage (recentViewed[]) | Supabase user_preferences |
+| Videos watched | localStorage (videosWatched{}) | Supabase user_preferences |
+| Last practiced | localStorage (lastPracticed{}) | Supabase user_preferences |
+
+**API shape (future):**
+```
+GET  /api/me/profile
+GET  /api/me/progress
+GET  /api/me/success-log
+GET  /api/me/drills
+GET  /api/me/notes
+POST /api/me/progress    { technique_key, status }
+POST /api/me/success-log { technique_key }
+POST /api/me/notes       { technique_key, text }
+```
+
+### Layer 2 — Shared Aggregate Intelligence
+Anonymous product-level patterns, safe for all users.
+
+| Signal | How Computed | Use |
+|--------|-------------|-----|
+| Most tracked techniques | COUNT across all user_progress | "Popular techniques" |
+| Most hit techniques | COUNT across all success_log | "What people are hitting" |
+| Common transitions | NET_EDGES weight + success frequency | "Common paths" |
+| Common next moves | After technique X, users often track Y | "Suggested additions" |
+| Weak-point clusters | Positions with high track-to-abandon rate | "Common trouble spots" |
+| Belt distribution | COUNT profiles by belt state | "Community progress" |
+
+**API shape (future):**
+```
+GET /api/aggregate/popular-techniques
+GET /api/aggregate/common-paths
+GET /api/aggregate/next-move?from=technique_key
+GET /api/aggregate/community-stats
+```
+
+**Rules:**
+- No PII in aggregate queries
+- Results are pre-computed or cached (not real-time scans)
+- Safe for guests to see aggregate data
+- Members get personalized overlay (their data + aggregate)
+
+### Layer 3 — AI Assistant Behavior
+
+**Guest AI:**
+- Can use: map structure, aggregate data, technique explanations
+- Cannot use: personal progress, drills, notes, success log
+- Example: "What positions connect to Mount?" / "What's popular?"
+
+**Member AI:**
+- Can use: everything from Layer 1 + Layer 2 + map structure
+- Example: "What should I drill?" / "Show my weak areas" / "Build a session"
+- Future LLM: system prompt includes user context from Layer 1
+
+**How AI combines layers:**
+```
+User asks: "What should I work on next?"
+
+AI reads:
+  Layer 1: user's progress, success log, drilling queue
+  Layer 2: what similar users prioritized after same patterns
+  Structure: NET_EDGES connections from user's strong positions
+
+AI responds:
+  "You've been hitting Toreando from J point. People with similar
+   patterns often add Leg drag next. Your Mount submissions are
+   a gap — consider adding Head arm choke."
+```
+
 ## Blockers
 | Blocker | Owner | Needed for |
 |---------|-------|------------|
