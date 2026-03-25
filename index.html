@@ -285,11 +285,15 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   #g3dLegend { right: 16px !important; }
 
   /* Bottom bars: compact, safe-area-aware, wrap-friendly */
-  #refBottomBar { flex-wrap: wrap; gap: 3px; padding: 4px 6px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #refBottomBar { flex-wrap: wrap; gap: 4px; padding: 6px 8px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); overflow-x: auto; -webkit-overflow-scrolling: touch; row-gap: 6px; }
   #refBottomBar input { width: 100px; font-size: 16px; }
-  #g3dToolbar { left: 8px !important; right: 8px !important; transform: none !important; bottom: calc(10px + env(safe-area-inset-bottom)) !important; max-width: 100% !important; gap: 1px !important; padding: 4px !important; flex-wrap: wrap !important; }
+  #g3dToolbar { left: 8px !important; right: 8px !important; transform: none !important; bottom: calc(10px + env(safe-area-inset-bottom)) !important; max-width: 100% !important; gap: 4px !important; padding: 6px 8px !important; flex-wrap: wrap !important; row-gap: 6px !important; }
   #g3dToolbar input { width: 90px; font-size: 16px; }
   .g3d-tb-btn { font-size: 11px; padding: 0 10px; height: 34px; min-width: 38px; }
+  /* Toolbar dividers: collapse on wrap to save space */
+  #refBottomBar > div[style*="width:1px"], #g3dToolbar > div[style*="width:1px"] { display: none; }
+  /* Belt filter chip on toolbar */
+  .belt-filter-chip { height: 28px; padding: 0 10px; border-radius: 14px; background: rgba(232,255,71,0.1); border: 1px solid rgba(232,255,71,0.3); color: var(--accent); font-family: 'Barlow Condensed',monospace; font-size: 10px; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
   .node-label { font-size: 14px; }
   .section-title { font-size: 15px; }
   /* Touch feedback */
@@ -506,6 +510,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="g3d-tb-btn" id="refExpandAll">Expand</button>
     <div id="refMediaBtns" style="display:contents;"></div>
     <button class="g3d-tb-btn" id="refKbdHint" style="color:#556;font-size:9px;" title="Keyboard shortcuts">? keys</button>
+    <button class="belt-filter-chip" id="refBeltChip" style="display:none;" title="Click to remove belt filter">⬜ White Belt ×</button>
   </div>
 </div>
 
@@ -539,6 +544,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="g3d-tb-btn" id="g3dFindPathBtn">Find Path</button>
     <button class="g3d-tb-btn" id="g3dOptionsBtn">Settings</button>
     <div id="g3dMediaBtns" style="display:contents;"></div>
+    <button class="belt-filter-chip" id="g3dBeltChip" style="display:none;" title="Click to remove belt filter">⬜ White Belt ×</button>
   </div>
 
   <!-- Options popover -->
@@ -2229,13 +2235,17 @@ function revealAncestorItems() {
 
 // ─── SEARCH (Reference) ───────────────────────────────────────────────────────
 let _refSearchTimer;
+// BJJ spelling variants: compound→spaced forms for search normalization
+var _bjjAliases = {'armbar':'arm bar','armbars':'arm bar','armlock':'arm lock','leglock':'leg lock','leglocks':'leg lock','headlock':'head lock','kimura':'kimura','kneebar':'knee bar','toebar':'toe bar','footlock':'foot lock','heelhook':'heel hook','wristlock':'wrist lock','bodylock':'body lock','backtake':'back take','singleleg':'single leg','doubleleg':'double leg','halfguard':'half guard','closedguard':'closed guard','openguard':'open guard','dlariva':'de la riva','delariva':'de la riva','rdlr':'reverse de la riva','slx':'single leg x','xguard':'x guard','northsouth':'north south','sidecontrol':'side control','backcontrol':'back control','fronthead':'front headlock','frontheadlock':'front headlock','kneeshield':'knee shield','butterflyhalf':'half butterfly','rnc':'rear naked choke','rearnakedchoke':'rear naked choke','rearnaked':'rear naked','darce':'darce','anaconda':'anaconda','guillotine':'guillotine','triangle':'triangle','armtriangle':'arm triangle'};
 function _refDoSearch() {
   var q = document.getElementById('refSearch').value.toLowerCase().trim();
+  // Expand BJJ aliases for search
+  var qExpanded = _bjjAliases[q.replace(/\s+/g, '')] || q;
   document.querySelectorAll('.tree-item').forEach(function(li) {
     var label = li.querySelector('.node-label');
     if (!label) return;
     var text = label.textContent.replace(' \u2605', ''); // strip built-out star for search
-    var match = !q || text.toLowerCase().includes(q);
+    var match = !q || text.toLowerCase().includes(q) || (qExpanded !== q && text.toLowerCase().includes(qExpanded));
     li.style.display = match ? '' : 'none';
     // Highlight matching text
     if (q && match) {
@@ -5872,6 +5882,17 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 
   // Belt syllabus filter toggle
   var beltFilterBtnEl = document.getElementById('beltFilterBtn');
+  var _refBeltChip = document.getElementById('refBeltChip');
+  var _g3dBeltChip = document.getElementById('g3dBeltChip');
+  var BELT_ICONS = {white:'⬜',blue:'🟦',purple:'🟪',brown:'🟫',black:'⬛'};
+  function _updateBeltChips(active) {
+    var txt = active ? (BELT_ICONS[currentBelt]||'') + ' ' + BELT_NAMES[currentBelt] + ' ×' : '';
+    [_refBeltChip, _g3dBeltChip].forEach(function(c) { if (!c) return; c.style.display = active ? '' : 'none'; c.textContent = txt; });
+  }
+  [_refBeltChip, _g3dBeltChip].forEach(function(c) { if (!c) return; c.addEventListener('click', function(ev) {
+    ev.stopPropagation(); beltFilterActive = false; window._beltFilterActive = false; applyBeltFilter();
+    if (window._g3dRebuildFilter) window._g3dRebuildFilter();
+  }); });
   function applyBeltFilter() {
     var posSet = BELT_POSITIONS[currentBelt];
     if (!posSet || !beltFilterActive) {
@@ -5880,6 +5901,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
       document.querySelectorAll('.section').forEach(function(sec) { sec.style.display = ''; });
       beltFilterBtnEl.textContent = 'Filter to syllabus';
       beltFilterBtnEl.style.color = 'var(--accent3)';
+      _updateBeltChips(false);
       return;
     }
     // Filter Reference tree to belt positions
@@ -5895,6 +5917,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     });
     beltFilterBtnEl.textContent = '✓ Filtering: ' + BELT_NAMES[currentBelt];
     beltFilterBtnEl.style.color = 'var(--accent)';
+    _updateBeltChips(true);
     showToast('Showing ' + BELT_NAMES[currentBelt] + ' syllabus');
   }
   window._applyBeltFilter = applyBeltFilter;
@@ -6289,7 +6312,7 @@ var AIActions = {
     if (!q) return;
 
     // Route to existing AI actions based on keywords
-    if (q.includes('drill') && (q.includes('next') || q.includes('what') || q.includes('should'))) {
+    if (q.includes('drill') && (q.includes('next') || q.includes('what') || q.includes('should') || q === 'drill' || q === 'drills')) {
       return renderResponse(AIActions.whatToDrill());
     }
     if (q.includes('weak') || q.includes('gap') || q.includes('missing')) {
