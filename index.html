@@ -3839,14 +3839,52 @@ window.initGraph3D = (function() {
         if(id===selectedId3d){resetHL3d();closeDetail3d();return;}
         selectNode3d(id);
       });
-      canvas.addEventListener('wheel',e=>{e.preventDefault();autoRotate3d=false;tZ3d=Math.min(2200,Math.max(80,tZ3d+e.deltaY*0.8));},{passive:false});
+      canvas.addEventListener('wheel',e=>{e.preventDefault();autoRotate3d=false;tZ3d=Math.min(3500,Math.max(80,tZ3d+e.deltaY*0.8));},{passive:false});
       canvas.addEventListener('mouseleave',()=>{hoveredId3d=null;document.getElementById('g3dTooltip').style.display='none';});
 
-      // Touch controls (mobile: single-finger drag to rotate, tap to select)
-      let touchX=0,touchY=0,isTouchDrag=false;
-      canvas.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;autoRotate3d=false;const t=e.touches[0];touchX=t.clientX;touchY=t.clientY;isTouchDrag=false;},{passive:true});
-      canvas.addEventListener('touchmove',e=>{if(e.touches.length!==1)return;e.preventDefault();const t=e.touches[0];if(Math.abs(t.clientX-touchX)>3||Math.abs(t.clientY-touchY)>3)isTouchDrag=true;tRY+=(t.clientX-touchX)*0.004;tRX+=(t.clientY-touchY)*0.004;touchX=t.clientX;touchY=t.clientY;},{passive:false});
-      canvas.addEventListener('touchend',e=>{if(isTouchDrag)return;const t=e.changedTouches[0];const rect=wrap.getBoundingClientRect(),mx=((t.clientX-rect.left)/rect.width)*2-1,my=-((t.clientY-rect.top)/rect.height)*2+1;camera3d.updateMatrixWorld();const ray=new THREE.Raycaster();ray.setFromCamera({x:mx,y:my},camera3d);const vis=Object.values(meshMap3d).filter(m=>m.visible&&m.material.opacity>0.25);const hits=ray.intersectObjects(vis);if(!hits.length){resetHL3d();closeDetail3d();return;}const id=hits[0].object.userData.id;if(id===selectedId3d){resetHL3d();closeDetail3d();return;}selectNode3d(id);});
+      // Touch controls (mobile)
+      let touchX=0,touchY=0,isTouchDrag=false,_pinchDist=0;
+      canvas.addEventListener('touchstart',e=>{
+        autoRotate3d=false;
+        if(e.touches.length===2){
+          // Pinch start
+          var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+          _pinchDist=Math.sqrt(dx*dx+dy*dy);
+          isTouchDrag=true;
+        } else if(e.touches.length===1){
+          const t=e.touches[0];touchX=t.clientX;touchY=t.clientY;isTouchDrag=false;
+        }
+      },{passive:true});
+      canvas.addEventListener('touchmove',e=>{
+        e.preventDefault();
+        if(e.touches.length===2&&_pinchDist>0){
+          // Pinch zoom
+          var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+          var newDist=Math.sqrt(dx*dx+dy*dy);
+          var delta=(_pinchDist-newDist)*2;
+          tZ3d=Math.min(3500,Math.max(80,tZ3d+delta));
+          _pinchDist=newDist;
+          isTouchDrag=true;
+        } else if(e.touches.length===1){
+          const t=e.touches[0];
+          if(Math.abs(t.clientX-touchX)>8||Math.abs(t.clientY-touchY)>8)isTouchDrag=true;
+          tRY+=(t.clientX-touchX)*0.004;tRX+=(t.clientY-touchY)*0.004;touchX=t.clientX;touchY=t.clientY;
+        }
+      },{passive:false});
+      canvas.addEventListener('touchend',e=>{
+        _pinchDist=0;
+        if(isTouchDrag)return;
+        const t=e.changedTouches[0];const rect=wrap.getBoundingClientRect(),mx=((t.clientX-rect.left)/rect.width)*2-1,my=-((t.clientY-rect.top)/rect.height)*2+1;
+        camera3d.updateMatrixWorld();const ray=new THREE.Raycaster();ray.setFromCamera({x:mx,y:my},camera3d);
+        // Lower opacity threshold for touch (easier to tap dimmed nodes)
+        const vis=Object.values(meshMap3d).filter(m=>m.visible&&m.material.opacity>0.02);
+        const hits=ray.intersectObjects(vis);
+        if(!hits.length){resetHL3d();closeDetail3d();return;}
+        const id=hits[0].object.userData.id;
+        if(window._g3dPathModeClick&&window._g3dPathModeClick(id))return;
+        if(id===selectedId3d){resetHL3d();closeDetail3d();return;}
+        selectNode3d(id);
+      });
 
       // Double-click: zoom to node + connections
       function zoomToNode3d(nd) {
