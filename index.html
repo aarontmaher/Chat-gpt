@@ -412,6 +412,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <button class="belt-opt" data-belt="brown" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">🟫 Brown Belt</button>
       <button class="belt-opt" data-belt="black" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">⬛ Black Belt</button>
       <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+      <button id="beltFilterBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:var(--accent3);font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;font-weight:500;">Filter to syllabus</button>
       <button id="beltApplyBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;font-weight:500;">Apply for Next Belt →</button>
     </div>
     <button id="authBtn" style="background:var(--accent);border:none;color:#000;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;display:none;">Create Account</button>
@@ -5770,7 +5771,25 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     black: { strip: '#1a1a1a', knot: '#000000', text: '#e8e8e8' }
   };
   var BELT_NAMES = { white: 'White Belt', blue: 'Blue Belt', purple: 'Purple Belt', brown: 'Brown Belt', black: 'Black Belt' };
+  // Cumulative belt position sets (each includes all lower belts)
+  var BELT_POSITIONS = {
+    white: new Set(['mount','side_control','back_control','turtle','front_headlock','closed_guard','knee_shield_half_guard','wrist_control','collar_tie','underhook','head_inside_single_leg','double_leg']),
+    blue: null, // computed below
+    purple: null,
+    brown: null,
+    black: null // black = show all
+  };
+  // Blue = White + half guard, butterfly, DLR, north south, half guard passing
+  BELT_POSITIONS.blue = new Set([...BELT_POSITIONS.white, 'half_guard','butterfly_guard','de_la_riva','north_south','half_guard_passing','seated_guard','supine_guard','j_point','quarter_guard']);
+  // Purple = Blue + K guard, outside ashi, knee shield camping, berimbolo, crab ride, grounded 50/50
+  BELT_POSITIONS.purple = new Set([...BELT_POSITIONS.blue, 'k_guard','outside_ashi','berimbolo','crab_ride','grounded_5050','overhook','2_on_1_you']);
+  // Brown = Purple + all remaining guards + scrambles
+  BELT_POSITIONS.brown = new Set([...BELT_POSITIONS.purple, 'butterfly_ashi','single_leg_x','x_guard','shin_pin','headquarters','reverse_de_la_riva','half_butterfly']);
+  // Black = everything
+  BELT_POSITIONS.black = null;
+
   var currentBelt = UserStore.load('gm_current_belt') || 'white';
+  var beltFilterActive = false;
 
   function updateBeltVisual(belt) {
     var c = BELT_COLORS[belt] || BELT_COLORS.white;
@@ -5805,6 +5824,41 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     btn.addEventListener('click', function() { setBelt(btn.dataset.belt); dd.style.display = 'none'; });
   });
 
+  // Belt syllabus filter toggle
+  var beltFilterBtnEl = document.getElementById('beltFilterBtn');
+  function applyBeltFilter() {
+    var posSet = BELT_POSITIONS[currentBelt];
+    if (!posSet || !beltFilterActive) {
+      // Show all — remove belt filter
+      document.querySelectorAll('.tree-item[data-depth="0"]').forEach(function(li) { li.style.display = ''; });
+      document.querySelectorAll('.section').forEach(function(sec) { sec.style.display = ''; });
+      beltFilterBtnEl.textContent = 'Filter to syllabus';
+      beltFilterBtnEl.style.color = 'var(--accent3)';
+      return;
+    }
+    // Filter Reference tree to belt positions
+    document.querySelectorAll('.tree-item[data-depth="0"]').forEach(function(li) {
+      var key = li.dataset.key || '';
+      var posNorm = key.split('|')[1] || '';
+      li.style.display = posSet.has(posNorm) ? '' : 'none';
+    });
+    // Hide sections with no visible positions
+    document.querySelectorAll('.section').forEach(function(sec) {
+      var hasVisible = Array.from(sec.querySelectorAll('.tree-item[data-depth="0"]')).some(function(li) { return li.style.display !== 'none'; });
+      sec.style.display = hasVisible ? '' : 'none';
+    });
+    beltFilterBtnEl.textContent = '✓ Filtering: ' + BELT_NAMES[currentBelt];
+    beltFilterBtnEl.style.color = 'var(--accent)';
+    showToast('Showing ' + BELT_NAMES[currentBelt] + ' syllabus');
+  }
+  window._applyBeltFilter = applyBeltFilter;
+
+  beltFilterBtnEl.addEventListener('click', function() {
+    dd.style.display = 'none';
+    beltFilterActive = !beltFilterActive;
+    applyBeltFilter();
+  });
+
   // Apply for Next Belt
   document.getElementById('beltApplyBtn').addEventListener('click', function() {
     dd.style.display = 'none';
@@ -5813,7 +5867,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 
   updateBeltVisual(currentBelt);
   window._getCurrentBelt = function() { return currentBelt; };
-  window._setBelt = setBelt;
+  window._setBelt = function(belt) { setBelt(belt); if (beltFilterActive) applyBeltFilter(); };
 })();
 
 (function initAuthUI() {
