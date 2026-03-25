@@ -359,6 +359,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
   /* Belt: compact on mobile */
   #beltLabel { display: none !important; }
+  /* AI Coach: full-width on mobile */
+  #aiPanel { width: calc(100vw - 24px) !important; right: 12px !important; max-height: 50vh !important; }
   #beltIcon { width: 24px; height: 14px; }
   #beltDropdown { right: -40px !important; }
 
@@ -5720,17 +5722,16 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 <!-- Quick-drill FAB (mobile) -->
 <button id="quickDrillFab" style="display:none;position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:16px;width:48px;height:48px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:20px;cursor:pointer;z-index:1000;box-shadow:0 4px 16px rgba(232,255,71,0.3);transition:all 0.2s;" title="Random Drill">▶</button>
 <!-- AI Assistant Panel -->
-<div id="aiPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:70vh;background:rgba(14,16,21,0.98);border-top:1px solid rgba(255,255,255,0.08);border-radius:16px 16px 0 0;z-index:1200;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 24px rgba(0,0,0,0.5);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);">
-  <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 6px;"></div>
-  <div style="display:flex;align-items:center;padding:0 18px 8px;border-bottom:1px solid rgba(255,255,255,0.04);">
-    <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:500;color:var(--accent);letter-spacing:0.5px;">AI Coach</div>
-    <button id="aiPanelClose" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:14px;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+<div id="aiPanel" style="display:none;position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));right:12px;width:320px;max-height:400px;background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;z-index:1200;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.5);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);overflow:hidden;">
+  <div style="display:flex;align-items:center;padding:10px 14px 8px;border-bottom:1px solid rgba(255,255,255,0.04);flex-shrink:0;">
+    <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:500;color:var(--accent3);letter-spacing:0.5px;">AI Coach</div>
+    <button id="aiPanelClose" style="background:none;border:none;color:#556;font-size:14px;cursor:pointer;padding:0 4px;">×</button>
   </div>
-  <div id="aiQuickActions" style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04);"></div>
-  <div id="aiResponse" style="flex:1;overflow-y:auto;padding:14px 18px;-webkit-overflow-scrolling:touch;min-height:120px;"></div>
+  <div id="aiQuickActions" style="display:flex;gap:4px;flex-wrap:wrap;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);flex-shrink:0;"></div>
+  <div id="aiResponse" style="flex:1;overflow-y:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;min-height:80px;max-height:260px;"></div>
 </div>
 <!-- AI Assistant Toggle Button -->
-<button id="aiToggleBtn" style="position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:16px;width:44px;height:44px;border-radius:50%;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:var(--accent3);font-size:18px;cursor:pointer;z-index:1000;box-shadow:0 2px 12px rgba(167,139,250,0.2);transition:all 0.2s;display:flex;align-items:center;justify-content:center;" title="AI Coach">🤖</button>
+<button id="aiToggleBtn" style="position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;width:40px;height:40px;border-radius:10px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.25);color:var(--accent3);font-size:16px;cursor:pointer;z-index:1000;box-shadow:0 2px 8px rgba(167,139,250,0.15);transition:all 0.2s;display:flex;align-items:center;justify-content:center;" title="AI Coach">🤖</button>
 <!-- Auth / Signup Modal -->
 <div id="authModal" style="display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
   <div style="position:relative;width:min(90vw,380px);background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:28px;box-shadow:0 16px 64px rgba(0,0,0,0.6);">
