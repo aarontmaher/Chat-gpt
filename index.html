@@ -474,7 +474,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <button class="view-tab active" data-view="graph3d" aria-label="Position Map view" role="tab">Position Map</button>
 </div></nav>
 
-<main role="main">
+<main role="main" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
   <div id="refHomePanel" style="display:none;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;max-height:40vh;overflow-y:auto;">
@@ -3645,17 +3645,13 @@ window.initGraph3D = (function() {
       if(isEmpty){e.line.visible=true;e._base=0.04;e._mat.opacity=0.04;return;}
       const vis=aIds.has(e.source)&&aIds.has(e.target);var ew=e.visibleWeight||e.weight;e.line.visible=vis;e._base=vis?Math.min(Math.max(0.2,0.2+ew*0.08),globalEdgeOpac):0;if(vis)e._mat.opacity=e._base;
     });
-    if(aIds.size>0){
-      var doRelayout = sf !== 'all';
-      var layoutNodes = doRelayout ? simNodes3d.filter(n=>aIds.has(n.id)) : simNodes3d;
-      var layoutEdges = doRelayout ? aEdges : ACTIVE_EDGES;
-      if (doRelayout) {
-        layoutNodes.forEach(n=>{const p=randSph3d(400);n.x=p[0];n.y=p[1];n.z=p[2];n.vx=0;n.vy=0;n.vz=0;const nd=nodeMap3d[n.id];if(nd){nd.x=n.x;nd.y=n.y;nd.z=n.z;}const m=meshMap3d[n.id];if(m)m.position.set(n.x,n.y,n.z);});
-      }
+    if(sf!=='all'&&aIds.size>0){
+      const asn=simNodes3d.filter(n=>aIds.has(n.id));
+      asn.forEach(n=>{const p=randSph3d(400);n.x=p[0];n.y=p[1];n.z=p[2];n.vx=0;n.vy=0;n.vz=0;const nd=nodeMap3d[n.id];if(nd){nd.x=n.x;nd.y=n.y;nd.z=n.z;}const m=meshMap3d[n.id];if(m)m.position.set(n.x,n.y,n.z);});
       syncEdges3d(aIds);
       if(window._g3dfsim)clearInterval(window._g3dfsim);
       let st=0;
-      window._g3dfsim=setInterval(()=>{runForce3d(layoutNodes,layoutEdges,4);syncEdges3d(doRelayout?aIds:null);st+=4;if(st>=140)clearInterval(window._g3dfsim);},16);
+      window._g3dfsim=setInterval(()=>{runForce3d(asn,aEdges,4);syncEdges3d(aIds);st+=4;if(st>=140)clearInterval(window._g3dfsim);},16);
     }
     if(typeof applyBuiltOut3d==='function') applyBuiltOut3d();
     else if(builtOut3d) _warn('applyBuiltOut3d not available');
