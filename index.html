@@ -389,7 +389,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 </head>
 <body>
 
-<header>
+<header role="banner">
   <div style="display:flex;flex-direction:column;">
     <div class="logo">Grappling<span style="font-size:12px;letter-spacing:1px;color:var(--text-muted);margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-weight:400;vertical-align:baseline;">MAP</span></div>
     <div id="headerSubtitle" style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#556;letter-spacing:0.5px;margin-top:-2px;">No-Gi Reference &amp; Training</div>
@@ -469,11 +469,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
 </div>
 
-<div class="view-tabs" role="tablist">
+<nav aria-label="Views"><div class="view-tabs" role="tablist">
   <button class="view-tab" data-view="reference" aria-label="Reference view" role="tab">Reference</button>
   <button class="view-tab active" data-view="graph3d" aria-label="Position Map view" role="tab">Position Map</button>
-</div>
+</div></nav>
 
+<main role="main">
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
   <div id="refHomePanel" style="display:none;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;max-height:40vh;overflow-y:auto;">
@@ -621,6 +622,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <!-- Label canvas overlay -->
   <canvas id="g3dLabelCanvas" style="position:absolute;inset:0;pointer-events:none;z-index:4;"></canvas>
 </div>
+</main>
 
 <!-- ══ NOTE PANEL ══════════════════════════════════════════════════════════ -->
 <div class="overlay" id="overlay"></div>
