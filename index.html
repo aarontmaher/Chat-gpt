@@ -4571,7 +4571,7 @@ function openListPanel(title, items) {
 function closeListPanel() { document.getElementById('listPanel').style.display = 'none'; }
 function showToast(msg) {
   var t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(14,16,21,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 20px;font-family:Barlow Condensed,sans-serif;font-size:13px;color:#c4cdd8;z-index:3000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity 0.3s;pointer-events:none;';
+  t.style.cssText = 'position:fixed;bottom:max(80px, calc(60px + env(safe-area-inset-bottom)));left:50%;transform:translateX(-50%);background:rgba(14,16,21,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 20px;font-family:Barlow Condensed,sans-serif;font-size:13px;color:#c4cdd8;z-index:3000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity 0.3s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center;';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 300); }, 2000);
@@ -5853,7 +5853,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   var BELT_NAMES = { white: 'White Belt', blue: 'Blue Belt', purple: 'Purple Belt', brown: 'Brown Belt', black: 'Black Belt' };
   // Cumulative belt position sets (each includes all lower belts)
   var BELT_POSITIONS = {
-    white: new Set(['mount','side_control','back_control','turtle','front_headlock','closed_guard','knee_shield_half_guard','wrist_control','collar_tie','underhook','double_leg','supine_guard','j_point','seated_guard','reverse_de_la_riva','single_leg_x','overhook','wrestling_bodylock','shots']),
+    white: new Set(['mount','side_control','back_control','turtle','front_headlock','closed_guard','knee_shield_half_guard','wrist_control','collar_tie','underhook','double_leg','supine_guard','j_point','seated_guard','reverse_de_la_riva','single_leg_x','overhook','wrestling_bodylock','shots','hand_fighting','outside_tie_(you)','inside_tie_(you)','collar_tie_(you)','underhook_(you)','overhook_(you)']),
     blue: null, // computed below
     purple: null,
     brown: null,
@@ -5946,7 +5946,12 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     beltFilterBtnEl.textContent = '✓ Filtering: ' + BELT_NAMES[currentBelt];
     beltFilterBtnEl.style.color = 'var(--accent)';
     _updateBeltChips(true);
-    showToast('Showing ' + BELT_NAMES[currentBelt] + ' syllabus');
+    // Count visible vs hidden for user context
+    var visiblePos = document.querySelectorAll('.tree-item[data-depth="0"]:not([style*="display: none"])').length;
+    var hiddenSections = document.querySelectorAll('.section[style*="display: none"]').length;
+    var msg = 'Showing ' + BELT_NAMES[currentBelt] + ' syllabus (' + visiblePos + ' positions)';
+    if (hiddenSections > 0) msg += ' · ' + hiddenSections + ' section' + (hiddenSections > 1 ? 's' : '') + ' not in this belt';
+    showToast(msg);
   }
   window._applyBeltFilter = applyBeltFilter;
   window._beltFilterActive = false;
@@ -6039,7 +6044,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     } else {
       authBtn.style.display = 'none';
       authUserBtn.style.display = '';
-      authUserBtn.textContent = AUTH_USER ? AUTH_USER.displayName || AUTH_USER.email || 'Account' : 'Account';
+      authUserBtn.textContent = AUTH_USER ? AUTH_USER.displayName || (AUTH_USER.email ? AUTH_USER.email.split('@')[0] : 'Account') : 'Account';
     }
   }
 
