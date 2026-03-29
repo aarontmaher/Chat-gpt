@@ -36,9 +36,9 @@ Updated: 2026-03-29 (overnight run)
 | CW15 | Video player pinned while scrolling | Cowork | ✅ done |
 | CW16 | Quick-drill FAB on mobile | Cowork | ✅ done |
 | CW17 | Share position/technique via URL (deep links) | Cowork | ✅ done |
-| CW18 | "My path" visualization on graph | Cowork | medium |
+| CW18 | "My path" visualization on graph | Cowork | ✅ done |
 | CC8 | Edge direction indicators | Chat | ✅ done |
-| CC9 | Technique notes with timestamps | Chat | medium |
+| CC9 | Technique notes with timestamps | Chat | ✅ done |
 | CC14 | Sparring journal | Chat | large |
 | CC15 | Coach mode | Chat | large |
 | CC16 | Custom technique chains | Chat | large |
