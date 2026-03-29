@@ -18,7 +18,7 @@ Updated: 2026-03-29 (overnight run)
 | CW13 | Game strength indicator per position (Strong/Building/Gap) | Cowork | ✅ done |
 | CW14 | Drill from graph — start training a specific position | Cowork | ✅ done |
 | CC6 | Graph: game-coloured nodes (blue drilling, green learned) | Chat | ✅ done |
-| CC10 | Game coverage heatmap on graph | Chat | pending |
+| CC10 | Game coverage heatmap on graph | Chat | ✅ done |
 
 ## Batch K — Training flow upgrades (partial ✅)
 | Item | Description | Source | Status |
@@ -26,14 +26,14 @@ Updated: 2026-03-29 (overnight run)
 | CW10 | Auto-advance after drill timer | Cowork | ✅ done |
 | CW11 | Session summary after training | Cowork | ✅ done |
 | CC3 | Drilling duration tracker | Chat | ✅ done |
-| CC4 | Weekly training summary | Chat | pending |
+| CC4 | Weekly training summary | Chat | ✅ done |
 
 ## Later / Needs Aaron
 | Item | Description | Source | Effort |
 |------|-------------|--------|--------|
 | CW3 | Drilling queue badge on Reference view | Cowork | ✅ done |
 | CW4 | Dynamic subtitle based on user state | Cowork | ✅ done |
-| CW15 | Video player pinned while scrolling | Cowork | medium |
+| CW15 | Video player pinned while scrolling | Cowork | ✅ done |
 | CW16 | Quick-drill FAB on mobile | Cowork | ✅ done |
 | CW17 | Share position/technique via URL (deep links) | Cowork | ✅ done |
 | CW18 | "My path" visualization on graph | Cowork | medium |

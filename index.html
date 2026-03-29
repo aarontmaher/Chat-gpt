@@ -637,11 +637,13 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <div class="overlay" id="overlay"></div>
 <div class="note-panel" id="notePanel">
   <div class="note-panel-title" id="notePanelTitle"></div>
-  <textarea id="noteTextarea" placeholder="Add your notes here... Use [3:42] for video timestamps"></textarea>
+  <div id="noteEntries" style="flex:1;overflow-y:auto;min-height:60px;max-height:40vh;"></div>
+  <div style="display:flex;gap:6px;align-items:flex-end;">
+    <textarea id="noteTextarea" placeholder="Add a note..." style="min-height:50px;flex:1;"></textarea>
+    <button class="btn-save-note" id="noteSaveBtn" style="height:38px;">Add</button>
+  </div>
   <div class="note-panel-actions">
-    <button class="btn-save-note" id="noteSaveBtn">Save Note</button>
-    <button class="btn-clear-note" id="noteTimestampBtn" title="Insert timestamp marker">⏱ Timestamp</button>
-    <button class="btn-clear-note" id="noteClearBtn">Clear</button>
+    <button class="btn-clear-note" id="noteTimestampBtn" title="Insert timestamp marker">&#9201; Timestamp</button>
     <button class="btn-clear-note" id="noteCloseBtn" style="margin-left:auto;" onclick="if(typeof closeNotePanel==='function')closeNotePanel();">Close</button>
   </div>
 </div>
@@ -1225,13 +1227,23 @@ function updateStats() {
   if (badge) { badge.textContent = drillCount; badge.style.display = drillCount > 0 ? 'inline' : 'none'; }
   var refBadge = document.getElementById('refDrillBadge');
   if (refBadge) { refBadge.textContent = drillCount; refBadge.style.display = drillCount > 0 ? 'inline' : 'none'; }
+  // CW41: Simplify guest menu — hide items that require tracked data when none exists
+  var _hasAnyProgress = Object.keys(STATE.progress).length > 0;
+  var _dataRequiredIds = ['menuProgressBtn', 'menuExportBtn', 'menuResetBtn', 'menuGapsBtn'];
+  _dataRequiredIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.style.display = _hasAnyProgress ? 'block' : 'none';
+    }
+  });
 }
 
 // ─── POPUP BUILDER (shared between 2D and 3D) ─────────────────────────────
 function buildPopup(popupEl, node, sectionTitle, color, pathKey) {
   const key = pathKey || makeKey(sectionTitle, node.t);
   const prog = STATE.progress[key] || 'none';
-  const note = STATE.notes[key] || '';
+  const noteEntries = getNoteEntries(key);
+  const note = noteEntries.length > 0 ? noteEntries[noteEntries.length - 1].text : '';
   const label = node.t.replace(/^[-•]\s*/, '').trim();
 
   const progColors = {none:'var(--text-muted)', drilling:'var(--blue)', learned:'var(--accent)'};
@@ -1378,8 +1390,11 @@ function buildPopup(popupEl, node, sectionTitle, color, pathKey) {
   ns.addEventListener('click', () => {
     const ta = na.querySelector('textarea');
     const val = ta ? ta.value.trim() : '';
-    if (val) STATE.notes[key] = val;
-    else delete STATE.notes[key];
+    if (val) {
+      var ents = getNoteEntries(key);
+      ents.push({ text: val, ts: Date.now() });
+      STATE.notes[key] = ents;
+    }
     saveState();
     nb.className = 'btn-note' + (val ? ' has-note' : '');
     refreshAllViews();
@@ -1584,12 +1599,13 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
   // Note button (skip for schema headings)
   if (!isSchemaHeading) {
   const noteBtn = document.createElement('button');
-  noteBtn.className = STATE.notes[key] ? 'btn-note has-note' : 'btn-note';
+  var _hasNoteEntries = getNoteEntries(key).length > 0;
+  noteBtn.className = _hasNoteEntries ? 'btn-note has-note' : 'btn-note';
   noteBtn.textContent = '✎';
   noteBtn.setAttribute('aria-label', 'Add note');
   noteBtn.title = 'Add note';
   noteBtn.addEventListener('click', e => { e.stopPropagation(); if (!ACCESS_CONFIG.GUEST_CAN_USE_NOTES && isGuest()) { requireAuth('add notes'); return; } openNotePanel(key, node.t); });
-  li.dataset.hasNote = STATE.notes[key] ? '1' : '0';
+  li.dataset.hasNote = _hasNoteEntries ? '1' : '0';
   actions.appendChild(noteBtn);
   } // end !isSchemaHeading for note button
 
@@ -1633,11 +1649,11 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     bc.textContent = segments.map(function(s) { return s.replace(/_/g, ' '); }).join(' › ');
     li.appendChild(bc);
     // Inline note preview (shown when selected, if note exists)
-    var noteText = STATE.notes[key];
-    if (noteText) {
+    var _noteEnts = getNoteEntries(key);
+    if (_noteEnts.length > 0) {
       var np = document.createElement('div');
       np.className = 'technique-note-preview';
-      np.textContent = '✎ ' + noteText;
+      np.textContent = '✎ ' + _noteEnts[_noteEnts.length - 1].text;
       li.appendChild(np);
     }
   }
@@ -2240,24 +2256,80 @@ function initDataFromSections() {
 }
 
 // ─── NOTE PANEL ───────────────────────────────────────────────────────────────
+// CC9: Helper — normalize note data (backward compat: string -> array of entries)
+function getNoteEntries(key) {
+  var raw = STATE.notes[key];
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    // Migrate old string note to timestamped entry
+    return [{ text: raw, ts: Date.now() }];
+  }
+  if (Array.isArray(raw)) return raw;
+  return [];
+}
+function renderNoteEntries(key) {
+  var container = document.getElementById('noteEntries');
+  var entries = getNoteEntries(key);
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:8px 0;">No notes yet. Add one below.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  entries.forEach(function(entry, idx) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);';
+    var dateStr = new Date(entry.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+    var timeStr = new Date(entry.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    var textDiv = document.createElement('div');
+    textDiv.style.cssText = 'flex:1;font-family:DM Mono,monospace;font-size:11px;color:var(--text);white-space:pre-wrap;word-break:break-word;line-height:1.5;';
+    textDiv.textContent = entry.text;
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:9px;color:var(--text-muted);white-space:nowrap;min-width:60px;text-align:right;padding-top:2px;';
+    meta.textContent = dateStr + ' ' + timeStr;
+    var delBtn = document.createElement('button');
+    delBtn.style.cssText = 'background:none;border:none;color:#f85149;font-size:12px;cursor:pointer;padding:0 2px;opacity:0.5;flex-shrink:0;';
+    delBtn.textContent = '\u00d7';
+    delBtn.title = 'Delete note';
+    delBtn.addEventListener('click', function() {
+      var ents = getNoteEntries(key);
+      ents.splice(idx, 1);
+      if (ents.length === 0) delete STATE.notes[key];
+      else STATE.notes[key] = ents;
+      saveState();
+      renderNoteEntries(key);
+      updateNoteIndicators(key);
+    });
+    row.appendChild(textDiv);
+    row.appendChild(meta);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+function updateNoteIndicators(key) {
+  var hasNote = getNoteEntries(key).length > 0;
+  var li = document.querySelector('[data-key="'+key+'"]');
+  if (li) {
+    li.dataset.hasNote = hasNote ? '1' : '0';
+    var nb = li.querySelector('.btn-note');
+    if (nb) nb.className = hasNote ? 'btn-note has-note' : 'btn-note';
+  }
+}
 function openNotePanel(key, title) {
   // B5: close auth modal if open
   var am = document.getElementById('authModal'); if (am) am.style.display = 'none';
   STATE.currentNoteKey = key;
   document.getElementById('notePanelTitle').textContent = title;
-  document.getElementById('noteTextarea').value = STATE.notes[key] || '';
+  document.getElementById('noteTextarea').value = '';
+  renderNoteEntries(key);
   document.getElementById('notePanel').classList.add('open');
   document.getElementById('overlay').classList.add('active');
   setTimeout(() => document.getElementById('noteTextarea').focus(), 300);
 }
 function closeNotePanel() {
   var ta = document.getElementById('noteTextarea');
-  var key = STATE.currentNoteKey;
-  if (ta && key) {
-    var saved = STATE.notes[key] || '';
-    if (ta.value.trim() !== saved && ta.value.trim() !== '') {
-      if (!confirm('You have unsaved notes. Close without saving?')) return;
-    }
+  if (ta && ta.value.trim() !== '') {
+    if (!confirm('You have an unsaved note. Close without saving?')) return;
   }
   document.getElementById('notePanel').classList.remove('open');
   document.getElementById('overlay').classList.remove('active');
@@ -2266,18 +2338,16 @@ function closeNotePanel() {
 document.getElementById('noteSaveBtn').addEventListener('click', () => {
   const key = STATE.currentNoteKey;
   const val = document.getElementById('noteTextarea').value.trim();
-  if (val) STATE.notes[key] = val; else delete STATE.notes[key];
+  if (!val) return;
+  var entries = getNoteEntries(key);
+  entries.push({ text: val, ts: Date.now() });
+  STATE.notes[key] = entries;
   saveState();
-  const li = document.querySelector('[data-key="'+key+'"]');
-  if (li) {
-    li.dataset.hasNote = val ? '1' : '0';
-    const nb = li.querySelector('.btn-note');
-    if (nb) nb.className = val ? 'btn-note has-note' : 'btn-note';
-  }
-  closeNotePanel();
+  document.getElementById('noteTextarea').value = '';
+  renderNoteEntries(key);
+  updateNoteIndicators(key);
   refreshAllViews();
 });
-document.getElementById('noteClearBtn').addEventListener('click', () => { document.getElementById('noteTextarea').value = ''; });
 document.getElementById('noteTimestampBtn').addEventListener('click', function() {
   var ta = document.getElementById('noteTextarea');
   var ts = prompt('Enter timestamp (e.g. 3:42):');
@@ -2595,8 +2665,9 @@ function refreshAllViews() {
       pill.textContent = {none:'Track',drilling:'Drilling',learned:'Learned'}[prog];
     }
     const nb = li.querySelector('.btn-note');
-    if (nb) nb.className = STATE.notes[key] ? 'btn-note has-note' : 'btn-note';
-    li.dataset.hasNote = STATE.notes[key] ? '1' : '0';
+    var _rvHasNote = getNoteEntries(key).length > 0;
+    if (nb) nb.className = _rvHasNote ? 'btn-note has-note' : 'btn-note';
+    li.dataset.hasNote = _rvHasNote ? '1' : '0';
     // CC3: Update drill time labels
     var dtLabel = li.querySelector('.drill-time-label');
     var dtSecs = STATE.drillTime && STATE.drillTime[key] ? STATE.drillTime[key] : 0;
@@ -2617,6 +2688,8 @@ function refreshAllViews() {
   if (STATE.currentFilter && STATE.currentFilter !== 'all') applyRefFilter(STATE.currentFilter);
   // Update 3D node colours if initialized
   if (window.g3dRefreshNodes) window.g3dRefreshNodes();
+  // CW18: Rebuild "My path" overlay when progress changes
+  if (window._buildMyPath3d) window._buildMyPath3d();
   // Update quick access bar
   updateQuickAccess();
 }
@@ -3025,6 +3098,20 @@ window.initGraph3D = (function() {
       if(e._arrow){var ax=src.x+(tgt.x-src.x)*0.8,ay=src.y+(tgt.y-src.y)*0.8,az=src.z+(tgt.z-src.z)*0.8;e._arrow.position.set(ax,ay,az);e._arrow.visible=e.line.visible;if(e._arrowMat)e._arrowMat.opacity=e._mat.opacity*0.8;var dx=tgt.x-src.x,dy=tgt.y-src.y,dz=tgt.z-src.z;var dl=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;var dir=new THREE.Vector3(dx/dl,dy/dl,dz/dl);var up=new THREE.Vector3(0,1,0);var q=new THREE.Quaternion();q.setFromUnitVectors(up,dir);e._arrow.quaternion.copy(q);}
     });
     Object.entries(ringMap3d).forEach(([id,r])=>{const n=nodeMap3d[id];if(n)r.position.set(n.x,n.y,n.z);});
+    // CW18: Sync "My path" overlay edges
+    if (window._pathMeshes3d) {
+      window._pathMeshes3d.forEach(function(pm) {
+        var src = nodeMap3d[pm.source], tgt = nodeMap3d[pm.target];
+        if (!src || !tgt) return;
+        var pos = pm.line.geometry.attributes.position;
+        pos.setXYZ(0, src.x, src.y, src.z);
+        pos.setXYZ(1, tgt.x, tgt.y, tgt.z);
+        pos.needsUpdate = true;
+        // Match visibility to corresponding normal edge
+        var normalEdge = edgeMeshes3d.find(function(e) { return e.source === pm.source && e.target === pm.target; });
+        pm.line.visible = normalEdge ? normalEdge.line.visible : false;
+      });
+    }
   }
 
   function resetHL3d(){
@@ -4089,6 +4176,42 @@ window.initGraph3D = (function() {
         pivot3d.add(arrow);
         edgeMeshes3d.push({line,source:e.source,target:e.target,weight:e.weight,edgeKey:ek,_mat:mat,_base:base,_arrow:arrow,_arrowMat:arrowMat});
       });
+
+      // CW18: "My path" visualization — highlight edges where BOTH endpoints have progress
+      var pathMeshes3d = [];
+      function buildMyPath3d() {
+        // Remove old path meshes
+        pathMeshes3d.forEach(function(pm) { pivot3d.remove(pm.line); });
+        pathMeshes3d.length = 0;
+        var prog = loadProg3d();
+        if (!prog || Object.keys(prog).length === 0) return;
+        // Build set of position keys (section|position) that have any progress
+        var trackedPosKeys = new Set();
+        Object.keys(prog).forEach(function(k) {
+          var segs = k.split('|');
+          if (segs.length >= 2) trackedPosKeys.add(segs[0] + '|' + segs[1]);
+        });
+        // For each edge, check if both source and target position nodes have progress
+        ACTIVE_EDGES.forEach(function(e) {
+          var srcNode = nodeMap3d[e.source];
+          var tgtNode = nodeMap3d[e.target];
+          if (!srcNode || !tgtNode) return;
+          var srcHas = trackedPosKeys.has(srcNode.key);
+          var tgtHas = trackedPosKeys.has(tgtNode.key);
+          if (!srcHas || !tgtHas) return;
+          // Draw a brighter, thicker gold line on top of the normal edge
+          var pathMat = new THREE.LineBasicMaterial({ color: 0xffbf00, transparent: true, opacity: 0.85, linewidth: 3.0 });
+          var pathGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(1,1,1)]);
+          var pathLine = new THREE.Line(pathGeo, pathMat);
+          pathLine.renderOrder = 1; // render on top of normal edges
+          pivot3d.add(pathLine);
+          pathMeshes3d.push({ line: pathLine, source: e.source, target: e.target, _mat: pathMat });
+        });
+      }
+      buildMyPath3d();
+      // Expose for refresh after progress changes
+      window._buildMyPath3d = buildMyPath3d;
+      window._pathMeshes3d = pathMeshes3d;
 
       // Auto-fit camera to show all nodes centred (initial load only)
       function autoFitCamera3d() {
@@ -5689,12 +5812,14 @@ if (typeof SECTIONS === 'undefined' || !SECTIONS.length) {
   _warn('SECTIONS empty or undefined — cannot build Reference tree');
 } else {
   buildSections();
-  // Auto-expand first section for better landing state
-  var firstSection = document.querySelector('.section.collapsed');
-  if (firstSection) {
-    firstSection.classList.remove('collapsed');
-    var sk = makeKey(SECTIONS[0].title, SECTIONS[0].title);
-    EXPANDED.add(sk);
+  // CW40: Auto-expand first section ONLY for new visitors (no progress data)
+  if (Object.keys(STATE.progress).length === 0) {
+    var firstSection = document.querySelector('.section.collapsed');
+    if (firstSection) {
+      firstSection.classList.remove('collapsed');
+      var sk = makeKey(SECTIONS[0].title, SECTIONS[0].title);
+      EXPANDED.add(sk);
+    }
   }
 }
 _log('TechPositionMap built:', window._techPositionMap.size);
