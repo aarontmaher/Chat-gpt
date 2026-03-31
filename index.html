@@ -442,6 +442,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <button id="menuCircuitBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Drill Circuit</button>
       <button id="menuWeeklySummaryBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Weekly Summary</button>
       <button id="menuJournalBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Sparring Journal</button>
+      <button id="menuCoachBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Coach</button>
       <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
       <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 2px;">Progress</div>
       <button id="menuProgressBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Dashboard</button>
@@ -473,6 +474,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">V</kbd><span>All Videos</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">W</kbd><span>Recently Watched</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">J</kbd><span>Sparring Journal</span>
+    <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">C</kbd><span>Coach Mode</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">G</kbd><span>Toggle Reference ↔ Network</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">?</kbd><span>Toggle this help panel</span>
   </div>
@@ -4811,6 +4813,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'w' && !inInput) { document.getElementById('menuWatchedBtn').click(); }
   // J: sparring journal
   if (e.key === 'j' && !inInput) { document.getElementById('menuJournalBtn').click(); }
+  // C: coach mode
+  if (e.key === 'c' && !inInput) { document.getElementById('menuCoachBtn').click(); }
   // ?: toggle help panel
   if (e.key === '?' && !inInput) {
     var hp = document.getElementById('kbdHelpPanel');
@@ -7582,6 +7586,399 @@ function buildJournalHistory(log) {
 function _escHtml(s) {
   if (!s) return '';
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// CC15: Coach Mode — structured training guidance
+document.getElementById('menuCoachBtn').addEventListener('click', function() {
+  document.getElementById('headerMenu').style.display = 'none';
+  openCoachPanel();
+});
+
+function openCoachPanel() {
+  var existing = document.getElementById('coachOverlay');
+  if (existing) existing.remove();
+
+  // ── Gather data ──
+  var trackedKeys = {};  // key -> status
+  var trackedPositions = {};  // normalized position name -> { keys: [], status: best-status }
+  Object.entries(STATE.progress).forEach(function(kv) {
+    trackedKeys[kv[0]] = kv[1];
+    var segs = kv[0].split('|');
+    var posNorm = segs.length >= 2 ? segs[1] : segs[0];
+    if (!trackedPositions[posNorm]) trackedPositions[posNorm] = { keys: [], statuses: [] };
+    trackedPositions[posNorm].keys.push(kv[0]);
+    trackedPositions[posNorm].statuses.push(kv[1]);
+  });
+
+  // Get current belt and belt positions
+  var currentBelt = (window._getCurrentBelt && window._getCurrentBelt()) || 'white';
+  var beltPosSet = window.BELT_POSITIONS ? window.BELT_POSITIONS[currentBelt] : null;
+
+  // Build position label map from NET_NODES (depth 1 = top-level positions)
+  var positionNodes = [];
+  if (typeof NET_NODES !== 'undefined') {
+    NET_NODES.forEach(function(n) {
+      if (n.depth === 1) {
+        positionNodes.push({ id: n.id, label: n.label, key: n.key, section: n.section, in_network: n.in_network });
+      }
+    });
+  }
+
+  // Build adjacency from NET_EDGES: position-label -> Set of connected position-labels
+  var adjacency = {};
+  if (typeof NET_EDGES !== 'undefined') {
+    NET_EDGES.forEach(function(e) {
+      if (!adjacency[e.source_label]) adjacency[e.source_label] = new Set();
+      if (!adjacency[e.target_label]) adjacency[e.target_label] = new Set();
+      adjacency[e.source_label].add(e.target_label);
+      adjacency[e.target_label].add(e.source_label);
+    });
+  }
+
+  // Map normalized key to display label
+  var normToLabel = {};
+  var labelToNorm = {};
+  positionNodes.forEach(function(n) {
+    var norm = n.key ? n.key.split('|').pop() : '';
+    if (norm) { normToLabel[norm] = n.label; labelToNorm[n.label] = norm; }
+  });
+
+  // ── Algorithm: Today's Focus ──
+  var focusPosition = null;
+  var focusReason = '';
+  var hasAnyProgress = Object.keys(STATE.progress).length > 0;
+
+  if (hasAnyProgress) {
+    // Step 1: Get tracked position labels
+    var trackedLabels = new Set();
+    Object.keys(trackedPositions).forEach(function(norm) {
+      var lbl = normToLabel[norm];
+      if (lbl) trackedLabels.add(lbl);
+    });
+
+    // Step 2: Find connected but untracked positions
+    var untrackedScores = {};
+    trackedLabels.forEach(function(lbl) {
+      var connected = adjacency[lbl];
+      if (!connected) return;
+      connected.forEach(function(connLabel) {
+        var connNorm = labelToNorm[connLabel];
+        if (!connNorm) return;
+        if (trackedPositions[connNorm]) return; // already tracked
+        if (!untrackedScores[connLabel]) untrackedScores[connLabel] = { score: 0, connections: [] };
+        untrackedScores[connLabel].score += 1;
+        untrackedScores[connLabel].connections.push(lbl);
+        // Bonus for being in current belt level
+        if (beltPosSet && beltPosSet.has(connNorm)) {
+          untrackedScores[connLabel].score += 0.5;
+        }
+      });
+    });
+
+    // Pick highest scored
+    var bestLabel = null;
+    var bestScore = 0;
+    Object.entries(untrackedScores).forEach(function(kv) {
+      if (kv[1].score > bestScore) { bestScore = kv[1].score; bestLabel = kv[0]; }
+    });
+
+    if (bestLabel) {
+      var conns = untrackedScores[bestLabel].connections;
+      focusPosition = bestLabel;
+      focusReason = 'Connected to ' + conns.slice(0, 2).join(' and ') + (conns.length > 2 ? ' (+' + (conns.length - 2) + ' more)' : '') + ' but not yet tracked';
+    } else {
+      // Fallback: least recently drilled among tracked
+      var leastRecent = null;
+      var leastTs = Infinity;
+      Object.keys(trackedPositions).forEach(function(norm) {
+        var lbl = normToLabel[norm];
+        if (!lbl) return;
+        // Find most recent drill time for any key under this position
+        var latestTs = 0;
+        trackedPositions[norm].keys.forEach(function(k) {
+          var lp = (STATE.lastPracticed || {})[k] || 0;
+          if (lp > latestTs) latestTs = lp;
+        });
+        if (latestTs < leastTs) { leastTs = latestTs; leastRecent = lbl; }
+      });
+      if (leastRecent) {
+        focusPosition = leastRecent;
+        focusReason = leastTs > 0 ? 'Least recently practiced among your tracked positions' : 'In your tracked positions but never drilled';
+      }
+    }
+  }
+
+  // Fallback: no tracking at all
+  if (!focusPosition) {
+    focusPosition = 'Mount';
+    focusReason = 'A foundational dominant position — great starting point';
+  }
+
+  // ── Algorithm: Suggested Path ──
+  var pathPositions = [];
+  if (hasAnyProgress && Object.keys(adjacency).length > 0) {
+    // Start from a strong position (most tracked techniques under it)
+    var startLabel = null;
+    var maxTechs = 0;
+    Object.keys(trackedPositions).forEach(function(norm) {
+      var lbl = normToLabel[norm];
+      if (!lbl || !adjacency[lbl]) return;
+      var count = trackedPositions[norm].keys.length;
+      // Bonus for learned status
+      var hasLearned = trackedPositions[norm].statuses.some(function(s) { return s === 'learned'; });
+      if (hasLearned) count += 2;
+      if (count > maxTechs) { maxTechs = count; startLabel = lbl; }
+    });
+
+    if (startLabel) {
+      pathPositions.push(startLabel);
+      var visited = new Set([startLabel]);
+
+      // Traverse edges, preferring weaker connected positions
+      for (var step = 0; step < 4; step++) {
+        var current = pathPositions[pathPositions.length - 1];
+        var neighbors = adjacency[current];
+        if (!neighbors) break;
+
+        var bestNext = null;
+        var bestNextScore = -1;
+        neighbors.forEach(function(nlbl) {
+          if (visited.has(nlbl)) return;
+          var nNorm = labelToNorm[nlbl];
+          var score = 0;
+          // Prefer untracked positions
+          if (!nNorm || !trackedPositions[nNorm]) { score += 3; }
+          // Prefer positions in current belt
+          else if (beltPosSet && beltPosSet.has(nNorm)) { score += 1; }
+          // Prefer positions with fewer tracked techniques
+          if (nNorm && trackedPositions[nNorm]) {
+            score += Math.max(0, 5 - trackedPositions[nNorm].keys.length);
+          } else {
+            score += 5;
+          }
+          if (score > bestNextScore) { bestNextScore = score; bestNext = nlbl; }
+        });
+
+        if (bestNext) {
+          pathPositions.push(bestNext);
+          visited.add(bestNext);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+  // If path is too short or no progress, build a starter path
+  if (pathPositions.length < 2) {
+    pathPositions = ['Mount', 'Side Control', 'Back Control'].filter(function(lbl) {
+      return positionNodes.some(function(n) { return n.label === lbl; });
+    });
+  }
+
+  // ── Algorithm: Game Observations ──
+  var observations = [];
+  if (hasAnyProgress) {
+    // Observation 1: Most drilled position area
+    var posDrillCounts = {};
+    Object.keys(trackedPositions).forEach(function(norm) {
+      posDrillCounts[norm] = trackedPositions[norm].keys.length;
+    });
+    var sortedPos = Object.entries(posDrillCounts).sort(function(a,b) { return b[1] - a[1]; });
+
+    if (sortedPos.length >= 1) {
+      var topPosNorm = sortedPos[0][0];
+      var topPosLabel = normToLabel[topPosNorm] || topPosNorm.replace(/_/g, ' ');
+      // Find connected positions not tracked
+      var topConnected = adjacency[topPosLabel];
+      var missingConnections = [];
+      if (topConnected) {
+        topConnected.forEach(function(connLbl) {
+          var cNorm = labelToNorm[connLbl];
+          if (cNorm && !trackedPositions[cNorm]) missingConnections.push(connLbl);
+        });
+      }
+      if (missingConnections.length > 0) {
+        observations.push('You\'ve been focusing on ' + topPosLabel + ' \u2014 consider adding ' + missingConnections[0] + ' to connect your transitions');
+      } else if (sortedPos.length >= 2) {
+        var secondLabel = normToLabel[sortedPos[1][0]] || sortedPos[1][0].replace(/_/g, ' ');
+        observations.push('Your top areas are ' + topPosLabel + ' and ' + secondLabel + ' \u2014 solid foundation building');
+      }
+    }
+
+    // Observation 2: Belt progress
+    if (beltPosSet) {
+      var beltTotal = beltPosSet.size;
+      var beltTracked = 0;
+      var beltLearned = 0;
+      beltPosSet.forEach(function(norm) {
+        if (trackedPositions[norm]) {
+          beltTracked++;
+          if (trackedPositions[norm].statuses.some(function(s) { return s === 'learned'; })) beltLearned++;
+        }
+      });
+      var beltPct = Math.round(beltTracked / beltTotal * 100);
+      var beltName = {white:'White',blue:'Blue',purple:'Purple',brown:'Brown',black:'Black'}[currentBelt] || currentBelt;
+      if (beltPct < 30) {
+        observations.push('You\'ve covered ' + beltPct + '% of your ' + beltName + ' Belt syllabus \u2014 lots of room to explore');
+      } else if (beltPct < 70) {
+        observations.push('You\'re at ' + beltPct + '% of your ' + beltName + ' Belt syllabus \u2014 making good progress');
+      } else {
+        observations.push(beltPct + '% of your ' + beltName + ' Belt syllabus is tracked \u2014 close to promotion readiness');
+      }
+    }
+
+    // Observation 3: Sparring log insights
+    var sparLog = STATE.sparringLog || [];
+    if (sparLog.length > 0) {
+      // Count sessions in last 7 days
+      var now = Date.now();
+      var weekMs = 7 * 24 * 60 * 60 * 1000;
+      var recentSessions = sparLog.filter(function(s) {
+        var sDate = new Date(s.date).getTime();
+        return (now - sDate) < weekMs;
+      });
+      if (recentSessions.length > 0) {
+        var totalHighlights = 0;
+        var successCount = 0;
+        recentSessions.forEach(function(s) {
+          (s.highlights || []).forEach(function(h) {
+            totalHighlights++;
+            if (h.success) successCount++;
+          });
+        });
+        var msg = 'You\'ve logged ' + recentSessions.length + ' sparring session' + (recentSessions.length > 1 ? 's' : '') + ' this week';
+        if (totalHighlights > 0) {
+          var rate = Math.round(successCount / totalHighlights * 100);
+          msg += ' \u2014 your technique success rate is ' + rate + '%';
+        }
+        observations.push(msg);
+      }
+    }
+
+    // Observation 4: Drill time insights (if no sparring observation)
+    if (observations.length < 3) {
+      var drillLog = STATE.dailyDrillLog || {};
+      var totalDrillSec = 0;
+      var drillDays = 0;
+      Object.values(drillLog).forEach(function(entry) {
+        if (entry.totalSeconds > 0) { totalDrillSec += entry.totalSeconds; drillDays++; }
+      });
+      if (drillDays > 0) {
+        var totalMin = Math.floor(totalDrillSec / 60);
+        var timeStr = totalMin >= 60 ? Math.floor(totalMin / 60) + 'h ' + (totalMin % 60) + 'm' : totalMin + 'm';
+        observations.push('Total drill time logged: ' + timeStr + ' across ' + drillDays + ' day' + (drillDays > 1 ? 's' : ''));
+      }
+    }
+  }
+
+  // ── Build UI ──
+  var overlay = document.createElement('div');
+  overlay.id = 'coachOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.88);z-index:4000;display:flex;align-items:flex-start;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadeIn 0.2s ease;overflow-y:auto;padding:24px 10px;';
+
+  var panel = document.createElement('div');
+  panel.style.cssText = 'background:#141820;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0;max-width:480px;width:calc(100vw - 24px);box-shadow:0 8px 32px rgba(0,0,0,0.4);margin:auto;';
+
+  // ── Header ──
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:20px 24px 12px;border-bottom:1px solid rgba(255,255,255,0.06);';
+  hdr.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:1px;">Coach Mode</div>'
+    + '<button class="coach-close" style="background:none;border:none;color:#4a5568;font-size:20px;cursor:pointer;padding:0 4px;">\u00d7</button>';
+  panel.appendChild(hdr);
+
+  var content = document.createElement('div');
+  content.style.cssText = 'padding:16px 24px 24px;max-height:calc(100vh - 120px);overflow-y:auto;';
+
+  if (!hasAnyProgress) {
+    // Empty state
+    content.innerHTML = '<div style="text-align:center;padding:32px 0;">'
+      + '<div style="font-size:32px;margin-bottom:12px;opacity:0.5;">&#127941;</div>'
+      + '<div style="font-family:Barlow Condensed,sans-serif;font-size:14px;color:var(--text-muted);line-height:1.6;">Start tracking techniques to get personalized coaching.<br>Mark positions as Drilling or Learned in the Reference view.</div>'
+      + '</div>';
+  } else {
+    // ── Section 1: Today's Focus ──
+    var focusHtml = '<div style="margin-bottom:20px;">'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;color:var(--text);letter-spacing:1px;margin-bottom:10px;">Today\'s Focus</div>'
+      + '<div style="background:rgba(232,255,71,0.04);border:1px solid rgba(232,255,71,0.12);border-radius:10px;padding:14px 16px;">'
+      + '<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:600;color:var(--accent);letter-spacing:0.5px;">' + _escHtml(focusPosition) + '</div>'
+      + '<div style="font-family:Barlow Condensed,sans-serif;font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.4;">' + _escHtml(focusReason) + '</div>'
+      + '<button class="coach-goto" data-label="' + _escHtml(focusPosition) + '" style="display:inline-block;margin-top:10px;background:var(--accent);color:#000;border:none;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:600;padding:6px 16px;border-radius:8px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;">Go there \u2192</button>'
+      + '</div></div>';
+    content.insertAdjacentHTML('beforeend', focusHtml);
+
+    // ── Section 2: Suggested Path ──
+    if (pathPositions.length >= 2) {
+      var pathHtml = '<div style="margin-bottom:20px;">'
+        + '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;color:var(--text);letter-spacing:1px;margin-bottom:10px;">Suggested Path</div>'
+        + '<div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;">';
+      pathPositions.forEach(function(lbl, i) {
+        var norm = labelToNorm[lbl] || '';
+        var isTracked = norm && trackedPositions[norm];
+        var statusColor = '#4a5568';
+        if (isTracked) {
+          var bestStatus = 'want';
+          trackedPositions[norm].statuses.forEach(function(s) {
+            if (s === 'learned') bestStatus = 'learned';
+            else if (s === 'drilling' && bestStatus !== 'learned') bestStatus = 'drilling';
+          });
+          statusColor = bestStatus === 'learned' ? 'var(--accent)' : bestStatus === 'drilling' ? 'var(--blue)' : 'var(--accent3)';
+        }
+        pathHtml += '<button class="coach-goto" data-label="' + _escHtml(lbl) + '" style="background:rgba(255,255,255,0.03);border:1px solid ' + statusColor + ';color:' + (isTracked ? statusColor : 'var(--text-dim)') + ';font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:500;padding:7px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;">' + _escHtml(lbl) + '</button>';
+        if (i < pathPositions.length - 1) {
+          pathHtml += '<span style="color:var(--text-muted);font-size:14px;margin:0 4px;flex-shrink:0;">\u2192</span>';
+        }
+      });
+      pathHtml += '</div></div>';
+      content.insertAdjacentHTML('beforeend', pathHtml);
+    }
+
+    // ── Section 3: Game Observations ──
+    if (observations.length > 0) {
+      var obsHtml = '<div>'
+        + '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;color:var(--text);letter-spacing:1px;margin-bottom:10px;">Game Observations</div>';
+      observations.forEach(function(obs) {
+        obsHtml += '<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--text-muted);line-height:1.5;padding:8px 12px;background:rgba(255,255,255,0.02);border-left:2px solid var(--border);border-radius:0 6px 6px 0;margin-bottom:6px;">' + _escHtml(obs) + '</div>';
+      });
+      obsHtml += '</div>';
+      content.insertAdjacentHTML('beforeend', obsHtml);
+    }
+  }
+
+  panel.appendChild(content);
+
+  // ── Done button ──
+  var footer = document.createElement('div');
+  footer.style.cssText = 'padding:0 24px 20px;text-align:center;';
+  var doneBtn = document.createElement('button');
+  doneBtn.style.cssText = 'background:var(--accent);color:#000;border:none;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;padding:10px 32px;border-radius:10px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;';
+  doneBtn.textContent = 'Done';
+  doneBtn.addEventListener('click', function() { overlay.remove(); });
+  footer.appendChild(doneBtn);
+  panel.appendChild(footer);
+
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+
+  // ── Events: close ──
+  panel.querySelector('.coach-close').addEventListener('click', function() { overlay.remove(); });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+  // ── Events: navigate to position ──
+  panel.querySelectorAll('.coach-goto').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var label = this.dataset.label;
+      overlay.remove();
+      if (typeof switchToReferenceNode === 'function') {
+        switchToReferenceNode(label);
+      }
+    });
+  });
+
+  // ── Event: Esc to close ──
+  function coachEscHandler(e) {
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', coachEscHandler); e.stopPropagation(); }
+  }
+  document.addEventListener('keydown', coachEscHandler);
 }
 
 // CW16: Quick-drill FAB — opens drill timer with all DRILLING techniques on mobile
