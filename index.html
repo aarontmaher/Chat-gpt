@@ -6923,6 +6923,9 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
       ]);
       if (result.error) {
         var errMsg = result.error.message || result.error.msg || (typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+        if (result.error.error_code === 'user_already_exists' || (errMsg && errMsg.includes('already registered'))) {
+          errMsg = 'An account with this email already exists. Try logging in.';
+        }
         status.textContent = errMsg; status.style.color = '#f85149'; return;
       }
       if (result.data && result.data.user) {
@@ -6961,7 +6964,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
       if (result.error) {
         var errMsg = result.error.message || result.error.msg || (typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
         if (result.error.message === 'Invalid login credentials' || (result.error.error_code && result.error.error_code === 'invalid_credentials')) {
-          errMsg = 'Invalid credentials — check your email and password. If you just signed up, confirm your email first.';
+          errMsg = 'Invalid email or password. Check your credentials and try again.';
         } else if (result.error.message === 'Email not confirmed') {
           errMsg = 'Please confirm your email before logging in. Check your inbox for the confirmation link.';
         }
