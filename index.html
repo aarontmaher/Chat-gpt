@@ -391,6 +391,28 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 #diagToggle:hover, #kbdHelpToggle:hover { background:rgba(255,255,255,0.04); }
 #headerMenuToggle:hover { border-color:rgba(255,255,255,0.25);color:#8892a4; }
 
+/* ── CC16: Custom Technique Chains ── */
+.chain-card { background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all 0.15s; }
+.chain-card:hover { border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.03); }
+.chain-card-name { font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:500;color:var(--text);letter-spacing:0.3px; }
+.chain-card-meta { font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:3px;display:flex;gap:12px; }
+.chain-flow { display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:10px 0 6px; }
+.chain-step-pill { font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-dim);background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:4px 12px;white-space:nowrap;transition:all 0.15s; }
+.chain-step-pill:hover { border-color:var(--accent);color:var(--accent);cursor:pointer; }
+.chain-step-pill.active-step { border-color:var(--accent);color:#000;background:var(--accent);font-weight:600; }
+.chain-flow-arrow { color:var(--text-muted);font-size:11px;flex-shrink:0; }
+.chain-form-step { display:flex;align-items:center;gap:6px;margin-bottom:6px;position:relative; }
+.chain-form-step input { flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none; }
+.chain-form-step input:focus { border-color:var(--accent); }
+.chain-form-step button { background:none;border:1px solid var(--border);color:var(--text-muted);font-size:12px;width:26px;height:26px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0; }
+.chain-form-step button:hover { border-color:var(--text-muted);color:var(--text); }
+.chain-autocomplete { position:absolute;top:100%;left:0;right:52px;background:rgba(14,16,21,0.98);border:1px solid var(--border);border-radius:4px;max-height:120px;overflow-y:auto;z-index:10;display:none; }
+.chain-autocomplete-item { padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);cursor:pointer;transition:background 0.1s; }
+.chain-autocomplete-item:hover { background:rgba(232,255,71,0.06);color:var(--text); }
+.chain-drill-progress { font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);text-align:center;letter-spacing:0.5px;margin-bottom:4px; }
+.chain-drill-timer { font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);text-align:center;letter-spacing:2px; }
+.chain-drill-step-label { font-family:'Barlow Condensed',sans-serif;font-size:20px;color:var(--text);text-align:center;margin:8px 0;letter-spacing:0.5px; }
+
 </style>
 </head>
 <body>
@@ -440,6 +462,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <button id="menuRandomBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Random Drill</button>
       <button id="menuTimerBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Drill Timer</button>
       <button id="menuCircuitBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Drill Circuit</button>
+      <button id="menuChainsBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Chains</button>
       <button id="menuWeeklySummaryBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Weekly Summary</button>
       <button id="menuJournalBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Sparring Journal</button>
       <button id="menuCoachBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Coach</button>
@@ -863,7 +886,8 @@ const STATE = {
   currentFilter: 'all',
   totalNodes: 0,
   learnedNodes: 0,
-  sparringLog: []
+  sparringLog: [],
+  chains: []
 };
 
 function saveState() {
@@ -879,7 +903,8 @@ function saveState() {
     drillingStarted: STATE.drillingStarted || {},
     drillTime: STATE.drillTime || {},
     dailyDrillLog: STATE.dailyDrillLog || {},
-    sparringLog: STATE.sparringLog || []
+    sparringLog: STATE.sparringLog || [],
+    chains: STATE.chains || []
   };
   UserStore.saveAppState(appState);
 }
@@ -921,6 +946,7 @@ function loadState() {
     STATE.drillTime = appState.drillTime || {};
     STATE.dailyDrillLog = appState.dailyDrillLog || {};
     STATE.sparringLog = appState.sparringLog || [];
+    STATE.chains = appState.chains || [];
   }
 }
 
@@ -4863,7 +4889,7 @@ document.addEventListener('keydown', e => {
 })();
 // Export progress
 document.getElementById('menuExportBtn').addEventListener('click', function() {
-  var data = { progress: STATE.progress, notes: STATE.notes, recentViewed: STATE.recentViewed || [], successLog: STATE.successLog || [], drillTime: STATE.drillTime || {}, sparringLog: STATE.sparringLog || [], exportedAt: new Date().toISOString() };
+  var data = { progress: STATE.progress, notes: STATE.notes, recentViewed: STATE.recentViewed || [], successLog: STATE.successLog || [], drillTime: STATE.drillTime || {}, sparringLog: STATE.sparringLog || [], chains: STATE.chains || [], exportedAt: new Date().toISOString() };
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -4889,6 +4915,7 @@ document.getElementById('menuImportBtn').addEventListener('click', function() {
         if (data.successLog) STATE.successLog = data.successLog;
         if (data.drillTime) STATE.drillTime = data.drillTime;
         if (data.sparringLog) STATE.sparringLog = data.sparringLog;
+        if (data.chains) STATE.chains = data.chains;
         saveState(); updateStats(); refreshAllViews();
         showToast('Progress imported successfully');
       } catch(e) { showToast('Could not read file — check format'); }
@@ -4906,6 +4933,7 @@ document.getElementById('menuResetBtn').addEventListener('click', function() {
   STATE.drillTime = {};
   STATE.dailyDrillLog = {};
   STATE.sparringLog = [];
+  STATE.chains = [];
   saveState(); updateStats(); refreshAllViews();
   showToast('All progress has been reset');
 });
@@ -8006,6 +8034,597 @@ function openCoachPanel() {
   window.addEventListener('resize', updateFab);
   setInterval(updateFab, 5000);
   updateFab();
+})();
+
+// ─── CC16: Custom Technique Chains ───────────────────────────────────────────
+(function() {
+  // Gather all technique names from SECTIONS for autocomplete
+  function getAllTechniqueNames() {
+    var names = [];
+    var ARROW = '\u2192';
+    function walk(nodes, path) {
+      (nodes || []).forEach(function(n) {
+        var t = (n.t || '').trim();
+        if (!t) return;
+        if (t.includes(ARROW) || t === 'Notes' || t === 'Instructional video' || t === 'Live video') return;
+        if (!SCHEMA_NAMES || !SCHEMA_NAMES.has(t)) {
+          names.push({ label: t, path: path });
+        }
+        if (n.c) walk(n.c, path + '|' + normalizeSegment(t));
+      });
+    }
+    if (typeof SECTIONS !== 'undefined') {
+      SECTIONS.forEach(function(sec) {
+        walk(sec.nodes, normalizeSegment(sec.title));
+      });
+    }
+    return names;
+  }
+
+  // Try to find a matching key for a step label
+  function findKeyForLabel(label) {
+    if (!label) return '';
+    var lc = label.trim().toLowerCase();
+    var techs = getAllTechniqueNames();
+    for (var i = 0; i < techs.length; i++) {
+      if (techs[i].label.toLowerCase() === lc) return techs[i].path + '|' + normalizeSegment(techs[i].label);
+    }
+    return '';
+  }
+
+  function formatDate(ts) {
+    if (!ts) return 'Never';
+    var d = new Date(ts);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  // ── Open Chains Panel ──
+  function openChainsPanel() {
+    var panel = document.getElementById('listPanel');
+    var body = document.getElementById('listPanelBody');
+    document.getElementById('listPanelTitle').textContent = 'Chains';
+    body.innerHTML = '';
+
+    var chains = STATE.chains || [];
+
+    // Create Chain button at top
+    var topBar = document.createElement('div');
+    topBar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;';
+    var createBtn = document.createElement('button');
+    createBtn.className = 'g3d-tb-btn';
+    createBtn.style.cssText = 'border-radius:12px;background:var(--accent);color:#000;border:none;padding:0 18px;height:34px;font-size:12px;font-family:Barlow Condensed,sans-serif;font-weight:600;letter-spacing:0.5px;';
+    createBtn.textContent = '+ New Chain';
+    createBtn.addEventListener('click', function() { openChainEditor(null); });
+    topBar.appendChild(createBtn);
+    body.appendChild(topBar);
+
+    if (chains.length === 0) {
+      var empty = document.createElement('div');
+      empty.style.cssText = 'text-align:center;padding:40px 0;color:var(--text-muted);font-family:Barlow Condensed,sans-serif;font-size:14px;letter-spacing:0.5px;';
+      empty.innerHTML = 'No chains yet.<br><span style="font-size:12px;color:#556;">Create a chain to drill sequences of connected moves.</span>';
+      body.appendChild(empty);
+    } else {
+      chains.forEach(function(chain) {
+        var card = document.createElement('div');
+        card.className = 'chain-card';
+        var header = document.createElement('div');
+        header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+        var nameEl = document.createElement('div');
+        nameEl.className = 'chain-card-name';
+        nameEl.textContent = chain.name;
+        header.appendChild(nameEl);
+        var btnGroup = document.createElement('div');
+        btnGroup.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+        // Edit button
+        var editBtn = document.createElement('button');
+        editBtn.className = 'g3d-tb-btn';
+        editBtn.style.cssText = 'border-radius:8px;font-size:10px;padding:0 10px;height:26px;';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function(e) { e.stopPropagation(); openChainEditor(chain); });
+        btnGroup.appendChild(editBtn);
+        // Delete button
+        var delBtn = document.createElement('button');
+        delBtn.className = 'g3d-tb-btn';
+        delBtn.style.cssText = 'border-radius:8px;font-size:10px;padding:0 10px;height:26px;color:#f85149;';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (!confirm('Delete chain "' + chain.name + '"?')) return;
+          STATE.chains = STATE.chains.filter(function(c) { return c.id !== chain.id; });
+          saveState();
+          openChainsPanel();
+          showToast('Chain deleted');
+        });
+        btnGroup.appendChild(delBtn);
+        header.appendChild(btnGroup);
+        card.appendChild(header);
+        // Meta
+        var meta = document.createElement('div');
+        meta.className = 'chain-card-meta';
+        meta.innerHTML = '<span>' + chain.steps.length + ' steps</span><span>Drilled: ' + formatDate(chain.lastDrilled) + '</span>';
+        card.appendChild(meta);
+        // Expandable flow (hidden by default)
+        var flowWrap = document.createElement('div');
+        flowWrap.style.cssText = 'display:none;';
+        var flow = document.createElement('div');
+        flow.className = 'chain-flow';
+        chain.steps.forEach(function(step, si) {
+          if (si > 0) {
+            var arrow = document.createElement('span');
+            arrow.className = 'chain-flow-arrow';
+            arrow.textContent = '\u2192';
+            flow.appendChild(arrow);
+          }
+          var pill = document.createElement('span');
+          pill.className = 'chain-step-pill';
+          pill.textContent = step.label;
+          if (step.key) {
+            pill.title = 'Click to navigate';
+            pill.addEventListener('click', function(e) {
+              e.stopPropagation();
+              var segs = step.key.split('|');
+              var label = segs[segs.length - 1].replace(/_/g, ' ');
+              var section = segs[0].replace(/_/g, ' ');
+              closeListPanel();
+              switchToReferenceNode(label, section);
+            });
+          }
+          flow.appendChild(pill);
+        });
+        flowWrap.appendChild(flow);
+        // Drill button
+        var drillWrap = document.createElement('div');
+        drillWrap.style.cssText = 'padding:8px 0 4px;';
+        var drillBtn = document.createElement('button');
+        drillBtn.className = 'g3d-tb-btn';
+        drillBtn.style.cssText = 'border-radius:12px;background:var(--blue);color:#000;border:none;padding:0 20px;height:34px;font-size:12px;font-family:Barlow Condensed,sans-serif;font-weight:600;width:100%;';
+        drillBtn.textContent = 'Drill This Chain';
+        drillBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          startChainDrill(chain);
+        });
+        drillWrap.appendChild(drillBtn);
+        flowWrap.appendChild(drillWrap);
+        card.appendChild(flowWrap);
+        // Toggle expand on card click
+        var expanded = false;
+        card.addEventListener('click', function() {
+          expanded = !expanded;
+          flowWrap.style.display = expanded ? 'block' : 'none';
+        });
+        body.appendChild(card);
+      });
+    }
+
+    panel.style.display = 'block';
+  }
+
+  // ── Chain Editor (create or edit) ──
+  function openChainEditor(existingChain) {
+    var panel = document.getElementById('listPanel');
+    var body = document.getElementById('listPanelBody');
+    var isEdit = !!existingChain;
+    document.getElementById('listPanelTitle').textContent = isEdit ? 'Edit Chain' : 'New Chain';
+    body.innerHTML = '';
+
+    var chainName = isEdit ? existingChain.name : '';
+    var steps = isEdit ? existingChain.steps.map(function(s) { return { label: s.label, key: s.key }; }) : [{ label: '', key: '' }, { label: '', key: '' }];
+
+    // Name input
+    var nameWrap = document.createElement('div');
+    nameWrap.style.cssText = 'margin-bottom:12px;';
+    var nameLabel = document.createElement('div');
+    nameLabel.style.cssText = 'font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;';
+    nameLabel.textContent = 'Chain Name';
+    nameWrap.appendChild(nameLabel);
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = chainName;
+    nameInput.placeholder = 'e.g. My Anaconda Setup';
+    nameInput.style.cssText = 'width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:DM Mono,monospace;font-size:12px;outline:none;';
+    nameWrap.appendChild(nameInput);
+    body.appendChild(nameWrap);
+
+    // Steps label
+    var stepsLabel = document.createElement('div');
+    stepsLabel.style.cssText = 'font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;';
+    stepsLabel.textContent = 'Steps';
+    body.appendChild(stepsLabel);
+
+    // Steps container
+    var stepsContainer = document.createElement('div');
+    stepsContainer.id = 'chainStepsContainer';
+    body.appendChild(stepsContainer);
+
+    var allTechNames = null; // lazy-loaded
+
+    function renderSteps() {
+      stepsContainer.innerHTML = '';
+      steps.forEach(function(step, i) {
+        var row = document.createElement('div');
+        row.className = 'chain-form-step';
+        // Step number
+        var numEl = document.createElement('span');
+        numEl.style.cssText = 'color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:16px;width:20px;text-align:center;flex-shrink:0;';
+        numEl.textContent = (i + 1);
+        row.appendChild(numEl);
+        // Input
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = step.label;
+        inp.placeholder = 'Technique or move name';
+        inp.dataset.stepIdx = i;
+        // Autocomplete
+        var acWrap = document.createElement('div');
+        acWrap.className = 'chain-autocomplete';
+        inp.addEventListener('input', function() {
+          step.label = inp.value;
+          step.key = findKeyForLabel(inp.value);
+          var q = inp.value.trim().toLowerCase();
+          if (q.length < 2) { acWrap.style.display = 'none'; return; }
+          if (!allTechNames) allTechNames = getAllTechniqueNames();
+          var matches = allTechNames.filter(function(t) { return t.label.toLowerCase().includes(q); }).slice(0, 8);
+          acWrap.innerHTML = '';
+          if (matches.length === 0) { acWrap.style.display = 'none'; return; }
+          matches.forEach(function(m) {
+            var item = document.createElement('div');
+            item.className = 'chain-autocomplete-item';
+            item.textContent = m.label;
+            item.addEventListener('mousedown', function(e) {
+              e.preventDefault();
+              inp.value = m.label;
+              step.label = m.label;
+              step.key = m.path + '|' + normalizeSegment(m.label);
+              acWrap.style.display = 'none';
+            });
+            acWrap.appendChild(item);
+          });
+          acWrap.style.display = 'block';
+        });
+        inp.addEventListener('blur', function() { setTimeout(function() { acWrap.style.display = 'none'; }, 150); });
+        row.appendChild(inp);
+        row.appendChild(acWrap);
+        // Move up
+        var upBtn = document.createElement('button');
+        upBtn.innerHTML = '\u2191';
+        upBtn.title = 'Move up';
+        upBtn.disabled = i === 0;
+        upBtn.style.opacity = i === 0 ? '0.3' : '1';
+        upBtn.addEventListener('click', function() {
+          if (i === 0) return;
+          var tmp = steps[i]; steps[i] = steps[i - 1]; steps[i - 1] = tmp;
+          renderSteps();
+        });
+        row.appendChild(upBtn);
+        // Move down
+        var dnBtn = document.createElement('button');
+        dnBtn.innerHTML = '\u2193';
+        dnBtn.title = 'Move down';
+        dnBtn.disabled = i === steps.length - 1;
+        dnBtn.style.opacity = i === steps.length - 1 ? '0.3' : '1';
+        dnBtn.addEventListener('click', function() {
+          if (i === steps.length - 1) return;
+          var tmp = steps[i]; steps[i] = steps[i + 1]; steps[i + 1] = tmp;
+          renderSteps();
+        });
+        row.appendChild(dnBtn);
+        // Remove
+        var rmBtn = document.createElement('button');
+        rmBtn.innerHTML = '\u00d7';
+        rmBtn.title = 'Remove step';
+        rmBtn.style.color = '#f85149';
+        rmBtn.addEventListener('click', function() {
+          if (steps.length <= 1) { showToast('Chain needs at least 1 step'); return; }
+          steps.splice(i, 1);
+          renderSteps();
+        });
+        row.appendChild(rmBtn);
+        stepsContainer.appendChild(row);
+      });
+    }
+    renderSteps();
+
+    // Add step button
+    var addStepBtn = document.createElement('button');
+    addStepBtn.className = 'g3d-tb-btn';
+    addStepBtn.style.cssText = 'border-radius:8px;font-size:11px;margin:8px 0 16px;';
+    addStepBtn.textContent = '+ Add Step';
+    addStepBtn.addEventListener('click', function() {
+      steps.push({ label: '', key: '' });
+      renderSteps();
+      // Focus the new input
+      var inputs = stepsContainer.querySelectorAll('input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    body.appendChild(addStepBtn);
+
+    // Save / Cancel buttons
+    var actionWrap = document.createElement('div');
+    actionWrap.style.cssText = 'display:flex;gap:8px;padding-top:8px;';
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'g3d-tb-btn';
+    saveBtn.style.cssText = 'border-radius:12px;background:var(--accent);color:#000;border:none;padding:0 24px;height:38px;font-size:13px;font-family:Barlow Condensed,sans-serif;font-weight:600;flex:1;';
+    saveBtn.textContent = isEdit ? 'Save Changes' : 'Save Chain';
+    saveBtn.addEventListener('click', function() {
+      var name = nameInput.value.trim();
+      if (!name) { showToast('Please enter a chain name'); nameInput.focus(); return; }
+      var validSteps = steps.filter(function(s) { return s.label.trim(); });
+      if (validSteps.length === 0) { showToast('Add at least one step'); return; }
+      // Auto-populate keys for any matched labels
+      validSteps.forEach(function(s) {
+        if (!s.key) s.key = findKeyForLabel(s.label);
+      });
+      if (isEdit) {
+        existingChain.name = name;
+        existingChain.steps = validSteps;
+      } else {
+        if (!STATE.chains) STATE.chains = [];
+        STATE.chains.push({
+          id: Date.now(),
+          name: name,
+          steps: validSteps,
+          created: new Date().toISOString().slice(0, 10),
+          lastDrilled: null
+        });
+      }
+      saveState();
+      showToast(isEdit ? 'Chain updated' : 'Chain saved');
+      openChainsPanel();
+    });
+    actionWrap.appendChild(saveBtn);
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'g3d-tb-btn';
+    cancelBtn.style.cssText = 'border-radius:12px;font-size:13px;padding:0 20px;height:38px;';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function() { openChainsPanel(); });
+    actionWrap.appendChild(cancelBtn);
+    body.appendChild(actionWrap);
+
+    panel.style.display = 'block';
+    nameInput.focus();
+  }
+
+  // ── Drill Chain ──
+  function startChainDrill(chain) {
+    closeListPanel();
+    var steps = chain.steps;
+    if (!steps || steps.length === 0) { showToast('Chain has no steps'); return; }
+
+    // Open drill UI in list panel
+    var panel = document.getElementById('listPanel');
+    var body = document.getElementById('listPanelBody');
+    document.getElementById('listPanelTitle').textContent = 'Drilling: ' + chain.name;
+    body.innerHTML = '';
+
+    var stepIdx = 0;
+    var timerSeconds = 30;
+    var remaining = timerSeconds;
+    var interval = null;
+    var paused = false;
+
+    // Timer setting
+    var settingWrap = document.createElement('div');
+    settingWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;';
+    var settingLabel = document.createElement('span');
+    settingLabel.style.cssText = 'font-family:Barlow Condensed,sans-serif;font-size:12px;color:var(--text-muted);';
+    settingLabel.textContent = 'Per step:';
+    settingWrap.appendChild(settingLabel);
+    [15, 30, 45, 60, 90].forEach(function(sec) {
+      var btn = document.createElement('button');
+      btn.className = 'g3d-tb-btn';
+      btn.style.cssText = 'border-radius:12px;font-size:11px;height:28px;' + (sec === timerSeconds ? 'background:var(--accent);color:#000;border:none;' : '');
+      btn.textContent = sec + 's';
+      btn.addEventListener('click', function() {
+        timerSeconds = sec;
+        remaining = sec;
+        // Highlight active
+        settingWrap.querySelectorAll('button').forEach(function(b) { b.style.background = ''; b.style.color = ''; b.style.borderColor = ''; });
+        btn.style.background = 'var(--accent)'; btn.style.color = '#000'; btn.style.border = 'none';
+        updateDisplay();
+      });
+      settingWrap.appendChild(btn);
+    });
+    body.appendChild(settingWrap);
+
+    // Progress bar
+    var progressEl = document.createElement('div');
+    progressEl.className = 'chain-drill-progress';
+    body.appendChild(progressEl);
+
+    // Flow visualization
+    var flowEl = document.createElement('div');
+    flowEl.className = 'chain-flow';
+    flowEl.style.cssText += 'justify-content:center;margin-bottom:8px;';
+    body.appendChild(flowEl);
+
+    // Current step label
+    var stepLabel = document.createElement('div');
+    stepLabel.className = 'chain-drill-step-label';
+    body.appendChild(stepLabel);
+
+    // Timer display
+    var timerEl = document.createElement('div');
+    timerEl.className = 'chain-drill-timer';
+    body.appendChild(timerEl);
+
+    // Controls
+    var controls = document.createElement('div');
+    controls.style.cssText = 'display:flex;gap:8px;justify-content:center;padding:16px 0;';
+    var startBtn = document.createElement('button');
+    startBtn.className = 'g3d-tb-btn';
+    startBtn.style.cssText = 'border-radius:12px;background:var(--accent);color:#000;border:none;padding:0 28px;height:40px;font-size:14px;font-family:Barlow Condensed,sans-serif;font-weight:600;';
+    startBtn.textContent = 'Start';
+    var skipBtn = document.createElement('button');
+    skipBtn.className = 'g3d-tb-btn';
+    skipBtn.style.cssText = 'border-radius:12px;font-size:12px;height:40px;padding:0 16px;';
+    skipBtn.textContent = 'Skip \u2192';
+    controls.appendChild(startBtn);
+    controls.appendChild(skipBtn);
+    body.appendChild(controls);
+
+    function updateDisplay() {
+      progressEl.textContent = 'Step ' + (stepIdx + 1) + ' of ' + steps.length;
+      stepLabel.textContent = steps[stepIdx].label;
+      var m = Math.floor(remaining / 60);
+      var s = remaining % 60;
+      timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+      timerEl.style.color = remaining <= 5 && remaining > 0 ? '#f85149' : 'var(--accent)';
+      // Update flow pills
+      flowEl.innerHTML = '';
+      steps.forEach(function(st, si) {
+        if (si > 0) {
+          var arrow = document.createElement('span');
+          arrow.className = 'chain-flow-arrow';
+          arrow.textContent = '\u2192';
+          flowEl.appendChild(arrow);
+        }
+        var pill = document.createElement('span');
+        pill.className = 'chain-step-pill' + (si === stepIdx ? ' active-step' : '');
+        pill.textContent = st.label;
+        pill.style.fontSize = '11px';
+        pill.style.padding = '3px 8px';
+        flowEl.appendChild(pill);
+      });
+    }
+
+    function advanceStep() {
+      stepIdx++;
+      if (stepIdx >= steps.length) {
+        showCompletion();
+        return;
+      }
+      remaining = timerSeconds;
+      updateDisplay();
+      // Navigate to technique in Reference if key exists
+      if (steps[stepIdx].key) {
+        var segs = steps[stepIdx].key.split('|');
+        var label = segs[segs.length - 1].replace(/_/g, ' ');
+        var section = segs[0].replace(/_/g, ' ');
+        switchToReferenceNode(label, section);
+      }
+    }
+
+    function tick() {
+      remaining--;
+      if (remaining <= 0) {
+        remaining = 0;
+        updateDisplay();
+        clearInterval(interval);
+        interval = null;
+        advanceStep();
+        // Auto-start next step timer
+        if (stepIdx < steps.length) {
+          interval = setInterval(tick, 1000);
+        }
+        return;
+      }
+      updateDisplay();
+    }
+
+    function showCompletion() {
+      clearInterval(interval);
+      interval = null;
+      // Update lastDrilled
+      chain.lastDrilled = Date.now();
+      saveState();
+      // Show completion overlay
+      body.innerHTML = '';
+      var doneWrap = document.createElement('div');
+      doneWrap.style.cssText = 'text-align:center;padding:30px 0;';
+      var doneTitle = document.createElement('div');
+      doneTitle.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:24px;color:var(--accent);letter-spacing:1px;margin-bottom:12px;';
+      doneTitle.textContent = 'Chain Complete';
+      doneWrap.appendChild(doneTitle);
+      var doneName = document.createElement('div');
+      doneName.style.cssText = 'font-family:Barlow Condensed,sans-serif;font-size:16px;color:var(--text);margin-bottom:4px;';
+      doneName.textContent = chain.name;
+      doneWrap.appendChild(doneName);
+      var doneStats = document.createElement('div');
+      doneStats.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;';
+      var statSteps = document.createElement('div');
+      statSteps.style.cssText = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:10px 8px;';
+      statSteps.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:24px;color:var(--accent);letter-spacing:1px;">' + steps.length + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;text-transform:uppercase;letter-spacing:0.5px;">Steps</div>';
+      doneStats.appendChild(statSteps);
+      var totalTime = steps.length * timerSeconds;
+      var totalMin = Math.floor(totalTime / 60);
+      var totalSec = totalTime % 60;
+      var timeStr = totalMin > 0 ? totalMin + 'm ' + totalSec + 's' : totalSec + 's';
+      var statTime = document.createElement('div');
+      statTime.style.cssText = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:10px 8px;';
+      statTime.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:24px;color:var(--blue);letter-spacing:1px;">' + timeStr + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:#556;text-transform:uppercase;letter-spacing:0.5px;">Total Time</div>';
+      doneStats.appendChild(statTime);
+      doneWrap.appendChild(doneStats);
+      // Flow recap
+      var recap = document.createElement('div');
+      recap.className = 'chain-flow';
+      recap.style.cssText += 'justify-content:center;margin:12px 0;';
+      steps.forEach(function(st, si) {
+        if (si > 0) {
+          var arrow = document.createElement('span');
+          arrow.className = 'chain-flow-arrow';
+          arrow.textContent = '\u2192';
+          recap.appendChild(arrow);
+        }
+        var pill = document.createElement('span');
+        pill.className = 'chain-step-pill';
+        pill.textContent = st.label;
+        recap.appendChild(pill);
+      });
+      doneWrap.appendChild(recap);
+      var closeBtn = document.createElement('button');
+      closeBtn.className = 'g3d-tb-btn';
+      closeBtn.style.cssText = 'border-radius:12px;background:var(--accent);color:#000;border:none;padding:0 32px;height:40px;font-size:14px;font-family:Barlow Condensed,sans-serif;font-weight:600;margin-top:12px;';
+      closeBtn.textContent = 'Done';
+      closeBtn.addEventListener('click', function() { closeListPanel(); });
+      doneWrap.appendChild(closeBtn);
+      body.appendChild(doneWrap);
+    }
+
+    startBtn.addEventListener('click', function() {
+      if (interval) {
+        // Pause
+        clearInterval(interval);
+        interval = null;
+        paused = true;
+        startBtn.textContent = 'Resume';
+        startBtn.style.background = 'var(--blue)';
+      } else {
+        // Start / Resume
+        paused = false;
+        startBtn.textContent = 'Pause';
+        startBtn.style.background = 'var(--accent2)';
+        interval = setInterval(tick, 1000);
+        // Navigate to first step technique if key exists
+        if (stepIdx === 0 && steps[0].key && !interval._navigated) {
+          var segs = steps[0].key.split('|');
+          var label = segs[segs.length - 1].replace(/_/g, ' ');
+          var section = segs[0].replace(/_/g, ' ');
+          switchToReferenceNode(label, section);
+        }
+      }
+    });
+
+    skipBtn.addEventListener('click', function() {
+      clearInterval(interval);
+      interval = null;
+      advanceStep();
+      if (stepIdx < steps.length) {
+        paused = false;
+        startBtn.textContent = 'Pause';
+        startBtn.style.background = 'var(--accent2)';
+        interval = setInterval(tick, 1000);
+      }
+    });
+
+    updateDisplay();
+    panel.style.display = 'block';
+  }
+
+  // Wire up menu button
+  document.getElementById('menuChainsBtn').addEventListener('click', function() {
+    document.getElementById('headerMenu').style.display = 'none';
+    openChainsPanel();
+  });
 })();
 
 // Register service worker for PWA/offline support
