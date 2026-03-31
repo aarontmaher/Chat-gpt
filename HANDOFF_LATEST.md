@@ -2,55 +2,52 @@
 Date: 2026-03-31
 
 ## Current State
-Third overnight run complete. All safe automation backlog items cleared across both Shopify and app lanes. True stopping point — only large-scope items, Aaron-input items, and Supabase backend issues remain.
+All known bug-fix and feature backlog items are complete across both app and Shopify. True stopping point — only Aaron-input items, Supabase dashboard config, and large-scope features remain.
 
-## Commits This Session (3 commits)
-1. `57bc20a` — Bug fixes batch: CW32-54 (10 items — belt button, dashboard dupes, Supabase guard, auth copy, welcome toast, touch targets, font sizes)
-2. `eb26e60` — CW59 belt counter fix + CW62 graph resize on init
+## Commits This Session (4 commits)
+1. `57bc20a` — Bug fixes CW32-54 (belt button, dashboard dupes, Supabase guard, auth copy, welcome toast, touch targets, font sizes)
+2. `eb26e60` — CW59 belt counter + CW62 graph resize on init
+3. `59b5037` — CW50/CW38 Supabase auth error handling + timeouts
+4. `c0237e7` — CW63 graph overlay fallback + CW65 video counts + CW66 content framing
 
 ## Shopify This Session
-- Deleted dead `size-guide.liquid` snippet
-- Full theme sync pushed to live (#147896795272)
-- All 19 code fixes confirmed deployed
+- Social URLs updated (Facebook + Instagram)
+- Twitter/Pinterest cleared (no accounts)
+- Dead size-guide.liquid deleted
+- Full theme sync pushed
 
-## Cumulative Stats (all overnight sessions)
-- **App:** 30+ features, 16+ bug fixes shipped across 7 commits
-- **Shopify:** 19 theme fixes + product_notice blocks + size clarity + announcement bar
-- **Media:** 75 instructionals sorted, live footage verified
-- **Tests:** 12/12 passing throughout
+## All Known Inbox Items — Final Status
+| Range | Status |
+|-------|--------|
+| CW1-CW18 | All done (Batch I/J/K/Extras) |
+| CW26 | Belt filter logic verified correct |
+| CW27-CW32 | All done |
+| CW35-CW37 | All done or verified working |
+| CW38 | Code-side timeout added. Backend: needs Supabase dashboard config |
+| CW39-CW41 | All done |
+| CW43-CW44 | All done or verified consistent |
+| CW46-CW49 | All done |
+| CW50 | Code-side error messaging improved. Backend: needs Supabase email confirmation toggle |
+| CW51-CW55 | All done |
+| CW57 | Done |
+| CW59-CW60 | Done or verified working |
+| CW61 | Verified already guarded |
+| CW62-CW63 | Done |
+| CW64 | Verified already working |
+| CW65-CW67 | Done or verified |
+| CC3-CC10 | All done |
+| CC14-CC16 | Not started (large scope) |
+| P3/CW55 | Start Here content populated |
 
-## Remaining — Blocked
-**Needs Aaron:**
-- Social media URLs (S5) — needs actual handles
-- Instagram token (S10) — needs token
-- About page "spats" removal (S3) — admin content
+## Remaining — Blocked on Aaron
+- Supabase dashboard: disable email confirmation OR configure SMTP
+- Supplier size chart screenshots (women's rashguard, hoodie, t-shirt, men's shorts)
 - Guard OT content (16/19 positions)
 - Saddle canonical name
 - Belt syllabus technique selections
-- Supplier measurements for women's rashguard, hoodie, t-shirt size guides
 
-**Needs backend investigation:**
-- CW50: Supabase login returns 400 for valid accounts
-- CW38: Supabase signUp hangs for existing accounts
-
-**Large scope (not overnight-safe):**
+## Remaining — Large Scope
 - CC14: Sparring journal
 - CC15: Coach mode
 - CC16: Custom technique chains
-- CW56: DOM element count reduction (~18k nodes)
-
-## All Inbox Items Status
-- CW26-34: Fixed or verified
-- CW35-37: Fixed or verified
-- CW38: Blocked (Supabase backend)
-- CW39-41: Fixed
-- CW43-44: Fixed or verified consistent
-- CW46-49: Fixed
-- CW50: Blocked (Supabase backend)
-- CW51-55: Fixed
-- CW57: Fixed
-- CW59: Fixed
-- CW60-61: Verified already working
-- CW62: Fixed
-- CW64: Verified already working
-- CW67: Verified already working
+- CW56: DOM element reduction (~18k nodes)
