@@ -2,38 +2,39 @@
 Date: 2026-04-01
 
 ## Current State
-Both code lanes fully complete. Auth verified working after Supabase email confirmation disabled. Cowork audit from March 29 revealed nav/collection issues that are admin-only fixes. True stopping point.
+All code lanes complete. Hero CTA fix deployed. Both Shopify and app at true stopping point.
 
-## Latest Actions
-- Verified Supabase auth: signup returns session immediately, login works, existing-account returns clear error
-- Updated auth error messages for new Supabase behavior (no email confirmation)
-- Deleted 17 more empty .min.js from Shopify theme
-- Verified storefront healthy
-- Reviewed Cowork FULL_AUDIT.md — identified admin-only fixes still needed
+## Today's Actions
+- Fixed hero CTA "Shop Now" button — was empty link, now points to `/collections/all`
+- Fixed 12 dead `#` and empty `button_link` values in `templates/index.json`
+- Pushed to live theme
+- Verified hero CTA works on live site
+- App: 12/12 tests passing, all backlog complete
+- Full storefront audit completed with findings classified
 
-## Auth Status: WORKING
-- Signup: returns access_token immediately (no email confirmation required)
-- Login: works with correct credentials
-- Existing-account signup: returns clear "already exists" error (no hang)
-- Tested via direct API calls — confirmed
+## Shopify Status
+**Live theme:** lauburu-dev (#147896795272)
+**All code-side fixes deployed.** Remaining items are admin/content:
 
-## Remaining — Admin/Cowork Fixes (NOT code-side)
-**Critical for ad readiness:**
-1. Nav → "STREET WEAR APPAREL" links to `/collections/street-wear-apparel` which 404s. Actual collections: `street-wear-apparel-men` + `streetwear-apparel` (women). Fix nav link or create parent collection.
-2. Nav → "MINDMAP INSTRUCTIONAL" links to `/collections/mindmap-library` — 404 (collection doesn't exist)
-3. Nav → "ONLINE COACHING" links to `/collections/coaching-subscriptions` — 404 (collection doesn't exist)
-4. About page still mentions "spats" — remove from copy
-5. Refund policy: fixed (placeholder removed, contact link working)
+### Cowork can do now (no Aaron decision needed):
+1. Paste brand-matched descriptions into 11 products (files ready in `~/Desktop/shopify-size-guides/product-descriptions/`)
+   - 7x Women's rashguards → `09-womens-rashguard.html`
+   - 2x Hoodies → `10-hoodie.html`
+   - 2x T-shirts → `11-tshirt.html`
+2. Check accessories inventory — all 5 show "Sold Out" on live site
+3. Verify footer copyright shows "Lauburu" not "Laburu" on live site
+4. Verify product notice blocks render on product pages
 
-**Content needed:**
-- Supplier size charts: women's rashguard, hoodie, t-shirt, men's shorts
-- Product descriptions for uncovered products (hoodies, t-shirts, women's rashguards, men's shorts)
+### Blocked on Aaron:
+- Men's No-Gi Shorts size chart (Merchize supplier)
+- Coloured fleece variants — confirm same sizing as plain versions
+- Uni Sex Grappling Shorts — confirm same sizing as women's shorts
 
-**GrapplingMap content (Aaron only):**
-- Guard OT content (16/19 positions)
-- Saddle canonical name
-- Belt syllabus technique selections
+## App Status
+**All backlog complete:** 30+ features, 16+ bug fixes, 3 large features (CC14/15/16), CW56 DOM reduction
+**Tests:** 12/12 passing
+**Remaining (Aaron-only):** Guard OT, Saddle canonical, belt syllabus
 
-## Smoke Tests
-- App: 12/12 passing
-- Shopify: storefront verified healthy
+## Size Guide Files Ready (22 products mapped)
+Mapping: `~/Shopify/product-mapping.json`
+Files: `~/Desktop/shopify-size-guides/product-descriptions/`
