@@ -571,6 +571,11 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     </div>
   </div>
   <div id="refEmpty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;"></div>
+  <div id="backupReminderBanner" style="display:none;flex-shrink:0;padding:8px 14px;background:rgba(30,34,44,0.95);border-top:1px solid rgba(255,255,255,0.06);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:#8892a4;display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span id="backupReminderText" style="flex:1;min-width:180px;"></span>
+    <button id="backupExportNow" style="background:#2a3a4a;color:#a0b4c8;border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 10px;cursor:pointer;white-space:nowrap;">Export Now</button>
+    <button id="backupDismiss" style="background:none;border:none;color:#556;font-size:11px;font-family:'Barlow Condensed',sans-serif;cursor:pointer;padding:3px 6px;white-space:nowrap;">Dismiss</button>
+  </div>
   <div id="refBottomBar" style="flex-shrink:0;display:flex;align-items:center;gap:2px;background:rgba(18,21,28,0.92);border-top:1px solid rgba(255,255,255,0.08);padding:5px 6px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:6px;background:#181c26;border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:0 10px;height:30px;">
       <span style="color:#4a5568;font-size:11px;">⌕</span>
@@ -5149,7 +5154,11 @@ document.getElementById('menuExportBtn').addEventListener('click', function() {
   a.download = 'grappling-map-progress-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   URL.revokeObjectURL(a.href);
+  localStorage.setItem('gm_lastExport', new Date().toISOString());
   showToast('Progress exported');
+  // Dismiss backup reminder if visible
+  var _bkBanner = document.getElementById('backupReminderBanner');
+  if (_bkBanner) _bkBanner.style.display = 'none';
 });
 // Import progress
 document.getElementById('menuImportBtn').addEventListener('click', function() {
@@ -6388,6 +6397,34 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
   closeBtn.addEventListener('click', function() {
     cardEl.style.display = 'none';
     localStorage.setItem('dailySuggestionDate', today);
+  });
+})();
+// ── Backup Reminder ──────────────────────────────────────────────────
+(function initBackupReminder() {
+  var banner = document.getElementById('backupReminderBanner');
+  if (!banner) return;
+  // Only for users with actual progress
+  if (Object.keys(STATE.progress).length === 0) return;
+  var lastExport = localStorage.getItem('gm_lastExport');
+  var lastDismiss = localStorage.getItem('gm_backupDismissed');
+  var now = Date.now();
+  var FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
+  // Check dismiss cooldown
+  if (lastDismiss && (now - new Date(lastDismiss).getTime()) < FOURTEEN_DAYS) return;
+  // Check if never exported or exported 14+ days ago
+  if (lastExport && (now - new Date(lastExport).getTime()) < FOURTEEN_DAYS) return;
+  var daysSince = lastExport ? Math.floor((now - new Date(lastExport).getTime()) / (24*60*60*1000)) : null;
+  var msg = daysSince
+    ? 'You haven\u2019t backed up in ' + daysSince + ' days \u2014 Export your data to keep it safe'
+    : 'You haven\u2019t exported your data yet \u2014 Back it up to keep it safe';
+  document.getElementById('backupReminderText').textContent = msg;
+  banner.style.display = 'flex';
+  document.getElementById('backupExportNow').addEventListener('click', function() {
+    document.getElementById('menuExportBtn').click();
+  });
+  document.getElementById('backupDismiss').addEventListener('click', function() {
+    banner.style.display = 'none';
+    localStorage.setItem('gm_backupDismissed', new Date().toISOString());
   });
 })();
 // Deep linking + resume

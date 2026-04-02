@@ -7,6 +7,9 @@
   "orientation": "portrait",
   "background_color": "#0a0c10",
   "theme_color": "#0a0c10",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["sports", "fitness", "education"],
   "icons": [
     {
       "src": "icon-180.png",
