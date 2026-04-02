@@ -280,6 +280,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .g3d-toggle-track::after { content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:11px;height:11px;background:#4a5568;border-radius:50%;transition:all 0.2s; }
 .g3d-toggle input:checked + .g3d-toggle-track::after { left:calc(100% - 13px);background:#000; }
 
+/* Filter toggle button — hidden on desktop, shown on mobile */
+#refFilterToggle { display: none; align-items: center; justify-content: center; gap: 4px; background: rgba(18,21,28,0.92); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 0.5px; padding: 6px 14px; cursor: pointer; margin: 4px 8px; flex-shrink: 0; }
+#refFilterToggle:active { background: rgba(255,255,255,0.06); }
+#refFilterToggle .filter-arrow { transition: transform 0.2s; }
+#refFilterToggle.open .filter-arrow { transform: rotate(180deg); }
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   /* Header: compact app-like */
@@ -399,6 +405,46 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
   /* Onboarding hint: positioned higher on mobile */
   #g3dOnboarding { bottom: calc(60px + env(safe-area-inset-bottom)) !important; }
+
+  /* ── Mobile-first simplification (CW-MOBILE-01) ─────────────────────── */
+
+  /* 1. Hide power-user stats in header */
+  #headerStats { display: none !important; }
+  #headerSubtitle { display: none !important; }
+  .progress-bar-wrap { display: none !important; }
+
+  /* 2. Hide backup reminder banner on mobile */
+  #backupReminderBanner { display: none !important; }
+
+  /* 3. Collapse filter bar behind toggle */
+  #refBottomBar { display: none !important; }
+  #refBottomBar.mobile-show { display: flex !important; }
+  #refFilterToggle { display: flex !important; }
+
+  /* 4. Position stats bars — reduce visual noise */
+  .pos-stats-bar { display: none; }
+
+  /* 5. Simplify floating actions — hide AI toggle, keep drill FAB */
+  #aiToggleBtn { display: none !important; }
+
+  /* 6. Home panel (suggestions/continue/build game) — collapse on mobile */
+  #refHomePanel { display: none !important; }
+  #refHomePanel.mobile-show { display: block !important; }
+
+  /* 7. View tabs — more prominent on mobile */
+  .view-tabs { background: rgba(18,21,28,0.95); border-bottom: 2px solid var(--border); }
+  .view-tab { font-size: 14px !important; font-weight: 600; letter-spacing: 0.5px; padding: 12px 10px !important; }
+  .view-tab.active { border-bottom: 2px solid var(--accent); }
+
+  /* 8. Reduce visual noise — muted neon on mobile */
+  .section-header { box-shadow: none; }
+  .node { box-shadow: none; }
+  .section { margin-bottom: 2px; border: 1px solid rgba(255,255,255,0.04); }
+  .section-header .section-count { opacity: 0.5; }
+
+  /* 9. Tighter above-the-fold spacing */
+  .sections { padding: 4px 6px !important; }
+  #dailySuggestionCard { margin: 4px 10px 0 !important; }
 }
 
 /* Diagnostics panel */
@@ -661,6 +707,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button id="backupExportNow" style="background:#2a3a4a;color:#a0b4c8;border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 10px;cursor:pointer;white-space:nowrap;">Export Now</button>
     <button id="backupDismiss" style="background:none;border:none;color:#556;font-size:11px;font-family:'Barlow Condensed',sans-serif;cursor:pointer;padding:3px 6px;white-space:nowrap;">Dismiss</button>
   </div>
+  <button id="refFilterToggle" aria-label="Toggle filters">Filters <span class="filter-arrow">&#9660;</span></button>
   <div id="refBottomBar" style="flex-shrink:0;display:flex;align-items:center;gap:2px;background:rgba(18,21,28,0.92);border-top:1px solid rgba(255,255,255,0.08);padding:5px 6px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:6px;background:#181c26;border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:0 10px;height:30px;">
       <span style="color:#4a5568;font-size:11px;">⌕</span>
@@ -6546,6 +6593,8 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
   var goBtn = document.getElementById('dailySuggestionGo');
   var closeBtn = document.getElementById('dailySuggestionClose');
   if (!cardEl || !textEl) return;
+  // CW-MOBILE-01: Hide daily suggestion for guests on mobile
+  if (typeof isGuest === 'function' && isGuest() && window.innerWidth <= 768) return;
   // Only show once per day
   var today = new Date().toISOString().slice(0, 10);
   var lastShown = localStorage.getItem('dailySuggestionDate');
@@ -8705,6 +8754,39 @@ function openCoachPanel() {
   }
   document.addEventListener('keydown', coachEscHandler);
 }
+
+// ── CW-MOBILE-01: Mobile simplification — filter toggle + panel toggle ──
+(function initMobileSimplification() {
+  var filterToggle = document.getElementById('refFilterToggle');
+  var filterBar = document.getElementById('refBottomBar');
+  if (!filterToggle || !filterBar) return;
+
+  filterToggle.addEventListener('click', function() {
+    var isOpen = filterBar.classList.contains('mobile-show');
+    if (isOpen) {
+      filterBar.classList.remove('mobile-show');
+      filterToggle.classList.remove('open');
+    } else {
+      filterBar.classList.add('mobile-show');
+      filterToggle.classList.add('open');
+    }
+  });
+
+  // Home panel toggle on mobile: add a "Suggestions" toggle if panels are hidden
+  var homePanel = document.getElementById('refHomePanel');
+  if (homePanel && window.innerWidth <= 768) {
+    // AI coach is accessible via menu on mobile — hide the toggle
+    // The aiToggleBtn is hidden via CSS; users can still open AI coach from the menu
+  }
+})();
+
+// CW-MOBILE-01: Hide daily suggestion for guests on mobile
+(function() {
+  if (typeof isGuest === 'function' && isGuest() && window.innerWidth <= 768) {
+    var card = document.getElementById('dailySuggestionCard');
+    if (card) card.style.display = 'none';
+  }
+})();
 
 // CW16: Quick-drill FAB — opens drill timer with all DRILLING techniques on mobile
 (function() {
