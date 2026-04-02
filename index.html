@@ -9281,6 +9281,31 @@ function openCoachPanel() {
   }
 })();
 
+// ── Online/Offline connection indicator ──
+(function() {
+  var offlineBanner = null;
+  function showOfflineBanner() {
+    if (offlineBanner) return;
+    offlineBanner = document.createElement('div');
+    offlineBanner.setAttribute('role', 'status');
+    offlineBanner.setAttribute('aria-live', 'polite');
+    offlineBanner.id = 'offlineBanner';
+    offlineBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#3d3200;color:#ffd866;font-family:Barlow Condensed,sans-serif;font-size:13px;text-align:center;padding:6px 16px;letter-spacing:0.3px;border-bottom:1px solid #5a4a00;opacity:0;transition:opacity 0.3s;';
+    offlineBanner.textContent = "You\u2019re offline \u2014 changes will be saved locally";
+    document.body.appendChild(offlineBanner);
+    requestAnimationFrame(function() { offlineBanner.style.opacity = '1'; });
+  }
+  function hideOfflineBanner() {
+    if (!offlineBanner) return;
+    offlineBanner.style.opacity = '0';
+    var b = offlineBanner;
+    offlineBanner = null;
+    setTimeout(function() { b.remove(); }, 300);
+  }
+  window.addEventListener('offline', function() { showOfflineBanner(); });
+  window.addEventListener('online', function() { hideOfflineBanner(); showToast('Back online'); });
+})();
+
 // Register service worker for PWA/offline support
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function(){});
