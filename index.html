@@ -436,9 +436,16 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   body::before { content: "GrapplingMap — " attr(data-print-date); display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; color: #000; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 6px; }
 }
 
+/* ── Accessibility ── */
+.skip-link { position: absolute; left: -9999px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; }
+.skip-link:focus { position: fixed; top: 0; left: 0; z-index: 9999; background: var(--accent); color: #000; padding: 8px 16px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
 </style>
 </head>
 <body>
+<a href="#sections" class="skip-link">Skip to content</a>
+<div id="srAnnounce" aria-live="assertive" class="sr-only"></div>
 
 <!-- Loading skeleton: replaced by real content after buildSections() -->
 <div id="loadingSkeleton" style="position:absolute;top:80px;left:0;right:0;padding:16px;z-index:1;">
@@ -512,10 +519,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
 </header>
 <!-- ── Keyboard shortcuts help panel ── -->
-<div id="kbdHelpPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:10px;z-index:1000;font-family:'DM Mono',monospace;font-size:12px;color:#8892a4;padding:24px 28px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 12px 48px rgba(0,0,0,0.6);min-width:280px;">
+<div id="kbdHelpPanel" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:10px;z-index:1000;font-family:'DM Mono',monospace;font-size:12px;color:#8892a4;padding:24px 28px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 12px 48px rgba(0,0,0,0.6);min-width:280px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <span style="font-size:13px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:600;">Keyboard Shortcuts</span>
-    <button id="kbdHelpClose" style="background:none;border:none;color:#4a5568;font-size:18px;cursor:pointer;padding:0 4px;">×</button>
+    <button id="kbdHelpClose" aria-label="Close keyboard shortcuts" style="background:none;border:none;color:#4a5568;font-size:18px;cursor:pointer;padding:0 4px;">×</button>
   </div>
   <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;">
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">/</kbd><span>Focus search</span>
@@ -551,7 +558,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="refHomeRecent" style="display:none;"></div>
   </div>
   <div id="dailySuggestionCard" style="display:none;margin:8px 16px 0;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:10px 14px;font-family:'Barlow Condensed',sans-serif;position:relative;flex-shrink:0;">
-    <button id="dailySuggestionClose" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;">&times;</button>
+    <button id="dailySuggestionClose" aria-label="Dismiss suggestion" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;">&times;</button>
     <div style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Today's Focus</div>
     <div id="dailySuggestionText" style="font-size:14px;font-weight:500;color:var(--text);line-height:1.4;margin-bottom:6px;padding-right:20px;"></div>
     <button id="dailySuggestionGo" style="background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;">Go there &rarr;</button>
@@ -646,7 +653,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <!-- Detail panel -->
   <div id="g3dDetail" style="position:absolute;right:0;top:0;bottom:0;width:270px;background:rgba(14,16,21,0.97);border-left:1px solid rgba(255,255,255,0.06);transform:translateX(100%);transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);z-index:10;display:flex;flex-direction:column;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);">
     <div style="padding:18px 18px 14px;border-bottom:1px solid rgba(255,255,255,0.04);flex-shrink:0;">
-      <button id="g3dDetailClose" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(255,255,255,0.08)';this.style.color='#aaa'" onmouseleave="this.style.background='rgba(255,255,255,0.04)';this.style.color='#667'">×</button>
+      <button id="g3dDetailClose" aria-label="Close detail panel" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseenter="this.style.background='rgba(255,255,255,0.08)';this.style.color='#aaa'" onmouseleave="this.style.background='rgba(255,255,255,0.04)';this.style.color='#667'">×</button>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
         <span id="g3dDetailDot" style="width:7px;height:7px;border-radius:50%;background:#666;flex-shrink:0;"></span>
         <span id="g3dDetailSect" style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#4a5568;text-transform:uppercase;"></span>
@@ -1461,6 +1468,7 @@ function buildPopup(popupEl, node, sectionTitle, color, pathKey) {
   nb.className = 'btn-note' + (note ? ' has-note' : '');
   nb.textContent = '✎';
   nb.title = 'Note';
+  nb.setAttribute('aria-label', 'Toggle note');
   nb.addEventListener('click', () => {
     const na = popupEl.querySelector('.popup-note-area');
     na.style.display = na.style.display === 'block' ? 'none' : 'block';
@@ -1686,6 +1694,11 @@ function buildNode(node, sectionTitle, depth, parentUl, parentKey, disambig, pos
     trackDot.className = 'track-dot' + (next !== 'none' ? ' ' + next : '');
     li.dataset.progress = next;
     saveState(); updateStats(); refreshAllViews();
+    var techLabel = node.t || '';
+    if (next === 'drilling') srAnnounce(techLabel + ' marked as drilling');
+    else if (next === 'learned') srAnnounce(techLabel + ' marked as learned');
+    else if (next === 'want') srAnnounce(techLabel + ' added to want list');
+    else srAnnounce(techLabel + ' tracking removed');
   });
   li.dataset.progress = curProg;
   actions.appendChild(prog);
@@ -2124,6 +2137,9 @@ function buildSections() {
     div.style.setProperty('--section-color', section.color);
     const header = document.createElement('div');
     header.className = 'section-header';
+    header.setAttribute('role', 'button');
+    header.setAttribute('aria-expanded', 'false');
+    header.setAttribute('tabindex', '0');
     var posCount = section.nodes ? section.nodes.length : 0;
     // Count real techniques in section (recursive, excluding schema/OT/Notes)
     function countSectionTechniques(nodes) {
@@ -2166,6 +2182,7 @@ function buildSections() {
       // CW56: Materialize section tree on first expand
       materializeSection(section.title);
       div.classList.toggle('collapsed');
+      header.setAttribute('aria-expanded', div.classList.contains('collapsed') ? 'false' : 'true');
       const sectionKey = makeKey(section.title, section.title);
       if (div.classList.contains('collapsed')) { EXPANDED.delete(sectionKey); }
       else {
@@ -5213,6 +5230,9 @@ document.getElementById('menuWeeklySummaryBtn').addEventListener('click', functi
   days.forEach(function(day) { if (day.entry && day.entry.totalSeconds > maxDaySec) maxDaySec = day.entry.totalSeconds; });
   // Build modal
   var overlay = document.createElement('div');
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Weekly Summary');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.85);z-index:4000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadeIn 0.2s ease;';
   var modal = document.createElement('div');
   modal.style.cssText = 'background:#141820;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:28px 32px;max-width:380px;width:calc(100vw - 40px);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
@@ -5263,11 +5283,13 @@ document.getElementById('menuWeeklySummaryBtn').addEventListener('click', functi
   var doneBtn = document.createElement('button');
   doneBtn.style.cssText = 'background:var(--accent);color:#000;border:none;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;padding:10px 32px;border-radius:10px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;';
   doneBtn.textContent = 'Done';
-  doneBtn.addEventListener('click', function() { overlay.remove(); });
   modal.appendChild(doneBtn);
   overlay.appendChild(modal);
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  var _wsFocusTrap = trapFocus(overlay);
+  function _wsClose() { _wsFocusTrap(); overlay.remove(); }
+  doneBtn.addEventListener('click', _wsClose);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) _wsClose(); });
 });
 // List panel helpers
 function openListPanel(title, items) {
@@ -5350,14 +5372,37 @@ function openListPanel(title, items) {
     });
   }
   panel.style.display = 'block';
+  window._listPanelFocusTrap = trapFocus(panel);
 }
-function closeListPanel() { document.getElementById('listPanel').style.display = 'none'; }
+function closeListPanel() { document.getElementById('listPanel').style.display = 'none'; if (window._listPanelFocusTrap) { window._listPanelFocusTrap(); window._listPanelFocusTrap = null; } }
 function showToast(msg) {
   var t = document.createElement('div');
+  t.setAttribute('role', 'status');
+  t.setAttribute('aria-live', 'polite');
   t.style.cssText = 'position:fixed;bottom:max(80px, calc(60px + env(safe-area-inset-bottom)));left:50%;transform:translateX(-50%);background:rgba(14,16,21,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 20px;font-family:Barlow Condensed,sans-serif;font-size:13px;color:#c4cdd8;z-index:3000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity 0.3s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center;';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 300); }, 2000);
+  srAnnounce(msg);
+}
+// ── Accessibility: announce state changes to screen readers ──
+function srAnnounce(msg) {
+  var el = document.getElementById('srAnnounce');
+  if (el) { el.textContent = ''; requestAnimationFrame(function() { el.textContent = msg; }); }
+}
+// ── Accessibility: trap focus within a container ──
+function trapFocus(container) {
+  var FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+  function handler(e) {
+    if (e.key !== 'Tab') return;
+    var focusable = Array.from(container.querySelectorAll(FOCUSABLE)).filter(function(el) { return el.offsetParent !== null; });
+    if (focusable.length === 0) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+    else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+  }
+  container.addEventListener('keydown', handler);
+  return function() { container.removeEventListener('keydown', handler); };
 }
 // List panel event listeners (elements may be defined later in DOM — use DOMContentLoaded-safe approach)
 (function initListPanelEvents() {
@@ -5848,6 +5893,9 @@ document.getElementById('menuTimerBtn').addEventListener('click', function() {
       var timeStr = elapsedMin >= 1 ? elapsedMin + ' min' : elapsedSec + ' sec';
       // Create overlay
       var overlay = document.createElement('div');
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', 'Session Complete');
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.85);z-index:4000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadeIn 0.2s ease;';
       var modal = document.createElement('div');
       modal.style.cssText = 'background:var(--card-bg,#141820);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:28px 32px;max-width:340px;width:calc(100vw - 40px);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
@@ -5881,12 +5929,15 @@ document.getElementById('menuTimerBtn').addEventListener('click', function() {
       var doneBtn = document.createElement('button');
       doneBtn.style.cssText = 'background:var(--accent);color:#000;border:none;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;padding:10px 32px;border-radius:10px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;';
       doneBtn.textContent = 'Done';
-      doneBtn.addEventListener('click', function() { overlay.remove(); });
       modal.appendChild(doneBtn);
       overlay.appendChild(modal);
-      // Click overlay background to dismiss
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
+      var _sessFocusTrap = trapFocus(overlay);
+      function _sessClose() { _sessFocusTrap(); overlay.remove(); }
+      doneBtn.addEventListener('click', _sessClose);
+      // Click overlay background to dismiss
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) _sessClose(); });
+      srAnnounce('Drill session complete. ' + sessionDrillCount + ' techniques in ' + timeStr);
     }
     window.closeListPanel = _origClose;
     _origClose();
@@ -5899,6 +5950,7 @@ document.getElementById('menuTimerBtn').addEventListener('click', function() {
   });
   body.appendChild(display);
   panel.style.display = 'block';
+  window._listPanelFocusTrap = trapFocus(panel);
 });
 // Drill Circuit
 document.getElementById('menuCircuitBtn').addEventListener('click', function() {
@@ -5948,6 +6000,9 @@ document.getElementById('menuCircuitBtn').addEventListener('click', function() {
       var timeStr = elapsedMin >= 1 ? elapsedMin + ' min' : elapsedSec + ' sec';
       var posNames = Object.keys(_circuitPositions);
       var overlay = document.createElement('div');
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', 'Circuit Complete');
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.85);z-index:4000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadeIn 0.2s ease;';
       var modal = document.createElement('div');
       modal.style.cssText = 'background:var(--card-bg,#141820);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:28px 32px;max-width:340px;width:calc(100vw - 40px);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
@@ -5977,11 +6032,13 @@ document.getElementById('menuCircuitBtn').addEventListener('click', function() {
       var doneBtn = document.createElement('button');
       doneBtn.style.cssText = 'background:var(--accent);color:#000;border:none;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;padding:10px 32px;border-radius:10px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;';
       doneBtn.textContent = 'Done';
-      doneBtn.addEventListener('click', function() { overlay.remove(); });
       modal.appendChild(doneBtn);
       overlay.appendChild(modal);
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
+      var _circFocusTrap = trapFocus(overlay);
+      function _circClose() { _circFocusTrap(); overlay.remove(); }
+      doneBtn.addEventListener('click', _circClose);
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) _circClose(); });
     }
     function runDrill() {
       if (idx >= circuitItems.length) { _showCircuitSummary(); return; }
@@ -6017,6 +6074,7 @@ document.getElementById('menuCircuitBtn').addEventListener('click', function() {
   startWrap.appendChild(shuffleBtn);
   body.appendChild(startWrap);
   panel.style.display = 'block';
+  window._listPanelFocusTrap = trapFocus(panel);
 });
 // Content Readiness Dashboard
 document.getElementById('menuReadinessBtn').addEventListener('click', function() {
@@ -6888,7 +6946,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 </script>
 <!-- ══ VIDEO MODAL ═══════════════════════════════════════════════════════ -->
 <!-- ══ LIST PANEL (Recent / Drilling / etc) ═══════════════════════════════ -->
-<div id="listPanel" style="display:none;position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);">
+<div id="listPanel" role="dialog" aria-modal="true" style="display:none;position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);">
   <div id="listPanelInner" style="position:absolute;bottom:0;left:0;right:0;max-height:70vh;background:rgba(14,16,21,0.98);border-top:1px solid rgba(255,255,255,0.08);border-radius:16px 16px 0 0;padding:0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
     <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 6px;"></div>
     <div style="display:flex;align-items:center;padding:0 18px 12px;border-bottom:1px solid rgba(255,255,255,0.04);">
@@ -6898,7 +6956,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     <div id="listPanelBody" style="flex:1;overflow-y:auto;padding:12px 18px;-webkit-overflow-scrolling:touch;"></div>
   </div>
 </div>
-<div id="videoModal" style="display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(0,0,0,0.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);">
+<div id="videoModal" role="dialog" aria-modal="true" aria-label="Video player" style="display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(0,0,0,0.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);">
   <div id="videoModalInner" style="position:relative;width:min(88vw,960px);max-height:90vh;">
     <div id="videoModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;color:#e8edf5;letter-spacing:0.5px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;"></div>
     <div id="videoModalPlayer" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 12px 48px rgba(0,0,0,0.6);"></div>
@@ -6975,9 +7033,9 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 <!-- AI Assistant Toggle Button -->
 <button id="aiToggleBtn" style="position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;width:40px;height:40px;border-radius:10px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.25);color:var(--accent3);font-size:16px;cursor:pointer;z-index:1000;box-shadow:0 2px 8px rgba(167,139,250,0.15);transition:all 0.2s;display:flex;align-items:center;justify-content:center;" title="AI Coach">🤖</button>
 <!-- Auth / Signup Modal -->
-<div id="authModal" style="display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
+<div id="authModal" role="dialog" aria-modal="true" aria-label="Authentication" style="display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
   <div style="position:relative;width:min(90vw,380px);background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:28px;box-shadow:0 16px 64px rgba(0,0,0,0.6);">
-    <button id="authModalClose" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    <button id="authModalClose" aria-label="Close" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;color:var(--accent);margin-bottom:6px;">Save your progress &amp; get AI coaching</div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:#667;margin-bottom:16px;">Sync progress tracking across devices, get AI coach feedback, and keep your drill history. The full map is already yours — an account unlocks the tools to train smarter.</div>
     <div id="authModalForm">
@@ -6990,17 +7048,17 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   </div>
 </div>
 <!-- Start Here Modal -->
-<div id="startHereModal" style="display:none;position:fixed;inset:0;z-index:2500;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
+<div id="startHereModal" role="dialog" aria-modal="true" aria-label="Getting started" style="display:none;position:fixed;inset:0;z-index:2500;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
   <div id="startHereModalInner" style="position:relative;width:min(90vw,480px);max-height:80vh;overflow-y:auto;background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:24px;box-shadow:0 16px 64px rgba(0,0,0,0.6);-webkit-overflow-scrolling:touch;">
-    <button id="startHereClose" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    <button id="startHereClose" aria-label="Close" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
     <div id="startHereContent"></div>
   </div>
 </div>
 
 <!-- Belt Application Modal -->
-<div id="beltApplyModal" style="display:none;position:fixed;inset:0;z-index:2500;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
+<div id="beltApplyModal" role="dialog" aria-modal="true" aria-label="Belt application" style="display:none;position:fixed;inset:0;z-index:2500;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
   <div style="position:relative;width:min(90vw,520px);max-height:85vh;overflow-y:auto;background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:28px;box-shadow:0 16px 64px rgba(0,0,0,0.6);-webkit-overflow-scrolling:touch;">
-    <button id="beltApplyClose" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    <button id="beltApplyClose" aria-label="Close" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
     <div id="beltApplyContent"></div>
   </div>
 </div>
@@ -7197,8 +7255,9 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     var lp = document.getElementById('listPanel'); if (lp) lp.classList.remove('open');
     var cp = document.getElementById('connectionPanel'); if (cp) cp.style.display = 'none';
     authModal.style.display = 'flex';
+    window._authFocusTrap = trapFocus(authModal);
   }
-  function hideAuthModal() { authModal.style.display = 'none'; }
+  function hideAuthModal() { authModal.style.display = 'none'; if (window._authFocusTrap) { window._authFocusTrap(); window._authFocusTrap = null; } }
   window.showAuthModal = showAuthModal;
 
   // Update header based on auth state
@@ -7680,6 +7739,9 @@ function openSparringJournal() {
 
   var overlay = document.createElement('div');
   overlay.id = 'sparringJournalOverlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Sparring Journal');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.88);z-index:4000;display:flex;align-items:flex-start;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadeIn 0.2s ease;overflow-y:auto;padding:24px 10px;';
 
   var panel = document.createElement('div');
@@ -7689,7 +7751,7 @@ function openSparringJournal() {
   var hdr = document.createElement('div');
   hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:20px 24px 12px;border-bottom:1px solid rgba(255,255,255,0.06);';
   hdr.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:1px;">Sparring Journal</div>'
-    + '<button id="sjClose" style="background:none;border:none;color:#4a5568;font-size:20px;cursor:pointer;padding:0 4px;">\u00d7</button>';
+    + '<button id="sjClose" aria-label="Close" style="background:none;border:none;color:#4a5568;font-size:20px;cursor:pointer;padding:0 4px;">\u00d7</button>';
   panel.appendChild(hdr);
 
   var content = document.createElement('div');
@@ -7749,10 +7811,12 @@ function openSparringJournal() {
   panel.appendChild(content);
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
+  var _sjFocusTrap = trapFocus(overlay);
 
   // ── Event: close ──
-  document.getElementById('sjClose').addEventListener('click', function() { overlay.remove(); });
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  function _sjCloseOverlay() { _sjFocusTrap(); overlay.remove(); }
+  document.getElementById('sjClose').addEventListener('click', _sjCloseOverlay);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) _sjCloseOverlay(); });
 
   // ── Event: mood selector ──
   var selectedMood = 'good';
@@ -7809,13 +7873,13 @@ function openSparringJournal() {
     saveState();
     showToast('Session logged');
     // Refresh the panel in place
-    overlay.remove();
+    _sjFocusTrap(); overlay.remove();
     openSparringJournal();
   });
 
   // ── Event: Esc to close ──
   function sjEscHandler(e) {
-    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', sjEscHandler); e.stopPropagation(); }
+    if (e.key === 'Escape') { _sjFocusTrap(); overlay.remove(); document.removeEventListener('keydown', sjEscHandler); e.stopPropagation(); }
   }
   document.addEventListener('keydown', sjEscHandler);
 
@@ -8251,6 +8315,9 @@ function openCoachPanel() {
   // ── Build UI ──
   var overlay = document.createElement('div');
   overlay.id = 'coachOverlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Coach Mode');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.88);z-index:4000;display:flex;align-items:flex-start;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadeIn 0.2s ease;overflow-y:auto;padding:24px 10px;';
 
   var panel = document.createElement('div');
@@ -8260,7 +8327,7 @@ function openCoachPanel() {
   var hdr = document.createElement('div');
   hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:20px 24px 12px;border-bottom:1px solid rgba(255,255,255,0.06);';
   hdr.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:1px;">Coach Mode</div>'
-    + '<button class="coach-close" style="background:none;border:none;color:#4a5568;font-size:20px;cursor:pointer;padding:0 4px;">\u00d7</button>';
+    + '<button class="coach-close" aria-label="Close" style="background:none;border:none;color:#4a5568;font-size:20px;cursor:pointer;padding:0 4px;">\u00d7</button>';
   panel.appendChild(hdr);
 
   var content = document.createElement('div');
@@ -8329,22 +8396,24 @@ function openCoachPanel() {
   var doneBtn = document.createElement('button');
   doneBtn.style.cssText = 'background:var(--accent);color:#000;border:none;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;padding:10px 32px;border-radius:10px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;';
   doneBtn.textContent = 'Done';
-  doneBtn.addEventListener('click', function() { overlay.remove(); });
   footer.appendChild(doneBtn);
   panel.appendChild(footer);
 
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
+  var _coachFocusTrap = trapFocus(overlay);
 
   // ── Events: close ──
-  panel.querySelector('.coach-close').addEventListener('click', function() { overlay.remove(); });
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  function _coachClose() { _coachFocusTrap(); overlay.remove(); }
+  panel.querySelector('.coach-close').addEventListener('click', _coachClose);
+  doneBtn.addEventListener('click', _coachClose);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) _coachClose(); });
 
   // ── Events: navigate to position ──
   panel.querySelectorAll('.coach-goto').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var label = this.dataset.label;
-      overlay.remove();
+      _coachClose();
       if (typeof switchToReferenceNode === 'function') {
         switchToReferenceNode(label);
       }
@@ -8353,7 +8422,7 @@ function openCoachPanel() {
 
   // ── Event: Esc to close ──
   function coachEscHandler(e) {
-    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', coachEscHandler); e.stopPropagation(); }
+    if (e.key === 'Escape') { _coachClose(); document.removeEventListener('keydown', coachEscHandler); e.stopPropagation(); }
   }
   document.addEventListener('keydown', coachEscHandler);
 }
@@ -8546,6 +8615,7 @@ function openCoachPanel() {
     }
 
     panel.style.display = 'block';
+    window._listPanelFocusTrap = trapFocus(panel);
   }
 
   // ── Chain Editor (create or edit) ──
@@ -8730,6 +8800,7 @@ function openCoachPanel() {
     body.appendChild(actionWrap);
 
     panel.style.display = 'block';
+    window._listPanelFocusTrap = trapFocus(panel);
     nameInput.focus();
   }
 
@@ -8969,6 +9040,7 @@ function openCoachPanel() {
 
     updateDisplay();
     panel.style.display = 'block';
+    window._listPanelFocusTrap = trapFocus(panel);
   }
 
   // Wire up menu button
