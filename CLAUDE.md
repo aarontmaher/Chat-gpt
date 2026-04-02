@@ -113,7 +113,7 @@ Canonical destinations:
 - Wrestling: Head inside single leg, Head outside single leg, Double leg, Low ankle,
   Wrestling bodylock, Side bodylock, Wrestling rear bodylock
 - Guard: all 19 listed above
-NOT canonical (hold): Knee on belly (permanent), Saddle (TBD), any node without perspective layer.
+NOT canonical (hold): Knee on belly (permanent), Saddle (canonical, confirmed 2026-04-02), any node without perspective layer.
 ---
 ## DATA RULES
 - No-Gi only. Permanent.
@@ -243,7 +243,7 @@ SITE-BATCH-12: Playwright suite live — 12 smoke tests + 3 snapshots, all passi
 # Update this section every session.
 Code: SITE-BATCH-12 (done), PIPE-LIVE-01B (verify live button wiring)
 Cowork: RETIRED — patch system + Chat verification replaces Cowork for structural work.
-Aaron decisions: Saddle canonical name TBD
+Aaron decisions: Saddle canonical name: "Saddle" (confirmed 2026-04-02)
 Half guard: RESOLVED — created 2026-03-19 by Cowork. Now 19 Guard canonical positions.
 Guard OT status: 16/19 positions have zero OT lines. Only HGP + RDLR have edges. Content needed from Aaron.
 OPML audit (2026-03-19): 3592 paths, 808 technique leaves, 48 canonical, 27 OT leaves,
@@ -262,7 +262,7 @@ NEXT SESSION PRIORITIES:
 | Half guard | Created 2026-03-19 by Cowork. Now canonical (19 Guard positions). |
 | Guard canonical count | 19 (Half guard added 2026-03-19) |
 | Knee on belly | PERMANENT HOLD. Never redirect/delete. |
-| Saddle canonical | Not defined. Hold. |
+| Saddle canonical | "Saddle" (confirmed 2026-04-02) |
 | Wrestling heading | "Defence" (not "Defence / Escapes") |
 | Guard heading | "Defence / Escapes" |
 | Side bodylock name | "Side bodylock" |

@@ -6,7 +6,7 @@ Last updated: 2026-03-23
 - No-Gi only. Permanent.
 - Half guard: canonical (19 Guard positions total)
 - Knee on belly: sub-position under Side Control. PERMANENT HOLD. Never redirect/delete.
-- Saddle canonical: Not defined. Hold.
+- Saddle canonical: "Saddle". Confirmed by Aaron 2026-04-02.
 - Exits / Transitions: instructional text only. NOT graph edges.
 - D'Arce: spelled "D'Arce" (apostrophe, capital D). Folder slug: "darce" or "reverse-darce".
 - Von Flue: capitalized "Von Flue".
