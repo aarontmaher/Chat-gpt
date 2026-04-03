@@ -1,0 +1,8 @@
+{
+  "agents": {
+    "claude_code": { "task": null, "status": "idle", "branch": null, "summary": null, "commit": null, "updated_at": null },
+    "codex": { "task": "MCP server build", "status": "in_progress", "branch": "codex/mcp-server", "summary": "building server layer on parsers", "commit": null, "updated_at": "2026-04-03T20:00:00Z" },
+    "cowork": { "task": null, "status": "idle", "branch": null, "summary": null, "commit": null, "updated_at": null }
+  },
+  "updated_at": "2026-04-03T20:00:00Z"
+}
