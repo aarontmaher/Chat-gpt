@@ -427,6 +427,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   /* 5. Simplify floating actions — hide AI toggle, keep drill FAB */
   #aiToggleBtn { display: none !important; }
 
+  /* WHOOP readiness card — hidden on mobile (accessible via Coach instead) */
+  .whoop-card-desktop { display: none !important; }
+
   /* 6. Home panel (suggestions/continue/build game) — collapse on mobile */
   #refHomePanel { display: none !important; }
   #refHomePanel.mobile-show { display: block !important; }
@@ -634,6 +637,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <button id="menuWeeklySummaryBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Weekly Summary</button>
       <button id="menuJournalBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Sparring Journal</button>
       <button id="menuCoachBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Coach</button>
+      <button id="menuWhoopSyncBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Sync WHOOP</button>
       <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
       <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 2px;">Progress</div>
       <button id="menuGameSummaryBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Game Summary</button>
@@ -694,6 +698,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Today's Focus</div>
     <div id="dailySuggestionText" style="font-size:14px;font-weight:500;color:var(--text);line-height:1.4;margin-bottom:6px;padding-right:20px;"></div>
     <button id="dailySuggestionGo" style="background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;">Go there &rarr;</button>
+  </div>
+  <div id="whoopReadinessCard" style="display:none;margin:6px 16px 0;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);flex-shrink:0;align-items:center;gap:10px;position:relative;" class="whoop-card-desktop">
+    <span id="whoopReadinessText"></span>
+    <button id="whoopReadinessDismiss" aria-label="Dismiss readiness card" style="position:absolute;top:4px;right:6px;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:0 4px;line-height:1;">&times;</button>
   </div>
   <div class="sections" id="sections" style="flex:1;overflow-y:auto;"></div>
   <div id="refOnboarding" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;display:none;transition:opacity 0.5s;">
@@ -1082,7 +1090,8 @@ const STATE = {
   sparringLog: [],
   chains: [],
   suggestions: [],
-  suggestion_handoffs: []
+  suggestion_handoffs: [],
+  whoopData: null
 };
 
 function saveState() {
@@ -1101,7 +1110,8 @@ function saveState() {
     sparringLog: STATE.sparringLog || [],
     chains: STATE.chains || [],
     suggestions: STATE.suggestions || [],
-    suggestion_handoffs: STATE.suggestion_handoffs || []
+    suggestion_handoffs: STATE.suggestion_handoffs || [],
+    whoopData: STATE.whoopData || null
   };
   UserStore.saveAppState(appState);
 }
@@ -1146,6 +1156,7 @@ function loadState() {
     STATE.chains = appState.chains || [];
     STATE.suggestions = appState.suggestions || [];
     STATE.suggestion_handoffs = appState.suggestion_handoffs || [];
+    STATE.whoopData = appState.whoopData || null;
   }
 }
 
@@ -1159,6 +1170,53 @@ function recordDrillActivity(techniqueKey, seconds) {
   entry.techniques[techniqueKey] = (entry.techniques[techniqueKey] || 0) + seconds;
   entry.totalSeconds += seconds;
 }
+
+// ─── WHOOP READINESS ──────────────────────────────────────────
+function computeReadiness(recovery) {
+  if (recovery == null) return 'unknown';
+  if (recovery >= 67) return 'high';
+  if (recovery >= 34) return 'moderate';
+  return 'low';
+}
+
+function isWhoopDataRecent(whoopData) {
+  if (!whoopData || !whoopData.date) return false;
+  var today = new Date().toISOString().slice(0, 10);
+  var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  return whoopData.date === today || whoopData.date === yesterday;
+}
+
+function syncWhoopData(data) {
+  var required = ['date', 'recovery_score'];
+  for (var i = 0; i < required.length; i++) {
+    if (data[required[i]] == null) {
+      showToast('Missing required field: ' + required[i]);
+      return false;
+    }
+  }
+  // Normalize and compute readiness_state
+  var normalized = {
+    date: data.date,
+    recovery_score: data.recovery_score,
+    hrv_ms: data.hrv_ms || null,
+    resting_hr: data.resting_hr || null,
+    sleep_hours: data.sleep_hours || null,
+    sleep_performance_pct: data.sleep_performance_pct || null,
+    daily_strain: data.daily_strain || null,
+    rolling_3_day_load: data.rolling_3_day_load || null,
+    rolling_7_day_load: data.rolling_7_day_load || null,
+    readiness_state: computeReadiness(data.recovery_score),
+    synced_at: new Date().toISOString()
+  };
+  STATE.whoopData = normalized;
+  saveState();
+  updateWhoopReadinessCard();
+  showToast('WHOOP data synced for ' + normalized.date);
+  return true;
+}
+
+// Programmatic API
+window._syncWhoop = function(data) { return syncWhoopData(data); };
 
 const KEY_VERSION = 2;
 function checkKeyVersion() {
@@ -5420,7 +5478,7 @@ document.addEventListener('keydown', e => {
 })();
 // Export progress
 document.getElementById('menuExportBtn').addEventListener('click', function() {
-  var data = { progress: STATE.progress, notes: STATE.notes, recentViewed: STATE.recentViewed || [], successLog: STATE.successLog || [], drillTime: STATE.drillTime || {}, sparringLog: STATE.sparringLog || [], chains: STATE.chains || [], suggestions: STATE.suggestions || [], suggestion_handoffs: STATE.suggestion_handoffs || [], exportedAt: new Date().toISOString() };
+  var data = { progress: STATE.progress, notes: STATE.notes, recentViewed: STATE.recentViewed || [], successLog: STATE.successLog || [], drillTime: STATE.drillTime || {}, sparringLog: STATE.sparringLog || [], chains: STATE.chains || [], suggestions: STATE.suggestions || [], suggestion_handoffs: STATE.suggestion_handoffs || [], whoopData: STATE.whoopData || null, exportedAt: new Date().toISOString() };
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -5453,6 +5511,7 @@ document.getElementById('menuImportBtn').addEventListener('click', function() {
         if (data.chains) STATE.chains = data.chains;
         if (data.suggestions) STATE.suggestions = data.suggestions;
         if (data.suggestion_handoffs) STATE.suggestion_handoffs = data.suggestion_handoffs;
+        if (data.whoopData) STATE.whoopData = data.whoopData;
         saveState(); updateStats(); refreshAllViews();
         showToast('Progress imported successfully');
       } catch(e) { showToast('Could not read file — check format'); }
@@ -5473,9 +5532,72 @@ document.getElementById('menuResetBtn').addEventListener('click', function() {
   STATE.chains = [];
   STATE.suggestions = [];
   STATE.suggestion_handoffs = [];
+  STATE.whoopData = null;
   saveState(); updateStats(); refreshAllViews();
+  updateWhoopReadinessCard();
   showToast('All progress has been reset');
 });
+// ─── WHOOP Sync Modal ─────────────────────────────────────────
+document.getElementById('menuWhoopSyncBtn').addEventListener('click', function() {
+  document.getElementById('headerMenu').style.display = 'none';
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;max-width:440px;width:100%;max-height:80vh;overflow-y:auto;';
+  modal.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent);letter-spacing:1px;margin-bottom:12px;">Sync WHOOP</div>'
+    + '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.5;">Paste your WHOOP daily data JSON here. Required fields: <code>date</code>, <code>recovery_score</code>.</div>'
+    + '<textarea id="whoopSyncInput" style="width:100%;min-height:120px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:DM Mono,monospace;font-size:11px;padding:10px;resize:vertical;" placeholder=\'{"date":"2026-04-03","recovery_score":36,"hrv_ms":53,"resting_hr":56,"sleep_hours":7.2,"daily_strain":7.8}\'></textarea>'
+    + '<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">'
+    + '<button id="whoopSyncCancel" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:11px;padding:6px 14px;border-radius:4px;cursor:pointer;">Cancel</button>'
+    + '<button id="whoopSyncSubmit" style="background:var(--accent);color:#000;border:none;font-family:DM Mono,monospace;font-size:11px;font-weight:600;padding:6px 14px;border-radius:4px;cursor:pointer;">Sync</button>'
+    + '</div>';
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  var closeModal = function() { overlay.remove(); };
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+  modal.querySelector('#whoopSyncCancel').addEventListener('click', closeModal);
+  modal.querySelector('#whoopSyncSubmit').addEventListener('click', function() {
+    var raw = document.getElementById('whoopSyncInput').value.trim();
+    if (!raw) { showToast('Please paste JSON data'); return; }
+    try {
+      var parsed = JSON.parse(raw);
+      if (syncWhoopData(parsed)) closeModal();
+    } catch(e) { showToast('Invalid JSON — check format'); }
+  });
+  document.getElementById('whoopSyncInput').focus();
+});
+
+// ─── WHOOP Readiness Card ─────────────────────────────────────
+function updateWhoopReadinessCard() {
+  var card = document.getElementById('whoopReadinessCard');
+  if (!card) return;
+  var data = STATE.whoopData;
+  if (!data || !isWhoopDataRecent(data)) {
+    card.style.display = 'none';
+    return;
+  }
+  if (sessionStorage.getItem('gm_whoopDismissed') === '1') {
+    card.style.display = 'none';
+    return;
+  }
+  var score = data.recovery_score;
+  var color = score >= 67 ? '#34d399' : score >= 34 ? '#f0c040' : '#f85149';
+  var parts = ['Recovery <span style="color:' + color + ';font-weight:600;">' + score + '%</span>'];
+  if (data.hrv_ms != null) parts.push('HRV ' + data.hrv_ms + 'ms');
+  if (data.daily_strain != null) parts.push('Strain ' + data.daily_strain);
+  document.getElementById('whoopReadinessText').innerHTML = parts.join(' <span style="color:var(--text-muted);">|</span> ');
+  card.style.display = 'flex';
+}
+
+// Dismiss readiness card for this session
+document.getElementById('whoopReadinessDismiss').addEventListener('click', function() {
+  sessionStorage.setItem('gm_whoopDismissed', '1');
+  document.getElementById('whoopReadinessCard').style.display = 'none';
+});
+
+// Initialize readiness card on load
+updateWhoopReadinessCard();
+
 // CC4: Weekly Summary modal
 document.getElementById('menuWeeklySummaryBtn').addEventListener('click', function() {
   document.getElementById('headerMenu').style.display = 'none';
@@ -8172,7 +8294,16 @@ var AIActions = {
       }
     }
 
-    greetingEl.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.5;">' + msg + '</div>';
+    // WHOOP readiness awareness
+    var whoopLine = '';
+    if (STATE.whoopData && isWhoopDataRecent(STATE.whoopData)) {
+      var _wr = STATE.whoopData.recovery_score;
+      var _ws = computeReadiness(_wr);
+      if (_ws === 'low') whoopLine = '<br>\u26a0\ufe0f Recovery is low (' + _wr + '%) \u2014 consider lighter training today.';
+      else if (_ws === 'moderate') whoopLine = '<br>Recovery is moderate (' + _wr + '%) \u2014 train smart.';
+      else if (_ws === 'high') whoopLine = '<br>\u2705 Recovery is green (' + _wr + '%) \u2014 good to push.';
+    }
+    greetingEl.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.5;">' + msg + whoopLine + '</div>';
     greetingEl.style.display = '';
   }
 
