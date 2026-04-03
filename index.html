@@ -8031,7 +8031,45 @@ function triagePrioritySort(a, b) {
   return pa - pb;
 }
 
-function captureSuggestion(text) {
+function compressImage(file, maxWidth, maxHeight, quality) {
+  maxWidth = maxWidth || 800;
+  maxHeight = maxHeight || 600;
+  quality = quality || 0.7;
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
+        if (h > maxHeight) { w = w * maxHeight / h; h = maxHeight; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // Check size — reject if over 200KB per image
+        if (dataUrl.length > 200 * 1024) {
+          // Try lower quality
+          dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        }
+        resolve({ dataUrl: dataUrl, name: file.name, size: dataUrl.length });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function checkStorageSize() {
+  try {
+    var data = JSON.stringify(STATE);
+    return data.length;
+  } catch(e) { return 0; }
+}
+
+function captureSuggestion(text, attachments) {
   var cls = classifySuggestion(text);
   var suggestion = {
     id: 'SUG-' + Date.now(),
@@ -8047,7 +8085,8 @@ function captureSuggestion(text) {
     status: 'new',
     approval_status: 'pending',
     implementation_status: 'not_started',
-    selected_node: (typeof SELECTED_NODE !== 'undefined' && SELECTED_NODE) ? SELECTED_NODE.label : null
+    selected_node: (typeof SELECTED_NODE !== 'undefined' && SELECTED_NODE) ? SELECTED_NODE.label : null,
+    attachments: attachments || []
   };
   var triage = triageSuggestion(text, cls.classification, cls.severity, {
     view: suggestion.current_view,
@@ -8262,6 +8301,161 @@ var AIActions = {
   }
 };
 
+function openSuggestionModal(prefillText) {
+  var pendingAttachments = [];
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;';
+
+  var titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent);letter-spacing:1px;margin-bottom:12px;';
+  titleEl.textContent = 'New Suggestion';
+  modal.appendChild(titleEl);
+
+  var descEl = document.createElement('div');
+  descEl.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.5;';
+  descEl.textContent = 'Describe your suggestion, bug, or idea. Optionally attach up to 3 screenshots.';
+  modal.appendChild(descEl);
+
+  var textarea = document.createElement('textarea');
+  textarea.style.cssText = 'width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:DM Mono,monospace;font-size:11px;padding:10px;resize:vertical;box-sizing:border-box;';
+  textarea.placeholder = 'Describe your suggestion, bug, or idea...';
+  if (prefillText) textarea.value = prefillText;
+  modal.appendChild(textarea);
+
+  // File input row
+  var fileRow = document.createElement('div');
+  fileRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:10px;';
+  var fileLabel = document.createElement('label');
+  fileLabel.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:11px;padding:6px 12px;border-radius:4px;cursor:pointer;display:inline-block;';
+  fileLabel.textContent = 'Attach photos';
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.png,.jpg,.jpeg,.webp';
+  fileInput.multiple = true;
+  fileInput.style.cssText = 'display:none;';
+  fileLabel.appendChild(fileInput);
+  fileRow.appendChild(fileLabel);
+  var fileHint = document.createElement('span');
+  fileHint.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:#556;';
+  fileHint.textContent = 'Max 3 images, compressed to 800x600';
+  fileRow.appendChild(fileHint);
+  modal.appendChild(fileRow);
+
+  // Preview area
+  var previewArea = document.createElement('div');
+  previewArea.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+  modal.appendChild(previewArea);
+
+  // Warning area
+  var warningEl = document.createElement('div');
+  warningEl.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:#f85149;margin-top:6px;display:none;';
+  modal.appendChild(warningEl);
+
+  function renderPreviews() {
+    previewArea.innerHTML = '';
+    pendingAttachments.forEach(function(att, idx) {
+      var thumb = document.createElement('div');
+      thumb.style.cssText = 'position:relative;width:48px;height:48px;border-radius:4px;overflow:hidden;border:1px solid var(--border);';
+      var img = document.createElement('img');
+      img.src = att.dataUrl;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      thumb.appendChild(img);
+      var removeBtn = document.createElement('button');
+      removeBtn.style.cssText = 'position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:#f85149;color:#fff;border:none;font-size:10px;line-height:16px;text-align:center;cursor:pointer;padding:0;';
+      removeBtn.textContent = '\u00D7';
+      removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        pendingAttachments.splice(idx, 1);
+        renderPreviews();
+      });
+      thumb.appendChild(removeBtn);
+      previewArea.appendChild(thumb);
+    });
+  }
+
+  fileInput.addEventListener('change', function() {
+    var files = Array.prototype.slice.call(fileInput.files);
+    var remaining = 3 - pendingAttachments.length;
+    if (remaining <= 0) {
+      showToast('Maximum 3 images allowed');
+      fileInput.value = '';
+      return;
+    }
+    var toProcess = files.slice(0, remaining);
+    if (files.length > remaining) {
+      showToast('Only ' + remaining + ' more image(s) allowed');
+    }
+    var promises = toProcess.map(function(f) { return compressImage(f); });
+    Promise.all(promises).then(function(results) {
+      // Check localStorage size before adding
+      var totalNewSize = results.reduce(function(sum, r) { return sum + r.size; }, 0);
+      var currentSize = checkStorageSize();
+      if (currentSize + totalNewSize > 4 * 1024 * 1024) {
+        warningEl.textContent = 'Warning: Adding these images would exceed the 4MB storage limit. Some images were not added.';
+        warningEl.style.display = 'block';
+        // Add only what fits
+        var budget = 4 * 1024 * 1024 - currentSize;
+        results.forEach(function(r) {
+          if (r.size <= budget && pendingAttachments.length < 3) {
+            pendingAttachments.push({ dataUrl: r.dataUrl, name: r.name });
+            budget -= r.size;
+          }
+        });
+      } else {
+        warningEl.style.display = 'none';
+        results.forEach(function(r) {
+          if (pendingAttachments.length < 3) {
+            pendingAttachments.push({ dataUrl: r.dataUrl, name: r.name });
+          }
+        });
+      }
+      renderPreviews();
+    }).catch(function() {
+      showToast('Failed to process image(s)');
+    });
+    fileInput.value = '';
+  });
+
+  // Buttons
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;margin-top:14px;justify-content:flex-end;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.style.cssText = 'background:none;border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:11px;padding:6px 14px;border-radius:4px;cursor:pointer;';
+  cancelBtn.textContent = 'Cancel';
+  var submitBtn = document.createElement('button');
+  submitBtn.style.cssText = 'background:var(--accent);color:#000;border:none;font-family:DM Mono,monospace;font-size:11px;font-weight:600;padding:6px 14px;border-radius:4px;cursor:pointer;';
+  submitBtn.textContent = 'Submit';
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(submitBtn);
+  modal.appendChild(btnRow);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  var closeModal = function() { overlay.remove(); };
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+  cancelBtn.addEventListener('click', closeModal);
+
+  submitBtn.addEventListener('click', function() {
+    var text = textarea.value.trim();
+    if (!text) { showToast('Please describe your suggestion'); return; }
+    var sug = captureSuggestion(text, pendingAttachments);
+    var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
+    renderResponse({ title: 'Suggestion captured \u2713', body: clsLabel + '\n' + sug.normalized_summary + (pendingAttachments.length > 0 ? '\n' + pendingAttachments.length + ' photo(s) attached' : '') + '\n\nSaved as ' + sug.id });
+    closeModal();
+  });
+
+  // Mobile: full-width modal
+  if (window.innerWidth < 768) {
+    modal.style.maxWidth = '100%';
+    modal.style.margin = '0 10px';
+  }
+
+  textarea.focus();
+}
+
 // AI Panel UI
 (function initAIPanel() {
   var panel = document.getElementById('aiPanel');
@@ -8288,12 +8482,7 @@ var AIActions = {
     { label: 'Syllabus info', key: 'syllabusInfo', fn: function() { renderResponse(AIActions.syllabusInfo()); }, modes: ['syllabus'] },
     { label: 'Why this filter?', key: 'whyFilter', fn: function() { renderResponse(AIActions.whyThisFilter()); }, modes: ['syllabus'] },
     { label: 'Suggest', key: 'suggest', fn: function() {
-      var text = prompt('Describe your suggestion, bug, or idea:');
-      if (text && text.trim()) {
-        var sug = captureSuggestion(text.trim());
-        var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
-        renderResponse({ title: 'Suggestion captured \u2713', body: clsLabel + '\n' + sug.normalized_summary + '\n\nSaved as ' + sug.id });
-      }
+      openSuggestionModal();
     }, modes: ['explore','train','game','syllabus'] }
   ];
 
@@ -8535,14 +8724,10 @@ var AIActions = {
     if (q.includes('syllabus') || q.includes('belt progress') || q.includes('belt info')) {
       return renderResponse(AIActions.syllabusInfo());
     }
-    // Suggestion detection
+    // Suggestion detection — open modal pre-filled so user can add photos
     if (/\b(bug|broken|suggest|feature request|could you add|should have|would be nice|improve|fix this|doesn'?t work|feedback)\b/i.test(q)) {
-      var sug = captureSuggestion(text);
-      var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
-      return renderResponse({
-        title: 'Suggestion captured \u2713',
-        body: clsLabel + '\n' + sug.normalized_summary + '\n\nSaved as ' + sug.id + ' for review.',
-      });
+      openSuggestionModal(text);
+      return;
     }
     // Search for a technique/position by name
     if (q.includes('find') || q.includes('show') || q.includes('search') || q.includes('where')) {
@@ -10112,6 +10297,31 @@ function openCoachPanel() {
             msgEl.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:#c4cdd8;line-height:1.4;';
             msgEl.textContent = sug.message_text.length > 80 ? sug.message_text.substring(0, 80) + '...' : sug.message_text;
             row.appendChild(msgEl);
+            // Attachment thumbnails
+            if (sug.attachments && sug.attachments.length > 0) {
+              var thumbRow = document.createElement('div');
+              thumbRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;';
+              sug.attachments.forEach(function(att) {
+                var thumb = document.createElement('img');
+                thumb.src = att.dataUrl;
+                thumb.style.cssText = 'width:48px;height:48px;border-radius:4px;object-fit:cover;cursor:pointer;border:1px solid rgba(255,255,255,0.08);';
+                thumb.title = att.name || 'Attachment';
+                thumb.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  // Lightbox
+                  var lb = document.createElement('div');
+                  lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+                  var fullImg = document.createElement('img');
+                  fullImg.src = att.dataUrl;
+                  fullImg.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+                  lb.appendChild(fullImg);
+                  lb.addEventListener('click', function() { lb.remove(); });
+                  document.body.appendChild(lb);
+                });
+                thumbRow.appendChild(thumb);
+              });
+              row.appendChild(thumbRow);
+            }
             // Action buttons
             var actRow = document.createElement('div');
             actRow.style.cssText = 'display:flex;gap:4px;margin-top:2px;';
@@ -10140,6 +10350,7 @@ function openCoachPanel() {
                 original_message: sug.message_text,
                 classification: sug.classification,
                 severity_guess: sug.severity_guess,
+                attachments: sug.attachments ? sug.attachments.map(function(a) { return { name: a.name }; }) : [],
                 automation_status: 'pending_audit'
               });
               saveState();
