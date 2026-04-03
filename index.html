@@ -898,6 +898,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     </div>
     <button id="authBtn" style="background:var(--accent);border:none;color:#000;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;display:none;">Create Account</button>
     <button id="authUserBtn" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;display:none;"></button>
+    <button id="suggestBtn" style="background:rgba(232,255,71,0.1);border:1px solid rgba(232,255,71,0.28);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;">Suggest</button>
     <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu" aria-label="Open menu" aria-haspopup="true">&#8942;</button>
     <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
       <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 2px;">Browse</div>
@@ -919,7 +920,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
       <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 2px;">Progress</div>
       <button id="menuGameSummaryBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Game Summary</button>
-      <button id="menuSuggestionsBtn" style="display:none;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Suggestions</button>
+      <button id="menuSuggestionsBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Send feedback</button>
       <button id="menuPromptJobsBtn" style="display:none;width:100%;text-align:left;background:none;border:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Remote Control</button>
       <button id="menuProgressBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Dashboard</button>
       <button id="menuExportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Export</button>
@@ -1060,6 +1061,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="refHomeDrills" style="display:none;margin-bottom:8px;"></div>
     <div id="refHomeGame" style="display:none;margin-bottom:8px;"></div>
     <div id="refHomeTrain" style="display:none;margin-bottom:8px;"></div>
+    <div id="refHomeFeedback" style="display:none;margin-bottom:8px;"></div>
     <div id="refHomeRecent" style="display:none;"></div>
   </div>
   <div id="dailySuggestionCard" style="display:none;margin:8px 16px 0;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:10px 14px;font-family:'Barlow Condensed',sans-serif;position:relative;flex-shrink:0;">
@@ -4380,6 +4382,7 @@ function updateHomePanel() {
   var drillsEl = document.getElementById('refHomeDrills');
   var gameEl = document.getElementById('refHomeGame');
   var trainEl = document.getElementById('refHomeTrain');
+  var feedbackEl = document.getElementById('refHomeFeedback');
   var recentEl = document.getElementById('refHomeRecent');
   var hasAnything = false;
 
@@ -4522,6 +4525,25 @@ function updateHomePanel() {
     }
     _trainHtml += '</div>';
     trainEl.innerHTML = _trainHtml;
+  }
+
+  // ─── FEEDBACK / SUGGESTIONS ───
+  if (feedbackEl) {
+    hasAnything = true;
+    feedbackEl.style.display = '';
+    feedbackEl.innerHTML =
+      '<div style="border:1px solid rgba(232,255,71,0.16);background:rgba(232,255,71,0.05);border-radius:10px;padding:12px 14px;">' +
+        '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:var(--accent);letter-spacing:1.1px;text-transform:uppercase;margin-bottom:5px;">Tester feedback</div>' +
+        '<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:var(--text-dim);line-height:1.45;">See a bug, confusing label, or missing feature? Send feedback straight into the public Suggestions queue.</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">' +
+          '<button id="refHomeFeedbackBtn" style="background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;letter-spacing:0.4px;">Send feedback</button>' +
+          '<span style="font-family:DM Mono,monospace;font-size:10px;color:#758198;align-self:center;">Visible for testers on desktop. Header button stays available everywhere.</span>' +
+        '</div>' +
+      '</div>';
+    var feedbackBtn = document.getElementById('refHomeFeedbackBtn');
+    if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
+      openSuggestionComposer({ source: 'website_home_feedback' });
+    });
   }
 
   // ─── RECENT ───
@@ -6695,9 +6717,6 @@ document.addEventListener('keydown', e => {
     ev.stopPropagation();
     var showing = menu.style.display === 'none';
     menu.style.display = showing ? 'block' : 'none';
-    // Show Suggestions button for members only
-    var sugBtn = document.getElementById('menuSuggestionsBtn');
-    if (sugBtn) sugBtn.style.display = (showing && typeof isMember === 'function' && isMember()) ? 'block' : 'none';
     var promptBtn = document.getElementById('menuPromptJobsBtn');
     if (promptBtn) promptBtn.style.display = (showing && typeof isOperatorUIEnabled === 'function' && isOperatorUIEnabled()) ? 'block' : 'none';
   });
@@ -8868,6 +8887,20 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     <div id="authModalStatus" style="font-family:'DM Mono',monospace;font-size:11px;color:#667;margin-top:8px;text-align:center;display:none;"></div>
   </div>
 </div>
+<!-- Suggestion / Feedback Modal -->
+<div id="suggestionModal" role="dialog" aria-modal="true" aria-label="Send feedback" style="display:none;position:fixed;inset:0;z-index:3050;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
+  <div style="position:relative;width:min(92vw,460px);background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:24px;box-shadow:0 16px 64px rgba(0,0,0,0.6);">
+    <button id="suggestionModalClose" aria-label="Close" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#667;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;color:var(--accent);margin-bottom:6px;">Send feedback</div>
+    <div id="suggestionModalCopy" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:#667;margin-bottom:14px;line-height:1.5;">Share a bug, confusing bit, idea, or anything a tester notices. This goes to the public Suggestions queue, not the private operator controls.</div>
+    <textarea id="suggestionModalInput" rows="6" placeholder="What did you notice? What should change?" style="width:100%;resize:vertical;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:12px;border-radius:8px;outline:none;"></textarea>
+    <div id="suggestionModalStatus" style="display:none;font-family:'DM Mono',monospace;font-size:11px;line-height:1.5;margin-top:10px;padding:9px 10px;border-radius:8px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:14px;">
+      <button id="suggestionModalCancel" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;padding:10px 14px;border-radius:8px;cursor:pointer;">Cancel</button>
+      <button id="suggestionModalSubmit" style="background:var(--accent);border:none;color:#000;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px;cursor:pointer;letter-spacing:0.4px;">Send feedback</button>
+    </div>
+  </div>
+</div>
 <!-- Start Here Modal -->
 <div id="startHereModal" role="dialog" aria-modal="true" aria-label="Getting started" style="display:none;position:fixed;inset:0;z-index:2500;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
   <div id="startHereModalInner" style="position:relative;width:min(90vw,480px);max-height:80vh;overflow-y:auto;background:rgba(14,16,21,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:24px;box-shadow:0 16px 64px rgba(0,0,0,0.6);-webkit-overflow-scrolling:touch;">
@@ -9299,11 +9332,12 @@ function classifySuggestion(text) {
 }
 
 function captureSuggestion(text) {
+  var meta = arguments[1] || {};
   var cls = classifySuggestion(text);
   var suggestion = {
     id: 'SUG-' + Date.now(),
     created_at: new Date().toISOString(),
-    source: 'website_ai_chat',
+    source: meta.source || 'website_feedback',
     user_role: typeof isMember === 'function' && isMember() ? 'member' : 'guest',
     page_or_surface: (document.querySelector('.view-tab.active') || {}).dataset ? (document.querySelector('.view-tab.active').dataset.view || 'unknown') : 'unknown',
     current_view: (document.querySelector('.view-tab.active') || {}).dataset ? document.querySelector('.view-tab.active').dataset.view : '',
@@ -9322,6 +9356,97 @@ function captureSuggestion(text) {
   if (typeof srAnnounce === 'function') srAnnounce('Suggestion captured');
   return suggestion;
 }
+
+function openSuggestionComposer(options) {
+  var modal = document.getElementById('suggestionModal');
+  var input = document.getElementById('suggestionModalInput');
+  var status = document.getElementById('suggestionModalStatus');
+  var copy = document.getElementById('suggestionModalCopy');
+  var submit = document.getElementById('suggestionModalSubmit');
+  if (!modal || !input || !status || !copy || !submit) return;
+  var opts = options || {};
+  modal.style.display = 'flex';
+  modal.dataset.source = opts.source || 'website_feedback';
+  if (opts.copy) copy.textContent = opts.copy;
+  else copy.textContent = 'Share a bug, confusing bit, idea, or anything a tester notices. This goes to the public Suggestions queue, not the private operator controls.';
+  input.value = opts.prefill || '';
+  status.style.display = 'none';
+  status.textContent = '';
+  status.style.background = '';
+  status.style.border = '';
+  status.style.color = '';
+  submit.textContent = 'Send feedback';
+  setTimeout(function() { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 0);
+  window._suggestionModalOnSuccess = typeof opts.onSuccess === 'function' ? opts.onSuccess : null;
+}
+
+function closeSuggestionComposer() {
+  var modal = document.getElementById('suggestionModal');
+  if (modal) modal.style.display = 'none';
+  window._suggestionModalOnSuccess = null;
+}
+
+(function initSuggestionComposer() {
+  var modal = document.getElementById('suggestionModal');
+  if (!modal) return;
+  var input = document.getElementById('suggestionModalInput');
+  var status = document.getElementById('suggestionModalStatus');
+  var submit = document.getElementById('suggestionModalSubmit');
+
+  function setSuggestionStatus(message, tone) {
+    status.style.display = 'block';
+    status.textContent = message;
+    if (tone === 'error') {
+      status.style.background = 'rgba(248,81,73,0.12)';
+      status.style.border = '1px solid rgba(248,81,73,0.25)';
+      status.style.color = '#ffb4af';
+      return;
+    }
+    status.style.background = 'rgba(52,211,153,0.12)';
+    status.style.border = '1px solid rgba(52,211,153,0.25)';
+    status.style.color = '#a7f3d0';
+  }
+
+  function submitSuggestionComposer() {
+    var text = (input.value || '').trim();
+    if (!text) {
+      setSuggestionStatus('Please add a short description before sending feedback.', 'error');
+      input.focus();
+      return;
+    }
+    var source = modal.dataset.source || 'website_feedback';
+    var sug = captureSuggestion(text, { source: source });
+    setSuggestionStatus('Saved as ' + sug.id + '. Thanks — your feedback is now in the Suggestions queue.');
+    showToast('Feedback saved');
+    submit.textContent = 'Send another';
+    if (window._suggestionModalOnSuccess) {
+      try { window._suggestionModalOnSuccess(sug); } catch (_err) {}
+    }
+    input.value = '';
+    updateHomePanel();
+  }
+
+  document.getElementById('suggestionModalClose').addEventListener('click', closeSuggestionComposer);
+  document.getElementById('suggestionModalCancel').addEventListener('click', closeSuggestionComposer);
+  document.getElementById('suggestBtn').addEventListener('click', function() {
+    openSuggestionComposer({ source: 'website_header_feedback' });
+  });
+  document.getElementById('menuSuggestionsBtn').addEventListener('click', function() {
+    document.getElementById('headerMenu').style.display = 'none';
+    openSuggestionComposer({ source: 'website_menu_feedback' });
+  });
+  submit.addEventListener('click', submitSuggestionComposer);
+  input.addEventListener('keydown', function(event) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      submitSuggestionComposer();
+    }
+    if (event.key === 'Escape') closeSuggestionComposer();
+  });
+  modal.addEventListener('click', function(event) {
+    if (event.target === modal) closeSuggestionComposer();
+  });
+})();
 
 // ─── AI ACTIONS (local-only smart assistant) ────────────────────────────────
 var AIActions = {
@@ -9549,13 +9674,15 @@ var AIActions = {
     { label: 'Game summary', key: 'gameSummary', fn: function() { renderResponse(AIActions.gameSummary()); }, modes: ['game'] },
     { label: 'Syllabus info', key: 'syllabusInfo', fn: function() { renderResponse(AIActions.syllabusInfo()); }, modes: ['syllabus'] },
     { label: 'Why this filter?', key: 'whyFilter', fn: function() { renderResponse(AIActions.whyThisFilter()); }, modes: ['syllabus'] },
-    { label: 'Suggest', key: 'suggest', fn: function() {
-      var text = prompt('Describe your suggestion, bug, or idea:');
-      if (text && text.trim()) {
-        var sug = captureSuggestion(text.trim());
-        var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
-        renderResponse({ title: 'Suggestion captured \u2713', body: clsLabel + '\n' + sug.normalized_summary + '\n\nSaved as ' + sug.id });
-      }
+    { label: 'Send feedback', key: 'suggest', fn: function() {
+      openSuggestionComposer({
+        source: 'website_ai_coach',
+        copy: 'Share a bug, confusing bit, idea, or tester note. This is the public Suggestions flow, not the private operator control lane.',
+        onSuccess: function(sug) {
+          var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
+          renderResponse({ title: 'Feedback captured \u2713', body: clsLabel + '\n' + sug.normalized_summary + '\n\nSaved as ' + sug.id + ' for review.' });
+        }
+      });
     }, modes: ['explore','train','game','syllabus'] }
   ];
 
@@ -9799,12 +9926,19 @@ var AIActions = {
     }
     // Suggestion detection
     if (/\b(bug|broken|suggest|feature request|could you add|should have|would be nice|improve|fix this|doesn'?t work|feedback)\b/i.test(q)) {
-      var sug = captureSuggestion(text);
-      var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
-      return renderResponse({
-        title: 'Suggestion captured \u2713',
-        body: clsLabel + '\n' + sug.normalized_summary + '\n\nSaved as ' + sug.id + ' for review.',
+      openSuggestionComposer({
+        prefill: text,
+        source: 'website_ai_chat',
+        copy: 'This looks like feedback. Review it, then send it into the public Suggestions queue for follow-up.',
+        onSuccess: function(sug) {
+          var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
+          renderResponse({
+            title: 'Feedback captured \u2713',
+            body: clsLabel + '\n' + sug.normalized_summary + '\n\nSaved as ' + sug.id + ' for review.',
+          });
+        }
       });
+      return;
     }
     // Search for a technique/position by name
     if (q.includes('find') || q.includes('show') || q.includes('search') || q.includes('where')) {
@@ -11205,12 +11339,6 @@ function openCoachPanel() {
   document.getElementById('menuGameSummaryBtn').addEventListener('click', function() {
     document.getElementById('headerMenu').style.display = 'none';
     openGameSummary();
-  });
-
-  // Suggestions queue (member-only)
-  document.getElementById('menuSuggestionsBtn').addEventListener('click', function() {
-    document.getElementById('headerMenu').style.display = 'none';
-    openSuggestionQueue();
   });
 
   document.getElementById('menuPromptJobsBtn').addEventListener('click', function() {
