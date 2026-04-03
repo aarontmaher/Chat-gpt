@@ -7945,6 +7945,92 @@ function classifySuggestion(text) {
   return { classification: 'unclear', severity: 'unknown' };
 }
 
+function triageSuggestion(text, classification, severity, context) {
+  var t = text.toLowerCase();
+  var triage = {
+    triage_recommendation: 'review',
+    triage_reason: '',
+    triage_confidence: 'medium',
+    triage_priority: 'medium',
+    triage_area: 'general',
+    triage_effort_guess: 'medium',
+    triage_risk: 'low',
+    triage_created_at: new Date().toISOString()
+  };
+
+  // Area detection
+  if (/graph|3d|map|node|edge|position map/i.test(t)) triage.triage_area = '3d-graph';
+  else if (/search|find|filter/i.test(t)) triage.triage_area = 'search';
+  else if (/drill|timer|train|circuit|chain/i.test(t)) triage.triage_area = 'training';
+  else if (/mobile|phone|touch|tap|swipe/i.test(t)) triage.triage_area = 'mobile';
+  else if (/coach|ai|suggest/i.test(t)) triage.triage_area = 'ai-coach';
+  else if (/login|auth|account|sign/i.test(t)) triage.triage_area = 'auth';
+  else if (/slow|perf|load|lag/i.test(t)) triage.triage_area = 'performance';
+  else if (/journal|sparr|log/i.test(t)) triage.triage_area = 'journal';
+
+  // Recommendation logic
+  if (classification === 'bug' && severity === 'high') {
+    triage.triage_recommendation = 'approve';
+    triage.triage_reason = 'High-severity bug — likely impacts user experience directly.';
+    triage.triage_confidence = 'high';
+    triage.triage_priority = 'urgent';
+    triage.triage_effort_guess = 'easy';
+  } else if (classification === 'bug') {
+    triage.triage_recommendation = 'approve';
+    triage.triage_reason = 'Bug report — should be investigated.';
+    triage.triage_confidence = 'medium';
+    triage.triage_priority = 'high';
+  } else if (classification === 'improvement' && /confus|unclear|hard to/.test(t)) {
+    triage.triage_recommendation = 'approve';
+    triage.triage_reason = 'UX confusion — likely affects multiple users.';
+    triage.triage_confidence = 'medium';
+    triage.triage_priority = 'medium';
+  } else if (classification === 'feature_request' && /simple|small|quick|easy|just/.test(t)) {
+    triage.triage_recommendation = 'approve';
+    triage.triage_reason = 'Small feature request — likely low effort.';
+    triage.triage_confidence = 'low';
+    triage.triage_priority = 'low';
+    triage.triage_effort_guess = 'easy';
+  } else if (classification === 'feature_request') {
+    triage.triage_recommendation = 'review';
+    triage.triage_reason = 'Feature request — needs scope assessment.';
+    triage.triage_confidence = 'low';
+    triage.triage_priority = 'medium';
+    triage.triage_effort_guess = 'large';
+    triage.triage_risk = 'medium';
+  } else if (classification === 'improvement') {
+    triage.triage_recommendation = 'review';
+    triage.triage_reason = 'Improvement suggestion — value depends on context.';
+    triage.triage_confidence = 'low';
+    triage.triage_priority = 'medium';
+  } else {
+    triage.triage_recommendation = 'review';
+    triage.triage_reason = 'Unclear intent — needs human review.';
+    triage.triage_confidence = 'low';
+    triage.triage_priority = 'low';
+  }
+
+  // Risk assessment
+  if (/delete|remove|reset|clear|wipe/i.test(t)) {
+    triage.triage_risk = 'high';
+    triage.triage_recommendation = 'review';
+    triage.triage_reason += ' Potentially destructive action mentioned.';
+  }
+
+  return triage;
+}
+
+function triagePrioritySort(a, b) {
+  var priorityOrder = {urgent: 0, high: 1, medium: 2, low: 3};
+  var statusOrder = {pending: 0, approved: 1, deferred: 2, rejected: 3};
+  var sa = statusOrder[a.approval_status] || 9;
+  var sb = statusOrder[b.approval_status] || 9;
+  if (sa !== sb) return sa - sb;
+  var pa = priorityOrder[a.triage_priority] || 9;
+  var pb = priorityOrder[b.triage_priority] || 9;
+  return pa - pb;
+}
+
 function captureSuggestion(text) {
   var cls = classifySuggestion(text);
   var suggestion = {
@@ -7963,6 +8049,11 @@ function captureSuggestion(text) {
     implementation_status: 'not_started',
     selected_node: (typeof SELECTED_NODE !== 'undefined' && SELECTED_NODE) ? SELECTED_NODE.label : null
   };
+  var triage = triageSuggestion(text, cls.classification, cls.severity, {
+    view: suggestion.current_view,
+    node: suggestion.selected_node
+  });
+  Object.assign(suggestion, triage);
   if (!STATE.suggestions) STATE.suggestions = [];
   STATE.suggestions.unshift(suggestion);
   saveState();
@@ -9861,23 +9952,28 @@ function openCoachPanel() {
   });
 
   function openSuggestionQueue() {
-    var suggestions = STATE.suggestions || [];
+    var suggestions = (STATE.suggestions || []).slice().sort(triagePrioritySort);
     var currentFilter = 'all';
+    var currentPriorityFilter = 'all';
+    var currentRecoFilter = 'all';
 
-    function buildItems(filter) {
+    function buildItems(filter, priorityFilter, recoFilter) {
       var filtered = suggestions;
-      if (filter === 'pending') filtered = suggestions.filter(function(s) { return s.approval_status === 'pending'; });
-      else if (filter === 'approved') filtered = suggestions.filter(function(s) { return s.approval_status === 'approved'; });
-      else if (filter === 'rejected') filtered = suggestions.filter(function(s) { return s.approval_status === 'rejected'; });
-      else if (filter === 'deferred') filtered = suggestions.filter(function(s) { return s.approval_status === 'deferred'; });
+      if (filter === 'pending') filtered = filtered.filter(function(s) { return s.approval_status === 'pending'; });
+      else if (filter === 'approved') filtered = filtered.filter(function(s) { return s.approval_status === 'approved'; });
+      else if (filter === 'rejected') filtered = filtered.filter(function(s) { return s.approval_status === 'rejected'; });
+      else if (filter === 'deferred') filtered = filtered.filter(function(s) { return s.approval_status === 'deferred'; });
+
+      if (priorityFilter !== 'all') filtered = filtered.filter(function(s) { return s.triage_priority === priorityFilter; });
+      if (recoFilter !== 'all') filtered = filtered.filter(function(s) { return s.triage_recommendation === recoFilter; });
 
       var items = [];
-      // Filter row header
+      // Status filter row
       items.push({
         isHeader: true,
         label: '',
         render: function(row) {
-          row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;padding:6px 0 10px;';
+          row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;padding:6px 0 4px;';
           ['all','pending','approved','rejected','deferred'].forEach(function(f) {
             var btn = document.createElement('button');
             btn.textContent = f.charAt(0).toUpperCase() + f.slice(1);
@@ -9892,18 +9988,65 @@ function openCoachPanel() {
         }
       });
 
+      // Triage filter row (priority + recommendation)
+      items.push({
+        isHeader: true,
+        label: '',
+        render: function(row) {
+          row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;padding:0 0 10px;';
+          var pLabel = document.createElement('span');
+          pLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:#556;padding:3px 0;';
+          pLabel.textContent = 'Priority:';
+          row.appendChild(pLabel);
+          ['all','urgent','high','medium','low'].forEach(function(p) {
+            var btn = document.createElement('button');
+            btn.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+            var active = p === priorityFilter;
+            btn.style.cssText = 'background:' + (active ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.04)') + ';border:1px solid ' + (active ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.08)') + ';color:' + (active ? 'var(--accent3)' : '#8892a4') + ';font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;';
+            btn.addEventListener('click', function() {
+              currentPriorityFilter = p;
+              openSuggestionQueue();
+            });
+            row.appendChild(btn);
+          });
+          var sep = document.createElement('span');
+          sep.style.cssText = 'width:8px;';
+          row.appendChild(sep);
+          var rLabel = document.createElement('span');
+          rLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:#556;padding:3px 0;';
+          rLabel.textContent = 'Reco:';
+          row.appendChild(rLabel);
+          ['all','approve','review','reject','defer'].forEach(function(r) {
+            var btn = document.createElement('button');
+            btn.textContent = r.charAt(0).toUpperCase() + r.slice(1);
+            var active = r === recoFilter;
+            btn.style.cssText = 'background:' + (active ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.04)') + ';border:1px solid ' + (active ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.08)') + ';color:' + (active ? 'var(--accent3)' : '#8892a4') + ';font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;';
+            btn.addEventListener('click', function() {
+              currentRecoFilter = r;
+              openSuggestionQueue();
+            });
+            row.appendChild(btn);
+          });
+        }
+      });
+
       filtered.forEach(function(sug) {
         var clsColors = {bug:'#f85149', feature_request:'#58a6ff', improvement:'#e8ff47', unclear:'#8b949e'};
         var clsLabels = {bug:'Bug', feature_request:'Feature', improvement:'Improvement', unclear:'Unclear'};
         var statusColors = {approved:'#3fb950', rejected:'#f85149', deferred:'#d29922', pending:'#8b949e'};
+        var recoColors = {approve:'#3fb950', review:'#58a6ff', reject:'#f85149', defer:'#d29922'};
+        var priorityColors = {urgent:'#f85149', high:'#e8903e', medium:'#58a6ff', low:'#8b949e'};
         var clsColor = clsColors[sug.classification] || '#8b949e';
         var statusColor = statusColors[sug.approval_status] || '#8b949e';
+        var recoColor = recoColors[sug.triage_recommendation] || '#8b949e';
+        var prioColor = priorityColors[sug.triage_priority] || '#8b949e';
+        var confDots = sug.triage_confidence === 'high' ? '\u2B24\u2B24\u2B24' : sug.triage_confidence === 'medium' ? '\u2B24\u2B24\u25CB' : '\u2B24\u25CB\u25CB';
 
         items.push({
           label: '',
           render: function(row) {
             row.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);';
-            // Top row: ID + timestamp + classification badge
+            // Top row: ID + timestamp + classification badge + status
             var topRow = document.createElement('div');
             topRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
             var idEl = document.createElement('span');
@@ -9923,6 +10066,47 @@ function openCoachPanel() {
             statusChip.textContent = sug.approval_status;
             topRow.appendChild(statusChip);
             row.appendChild(topRow);
+
+            // Triage row: recommendation + priority + confidence + area + effort + risk
+            var triageRow = document.createElement('div');
+            triageRow.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;';
+            var recoBadge = document.createElement('span');
+            recoBadge.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;padding:1px 6px;border-radius:3px;color:#fff;background:' + recoColor + ';';
+            recoBadge.textContent = (sug.triage_recommendation || 'review').toUpperCase();
+            triageRow.appendChild(recoBadge);
+            var prioBadge = document.createElement('span');
+            prioBadge.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;padding:1px 6px;border-radius:3px;color:#fff;background:' + prioColor + ';';
+            prioBadge.textContent = (sug.triage_priority || 'medium');
+            triageRow.appendChild(prioBadge);
+            var confEl = document.createElement('span');
+            confEl.style.cssText = 'font-size:8px;color:' + prioColor + ';letter-spacing:-1px;';
+            confEl.textContent = confDots;
+            triageRow.appendChild(confEl);
+            if (sug.triage_area && sug.triage_area !== 'general') {
+              var areaChip = document.createElement('span');
+              areaChip.style.cssText = 'font-family:DM Mono,monospace;font-size:8px;padding:1px 5px;border-radius:3px;color:#a0a8b4;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);';
+              areaChip.textContent = sug.triage_area;
+              triageRow.appendChild(areaChip);
+            }
+            var effortChip = document.createElement('span');
+            effortChip.style.cssText = 'font-family:DM Mono,monospace;font-size:8px;padding:1px 5px;border-radius:3px;color:#8892a4;background:rgba(255,255,255,0.04);';
+            effortChip.textContent = 'effort:' + (sug.triage_effort_guess || 'medium');
+            triageRow.appendChild(effortChip);
+            var riskChip = document.createElement('span');
+            var riskColor = sug.triage_risk === 'high' ? '#f85149' : sug.triage_risk === 'medium' ? '#d29922' : '#8b949e';
+            riskChip.style.cssText = 'font-family:DM Mono,monospace;font-size:8px;padding:1px 5px;border-radius:3px;color:' + riskColor + ';background:rgba(255,255,255,0.04);';
+            riskChip.textContent = 'risk:' + (sug.triage_risk || 'low');
+            triageRow.appendChild(riskChip);
+            row.appendChild(triageRow);
+
+            // Triage reason
+            if (sug.triage_reason) {
+              var reasonEl = document.createElement('div');
+              reasonEl.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:#6a7280;font-style:italic;line-height:1.3;';
+              reasonEl.textContent = sug.triage_reason;
+              row.appendChild(reasonEl);
+            }
+
             // Message
             var msgEl = document.createElement('div');
             msgEl.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:#c4cdd8;line-height:1.4;';
@@ -9941,7 +10125,8 @@ function openCoachPanel() {
               });
               return b;
             }
-            actRow.appendChild(makeBtn('Approve', '#3fb950', function() {
+            var approveLabel = sug.triage_recommendation === 'approve' ? '\u2726 Approve (suggested)' : 'Approve';
+            actRow.appendChild(makeBtn(approveLabel, '#3fb950', function() {
               sug.status = 'approved';
               sug.approval_status = 'approved';
               // Write handoff
@@ -9984,7 +10169,7 @@ function openCoachPanel() {
       return items;
     }
 
-    var items = buildItems(currentFilter);
+    var items = buildItems(currentFilter, currentPriorityFilter, currentRecoFilter);
     var pendingCount = suggestions.filter(function(s) { return s.approval_status === 'pending'; }).length;
     openListPanel('Suggestion Queue (' + suggestions.length + (pendingCount > 0 ? ', ' + pendingCount + ' pending' : '') + ')', items);
   }
