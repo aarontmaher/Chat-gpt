@@ -4,3 +4,10 @@ test-results/
 playwright-report/
 tests/results.json
 .claude/
+tokens.json
+audit_log.jsonl
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.venv/
