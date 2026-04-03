@@ -295,6 +295,13 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cc-topbar-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:2px; color:var(--text); line-height:1; }
 .cc-topbar-sub { font-size:13px; color:var(--text-dim); line-height:1.68; max-width:720px; }
 .cc-topbar-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.cc-env-pill { font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:0.9px; text-transform:uppercase; }
+.cc-env-pill.live { color:#7ef7c3; border-color:rgba(52,211,153,0.28); background:rgba(52,211,153,0.12); }
+.cc-env-pill.dev { color:#ffd782; border-color:rgba(210,153,34,0.28); background:rgba(210,153,34,0.12); }
+.cc-env-host { color:var(--text-muted); max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cc-mobile-nav { display:none; gap:8px; flex-wrap:wrap; }
+.cc-mobile-nav-btn { min-height:40px; padding:0 12px; border-radius:999px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:0.7px; text-transform:uppercase; cursor:pointer; }
+.cc-mobile-nav-btn:hover { color:var(--text); border-color:rgba(255,255,255,0.16); }
 .cc-grid { display:grid; grid-template-columns: 1.08fr 1.35fr 1.12fr; gap:14px; flex:1; min-height:0; }
 .cc-col { min-width:0; display:flex; flex-direction:column; gap:14px; min-height:0; }
 .cc-panel { background:rgba(15,18,24,0.96); border:1px solid rgba(255,255,255,0.07); border-radius:14px; min-height:0; display:flex; flex-direction:column; box-shadow:0 10px 28px rgba(0,0,0,0.22); overflow:hidden; }
@@ -332,7 +339,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cc-agent-header > div, .cc-suggestion-head > div, .cc-queue-head > div, .cc-activity-head > div, .cc-detail-head > div { min-width:0; }
 .cc-agent-name, .cc-suggestion-title, .cc-detail-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; color:var(--text); letter-spacing:0.32px; line-height:1.2; }
 .cc-agent-task, .cc-suggestion-body, .cc-detail-copy, .cc-empty-copy { font-size:13px; color:var(--text-dim); line-height:1.68; min-width:0; }
+.cc-agent-header .cc-status { flex-shrink:0; }
+.cc-agent-task { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; }
 .cc-agent-meta, .cc-inline-meta { display:flex; flex-wrap:wrap; gap:8px 13px; font-size:12px; color:var(--text-muted); margin-top:9px; }
+.cc-agent-meta > span, .cc-inline-meta > span { min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.cc-agent-mono { font-family:'DM Mono',monospace; font-size:11px; color:#9ba7c0; }
+.cc-agent-blocker { overflow-wrap:anywhere; }
 .cc-label { color:#6f7990; text-transform:uppercase; letter-spacing:1px; font-size:11px; }
 .cc-value-strong { color:var(--text); }
 .cc-dot { width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block; }
@@ -533,6 +545,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .cc-topbar { flex-direction:column; align-items:flex-start; padding:14px; }
   .cc-topbar-title { font-size:24px; }
   .cc-topbar-meta { justify-content:flex-start; }
+  .cc-env-host { max-width:100%; font-size:11px; }
+  .cc-mobile-nav { display:flex; }
   .cc-priority-strip { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .cc-summary-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .cc-grid { grid-template-columns:1fr; overflow:visible; flex:none; }
@@ -548,6 +562,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .cc-pill, .cc-status { min-height:30px; }
   .cc-agent-task, .cc-suggestion-body, .cc-detail-copy, .cc-activity-copy, .cc-detail-card p, .cc-detail-card li { font-size:13px; }
   .cc-label, .cc-panel-meta, .cc-summary-label, .cc-queue-label, .cc-priority-label, .cc-activity-time { font-size:11px; }
+  .cc-topbar-kicker, .cc-mobile-nav-btn, .cc-env-pill { font-size:11px; }
+  .cc-agent-meta, .cc-inline-meta, .cc-task-meta, .cc-task-id { font-size:11px; }
+  .cc-agent-mono { font-size:10px; }
 }
 
 /* Diagnostics panel */
@@ -796,15 +813,23 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         <div class="cc-topbar-sub">Single-screen oversight for all five AI lanes, the suggestion queue, automation state, handoffs, and the human approvals that unblock the workflow. The UI is adapter-driven and ready to swap local state for the MCP tools at <span class="cc-value-strong">mcp.lauburugrapplingmap.com/mcp</span>.</div>
       </div>
       <div class="cc-topbar-meta">
+        <span id="ccEnvironmentBadge" class="cc-pill cc-env-pill dev">Dev</span>
+        <span id="ccEnvironmentHost" class="cc-pill cc-env-host"></span>
         <span class="cc-pill">Website: www.lauburugrapplingmap.com</span>
         <span class="cc-pill">Backend: get_work_status · list_pending_suggestions · get_automation_state · get_handoff</span>
         <button id="ccRefreshBtn" class="cc-toolbar-btn">Refresh View</button>
       </div>
     </div>
+    <div class="cc-mobile-nav" id="ccMobileNav">
+      <button class="cc-mobile-nav-btn" data-cc-jump="ccPriorityStrip">Overview</button>
+      <button class="cc-mobile-nav-btn" data-cc-jump="ccTaskRoutingPanel">Tasks</button>
+      <button class="cc-mobile-nav-btn" data-cc-jump="ccDetailPanelSection">Detail</button>
+      <button class="cc-mobile-nav-btn" data-cc-jump="ccActivityPanel">Activity</button>
+    </div>
     <div id="ccPriorityStrip" class="cc-priority-strip"></div>
     <div class="cc-grid">
       <div class="cc-col">
-        <section class="cc-panel">
+        <section class="cc-panel" id="ccAgentPanel">
           <div class="cc-panel-header">
             <div class="cc-panel-title">AI Agent Board</div>
             <div id="ccAgentMeta" class="cc-panel-meta"></div>
@@ -813,7 +838,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         </section>
       </div>
       <div class="cc-col">
-        <section class="cc-panel">
+        <section class="cc-panel" id="ccSuggestionsPanel">
           <div class="cc-panel-header">
             <div class="cc-panel-title">Suggestions + Workflow</div>
             <div id="ccSuggestionMeta" class="cc-panel-meta"></div>
@@ -822,7 +847,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
             <div id="ccSummaryCards" class="cc-summary-grid"></div>
           </div>
         </section>
-        <section class="cc-panel">
+        <section class="cc-panel" id="ccTaskRoutingPanel">
           <div class="cc-panel-header">
             <div class="cc-panel-title">Suggestion Queue</div>
             <div class="cc-panel-meta">Triage, assignment, lifecycle</div>
@@ -847,7 +872,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         </section>
       </div>
       <div class="cc-col">
-        <section class="cc-panel" style="flex:1;">
+        <section class="cc-panel" id="ccDetailPanelSection" style="flex:1;">
           <div class="cc-panel-header">
             <div class="cc-panel-title">Detail Panel</div>
             <div id="ccDetailMeta" class="cc-panel-meta"></div>
@@ -856,7 +881,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         </section>
       </div>
     </div>
-    <section class="cc-panel">
+    <section class="cc-panel" id="ccActivityPanel">
       <div class="cc-panel-header">
         <div class="cc-panel-title">Recent Activity</div>
         <div class="cc-panel-meta">Shared-state movement and human dependencies</div>
@@ -3747,6 +3772,28 @@ function ccBuildSnapshot() {
   return snapshot;
 }
 
+function ccRuntimeEnvironment() {
+  var host = window.location.hostname || '';
+  var href = window.location.origin || window.location.href || '';
+  var isLive = host === 'www.lauburugrapplingmap.com' || host === 'lauburugrapplingmap.com';
+  return {
+    label: isLive ? 'Live' : 'Dev',
+    tone: isLive ? 'live' : 'dev',
+    host: host || href || 'local runtime'
+  };
+}
+
+function ccRenderEnvironmentBadge() {
+  var badge = document.getElementById('ccEnvironmentBadge');
+  var host = document.getElementById('ccEnvironmentHost');
+  if (!badge || !host) return;
+  var env = ccRuntimeEnvironment();
+  badge.textContent = env.label;
+  badge.className = 'cc-pill cc-env-pill ' + env.tone;
+  host.textContent = env.host;
+  host.title = env.host;
+}
+
 function ccBadge(text, tone) {
   var className = 'cc-pill';
   if (tone) className += ' ' + tone;
@@ -3772,12 +3819,12 @@ function ccRenderAgentBoard(snapshot) {
     return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-agent="' + ccEscape(agent.key) + '">' +
       '<div class="cc-agent-header"><div><div class="cc-agent-name">' + ccEscape(agent.name) + '</div><div class="cc-agent-task">' + ccEscape(agent.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(agent.status || 'idle') + '">' + ccEscape(ccPrettyStatus(agent.status || 'idle')) + '</span></div>' +
       '<div class="cc-agent-meta">' +
-      '<span><span class="cc-label">Branch</span> ' + ccEscape(agent.branch || 'none') + '</span>' +
-      '<span><span class="cc-label">Commit</span> ' + ccEscape(agent.lastCommit || 'none') + '</span>' +
+      '<span><span class="cc-label">Branch</span> <span class="cc-agent-mono">' + ccEscape(agent.branch || 'none') + '</span></span>' +
+      '<span><span class="cc-label">Commit</span> <span class="cc-agent-mono">' + ccEscape(agent.lastCommit || 'none') + '</span></span>' +
       '<span><span class="cc-label">Assigned</span> ' + ccEscape(agent.assignedCount || 0) + '</span>' +
       '<span><span class="cc-label">Updated</span> ' + ccEscape(ccFormatWhen(agent.updatedAt)) + '</span>' +
       '</div>' +
-      (agent.blockers ? '<div class="cc-agent-meta"><span><span class="cc-label">Blocker</span> ' + ccEscape(agent.blockers) + '</span></div>' : '') +
+      (agent.blockers ? '<div class="cc-agent-meta"><span class="cc-agent-blocker"><span class="cc-label">Blocker</span> ' + ccEscape(agent.blockers) + '</span></div>' : '') +
       '</article>';
   }).join('') + '</div>';
 }
@@ -3928,11 +3975,12 @@ function ccRenderDetail(snapshot) {
 
 function ccRenderActivity(snapshot) {
   var root = document.getElementById('ccActivityFeed');
-  if (!snapshot.activity.length) {
+  var items = Array.isArray(snapshot.activity) ? snapshot.activity : [];
+  if (!items.length) {
     root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No recent activity</div><div class="cc-empty-copy">Activity will appear here as suggestions move, handoffs get created, and AI statuses change.</div></div>';
     return;
   }
-  root.innerHTML = '<div class="cc-activity-list">' + snapshot.activity.map(function(item) {
+  root.innerHTML = '<div class="cc-activity-list">' + items.map(function(item) {
     return '<article class="cc-activity-card"><div class="cc-activity-head"><div class="cc-panel-title" style="font-size:12px;">' + ccEscape(item.type) + '</div><div class="cc-activity-time">' + ccEscape(ccFormatWhen(item.ts)) + '</div></div><div class="cc-activity-copy"><span class="cc-value-strong">' + ccEscape(item.title) + '</span> · ' + ccEscape(item.body || '') + '</div></article>';
   }).join('') + '</div>';
 }
@@ -3942,6 +3990,7 @@ window.renderControlCentre = function() {
   if (!root) return;
   var snapshot = ccBuildSnapshot();
   CONTROL_CENTRE_UI.snapshot = snapshot;
+  ccRenderEnvironmentBadge();
   ccRenderPriorityStrip(snapshot);
   ccRenderAgentBoard(snapshot);
   ccRenderSummaryCards(snapshot);
@@ -3952,8 +4001,25 @@ window.renderControlCentre = function() {
   ccRenderActivity(snapshot);
 };
 
+function ccScrollToSection(targetId) {
+  var target = document.getElementById(targetId);
+  if (!target) return;
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function ccMaybeRevealDetailOnMobile() {
+  if (window.innerWidth > 768) return;
+  ccScrollToSection('ccDetailPanelSection');
+}
+
 document.getElementById('ccRefreshBtn').addEventListener('click', function() {
   window.renderControlCentre();
+});
+
+document.getElementById('ccMobileNav').addEventListener('click', function(event) {
+  var button = event.target.closest('[data-cc-jump]');
+  if (!button) return;
+  ccScrollToSection(button.getAttribute('data-cc-jump'));
 });
 
 document.getElementById('ccAgentBoard').addEventListener('click', function(event) {
@@ -3962,6 +4028,7 @@ document.getElementById('ccAgentBoard').addEventListener('click', function(event
   CONTROL_CENTRE_UI.selectedType = 'agent';
   CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-agent');
   window.renderControlCentre();
+  ccMaybeRevealDetailOnMobile();
 });
 
 document.getElementById('ccSuggestionList').addEventListener('click', function(event) {
@@ -3970,6 +4037,7 @@ document.getElementById('ccSuggestionList').addEventListener('click', function(e
   CONTROL_CENTRE_UI.selectedType = 'suggestion';
   CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-suggestion');
   window.renderControlCentre();
+  ccMaybeRevealDetailOnMobile();
 });
 
 document.getElementById('ccWorkQueue').addEventListener('click', function(event) {
@@ -3978,6 +4046,7 @@ document.getElementById('ccWorkQueue').addEventListener('click', function(event)
   CONTROL_CENTRE_UI.selectedType = 'agent';
   CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-task-agent');
   window.renderControlCentre();
+  ccMaybeRevealDetailOnMobile();
 });
 
 document.getElementById('ccDetailPanel').addEventListener('click', function(event) {
