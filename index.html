@@ -15,15 +15,15 @@
 <meta property="og:title" content="Grappling Map">
 <meta property="og:description" content="Interactive no-gi grappling reference and training map with 3D network visualization.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://aarontmaher.github.io/Chat-gpt/">
-<meta property="og:image" content="https://aarontmaher.github.io/Chat-gpt/icon-512.png">
+<meta property="og:url" content="https://www.lauburugrapplingmap.com/">
+<meta property="og:image" content="https://www.lauburugrapplingmap.com/icon-512.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "Grappling Map",
   "description": "No-gi grappling reference, training map, and coaching tool. Track techniques, drill with timers, find game gaps, and build your personal grappling system.",
-  "url": "https://aarontmaher.github.io/Chat-gpt/",
+  "url": "https://www.lauburugrapplingmap.com/",
   "applicationCategory": "SportsApplication",
   "operatingSystem": "Web",
   "offers": {
@@ -286,6 +286,75 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 #refFilterToggle .filter-arrow { transition: transform 0.2s; }
 #refFilterToggle.open .filter-arrow { transform: rotate(180deg); }
 
+/* ── CONTROL CENTRE ── */
+#controlCentreView { display:none; flex-direction:column; flex:1; min-height:0; background:linear-gradient(180deg, rgba(15,18,24,0.98) 0%, rgba(10,12,16,1) 100%); }
+.cc-shell { display:flex; flex-direction:column; gap:14px; flex:1; min-height:0; padding:14px; overflow:hidden; }
+.cc-topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:16px 18px; background:linear-gradient(135deg, rgba(19,22,30,0.96), rgba(15,18,24,0.96)); border:1px solid rgba(255,255,255,0.08); border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,0.28); }
+.cc-topbar-copy { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.cc-topbar-kicker { font-family:'Barlow Condensed',sans-serif; font-size:13px; letter-spacing:1.8px; text-transform:uppercase; color:var(--accent); }
+.cc-topbar-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:2px; color:var(--text); line-height:1; }
+.cc-topbar-sub { font-size:13px; color:var(--text-dim); line-height:1.68; max-width:720px; }
+.cc-topbar-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.cc-grid { display:grid; grid-template-columns: 1.08fr 1.35fr 1.12fr; gap:14px; flex:1; min-height:0; }
+.cc-col { min-width:0; display:flex; flex-direction:column; gap:14px; min-height:0; }
+.cc-panel { background:rgba(15,18,24,0.96); border:1px solid rgba(255,255,255,0.07); border-radius:14px; min-height:0; display:flex; flex-direction:column; box-shadow:0 10px 28px rgba(0,0,0,0.22); overflow:hidden; }
+.cc-panel-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 15px; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.015); }
+.cc-panel-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; letter-spacing:1.3px; text-transform:uppercase; color:var(--text); }
+.cc-panel-meta { font-size:12px; color:var(--text-muted); line-height:1.45; }
+.cc-panel-body { padding:14px; overflow:auto; min-height:0; }
+.cc-panel-body.tight { padding:12px; }
+.cc-pill { display:inline-flex; align-items:center; gap:6px; padding:7px 11px; border-radius:999px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); font-size:12px; color:var(--text-dim); white-space:nowrap; }
+.cc-badge-row { display:flex; flex-wrap:wrap; gap:6px; }
+.cc-status { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:0.8px; text-transform:uppercase; }
+.cc-status::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+.cc-status.idle { color:#7f8ba3; background:rgba(127,139,163,0.12); border:1px solid rgba(127,139,163,0.25); }
+.cc-status.in_progress { color:var(--blue); background:rgba(71,200,255,0.12); border:1px solid rgba(71,200,255,0.25); }
+.cc-status.blocked { color:#ff7c70; background:rgba(248,81,73,0.12); border:1px solid rgba(248,81,73,0.25); }
+.cc-status.done { color:var(--green); background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.25); }
+.cc-status.waiting { color:#ffd166; background:rgba(210,153,34,0.12); border:1px solid rgba(210,153,34,0.25); }
+.cc-status.ready { color:var(--accent); background:rgba(232,255,71,0.12); border:1px solid rgba(232,255,71,0.25); }
+.cc-priority-strip { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; }
+.cc-priority-card { padding:14px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(180deg, rgba(20,23,31,0.92), rgba(15,18,24,0.92)); min-height:92px; }
+.cc-priority-label { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.45px; margin-bottom:7px; }
+.cc-priority-value { font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:1px; color:var(--accent); line-height:1; }
+.cc-priority-copy { font-size:13px; color:var(--text-dim); line-height:1.6; margin-top:8px; }
+.cc-summary-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px; }
+.cc-summary-card { border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); border-radius:12px; padding:12px; min-height:84px; }
+.cc-summary-label { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.15px; }
+.cc-summary-value { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--text); margin-top:6px; line-height:1; }
+.cc-summary-note { font-size:12px; color:var(--text-dim); margin-top:6px; line-height:1.55; }
+.cc-agent-list, .cc-suggestion-list, .cc-queue-list, .cc-activity-list, .cc-assigned-list { display:flex; flex-direction:column; gap:10px; }
+.cc-agent-card, .cc-suggestion-card, .cc-queue-card, .cc-activity-card { border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); border-radius:12px; padding:14px 15px; transition:all 0.16s ease; }
+.cc-agent-card, .cc-suggestion-card { cursor:pointer; }
+.cc-agent-card:hover, .cc-suggestion-card:hover, .cc-queue-card:hover { border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.035); transform:translateY(-1px); }
+.cc-agent-card.selected, .cc-suggestion-card.selected { border-color:rgba(232,255,71,0.42); box-shadow:0 0 0 1px rgba(232,255,71,0.18) inset; background:rgba(232,255,71,0.05); }
+.cc-agent-header, .cc-suggestion-head, .cc-queue-head, .cc-activity-head, .cc-detail-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.cc-agent-name, .cc-suggestion-title, .cc-detail-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; color:var(--text); letter-spacing:0.32px; line-height:1.2; }
+.cc-agent-task, .cc-suggestion-body, .cc-detail-copy, .cc-empty-copy { font-size:13px; color:var(--text-dim); line-height:1.68; }
+.cc-agent-meta, .cc-inline-meta { display:flex; flex-wrap:wrap; gap:8px 13px; font-size:12px; color:var(--text-muted); margin-top:9px; }
+.cc-label { color:#6f7990; text-transform:uppercase; letter-spacing:1px; font-size:11px; }
+.cc-value-strong { color:var(--text); }
+.cc-dot { width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block; }
+.cc-queue-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; }
+.cc-queue-count { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--text); line-height:1; }
+.cc-queue-label { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; margin-top:6px; }
+.cc-detail-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; margin-top:12px; }
+.cc-detail-card { border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px; background:rgba(255,255,255,0.02); }
+.cc-detail-card h4 { font-family:'Barlow Condensed',sans-serif; font-size:14px; letter-spacing:1.1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:7px; }
+.cc-detail-card p, .cc-detail-card li { font-size:13px; color:var(--text-dim); line-height:1.65; }
+.cc-detail-card ul { list-style:none; display:flex; flex-direction:column; gap:7px; }
+.cc-photo-strip { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.cc-photo-chip { min-width:96px; padding:11px 12px; border-radius:10px; border:1px dashed rgba(255,255,255,0.12); background:rgba(255,255,255,0.02); font-size:12px; color:var(--text-muted); text-align:center; }
+.cc-activity-time { font-size:12px; color:#6f7990; white-space:nowrap; }
+.cc-activity-copy { font-size:13px; color:var(--text-dim); line-height:1.68; margin-top:7px; }
+.cc-empty { border:1px dashed rgba(255,255,255,0.08); border-radius:12px; padding:20px 18px; background:rgba(255,255,255,0.015); }
+.cc-empty-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; color:var(--text); margin-bottom:6px; letter-spacing:0.4px; }
+.cc-action-link { display:inline-flex; align-items:center; gap:6px; margin-top:12px; border:none; background:none; color:var(--accent); font-family:'Barlow Condensed',sans-serif; font-size:14px; letter-spacing:0.4px; cursor:pointer; padding:0; }
+.cc-toolbar-btn { min-height:44px; padding:0 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-size:14px; letter-spacing:0.75px; text-transform:uppercase; cursor:pointer; transition:all 0.15s; }
+.cc-toolbar-btn:hover { color:var(--text); border-color:rgba(255,255,255,0.18); }
+.cc-toolbar-btn:focus-visible, .cc-action-link:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:10px; }
+.cc-footer-note { font-size:12px; color:#6f7990; line-height:1.65; }
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   /* Header: compact app-like */
@@ -448,6 +517,22 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   /* 9. Tighter above-the-fold spacing */
   .sections { padding: 4px 6px !important; }
   #dailySuggestionCard { margin: 4px 10px 0 !important; }
+  .cc-shell { padding:10px; gap:10px; overflow:auto; }
+  .cc-topbar { flex-direction:column; align-items:flex-start; padding:14px; }
+  .cc-topbar-title { font-size:24px; }
+  .cc-topbar-meta { justify-content:flex-start; }
+  .cc-priority-strip { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .cc-summary-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .cc-grid { grid-template-columns:1fr; overflow:visible; flex:none; }
+  .cc-col { min-height:auto; }
+  .cc-panel-body { overflow:visible; }
+  #controlCentreView { overflow:auto; }
+  .cc-queue-grid, .cc-detail-grid { grid-template-columns:1fr; }
+  .cc-agent-card, .cc-suggestion-card, .cc-queue-card, .cc-activity-card { padding:14px; }
+  .cc-toolbar-btn { width:100%; min-height:44px; justify-content:center; }
+  .cc-pill, .cc-status { min-height:30px; }
+  .cc-agent-task, .cc-suggestion-body, .cc-detail-copy, .cc-activity-copy, .cc-detail-card p, .cc-detail-card li { font-size:13px; }
+  .cc-label, .cc-panel-meta, .cc-summary-label, .cc-queue-label, .cc-priority-label, .cc-activity-time { font-size:11px; }
 }
 
 /* Diagnostics panel */
@@ -490,7 +575,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 @media print {
   @page { margin: 1.5cm; }
   body { background: #fff !important; color: #000 !important; display: block !important; overflow: visible !important; height: auto !important; }
-  header, .view-tabs, nav, .toolbar, #graph3dView, #refBottomBar, #quickDrillFab, #headerMenu, #beltDropdown, #dailySuggestionCard, #refHomePanel, #refOnboarding, #refEmpty, canvas { display: none !important; }
+  header, .view-tabs, nav, .toolbar, #graph3dView, #controlCentreView, #refBottomBar, #quickDrillFab, #headerMenu, #beltDropdown, #dailySuggestionCard, #refHomePanel, #refOnboarding, #refEmpty, canvas { display: none !important; }
   main { display: block !important; overflow: visible !important; }
   #referenceView { display: block !important; overflow: visible !important; flex: none !important; }
   .sections { overflow: visible !important; height: auto !important; flex: none !important; }
@@ -681,9 +766,90 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <nav aria-label="Views"><div class="view-tabs" role="tablist">
   <button class="view-tab" data-view="reference" aria-label="Reference view" role="tab">Reference <span id="refDrillBadge" style="display:none;background:var(--blue);color:#000;font-size:8px;padding:1px 5px;border-radius:8px;vertical-align:super;margin-left:2px;font-weight:700;"></span></button>
   <button class="view-tab active" data-view="graph3d" aria-label="Position Map view" role="tab">Position Map</button>
+  <button class="view-tab" data-view="controlcentre" aria-label="Control Centre view" role="tab">Control Centre</button>
 </div></nav>
 
 <main role="main" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+<!-- ══ CONTROL CENTRE ═════════════════════════════════════════════════════ -->
+<div id="controlCentreView" style="display:none;flex-direction:column;flex:1;min-height:0;">
+  <div class="cc-shell">
+    <div class="cc-topbar">
+      <div class="cc-topbar-copy">
+        <div class="cc-topbar-kicker">Five AI Coordination Layer</div>
+        <div class="cc-topbar-title">Mission Control</div>
+        <div class="cc-topbar-sub">Single-screen oversight for all five AI lanes, the suggestion queue, automation state, handoffs, and the human approvals that unblock the workflow. The UI is adapter-driven and ready to swap local state for the MCP tools at <span class="cc-value-strong">mcp.lauburugrapplingmap.com/mcp</span>.</div>
+      </div>
+      <div class="cc-topbar-meta">
+        <span class="cc-pill">Website: www.lauburugrapplingmap.com</span>
+        <span class="cc-pill">Backend: get_work_status · list_pending_suggestions · get_automation_state · get_handoff</span>
+        <button id="ccRefreshBtn" class="cc-toolbar-btn">Refresh View</button>
+      </div>
+    </div>
+    <div id="ccPriorityStrip" class="cc-priority-strip"></div>
+    <div class="cc-grid">
+      <div class="cc-col">
+        <section class="cc-panel">
+          <div class="cc-panel-header">
+            <div class="cc-panel-title">AI Agent Board</div>
+            <div id="ccAgentMeta" class="cc-panel-meta"></div>
+          </div>
+          <div id="ccAgentBoard" class="cc-panel-body"></div>
+        </section>
+      </div>
+      <div class="cc-col">
+        <section class="cc-panel">
+          <div class="cc-panel-header">
+            <div class="cc-panel-title">Suggestions + Workflow</div>
+            <div id="ccSuggestionMeta" class="cc-panel-meta"></div>
+          </div>
+          <div class="cc-panel-body">
+            <div id="ccSummaryCards" class="cc-summary-grid"></div>
+          </div>
+        </section>
+        <section class="cc-panel">
+          <div class="cc-panel-header">
+            <div class="cc-panel-title">Suggestion Queue</div>
+            <div class="cc-panel-meta">Triage, assignment, lifecycle</div>
+          </div>
+          <div id="ccSuggestionList" class="cc-panel-body tight"></div>
+        </section>
+        <section class="cc-panel">
+          <div class="cc-panel-header">
+            <div class="cc-panel-title">Task Routing</div>
+            <div class="cc-panel-meta">Queued to verification-ready</div>
+          </div>
+          <div class="cc-panel-body">
+            <div id="ccWorkQueue" class="cc-queue-grid"></div>
+          </div>
+        </section>
+        <section class="cc-panel">
+          <div class="cc-panel-header">
+            <div class="cc-panel-title">Automation Pipeline</div>
+            <div class="cc-panel-meta">Phase, handoffs, preview flow</div>
+          </div>
+          <div id="ccPipelineSummary" class="cc-panel-body tight"></div>
+        </section>
+      </div>
+      <div class="cc-col">
+        <section class="cc-panel" style="flex:1;">
+          <div class="cc-panel-header">
+            <div class="cc-panel-title">Detail Panel</div>
+            <div id="ccDetailMeta" class="cc-panel-meta"></div>
+          </div>
+          <div id="ccDetailPanel" class="cc-panel-body"></div>
+        </section>
+      </div>
+    </div>
+    <section class="cc-panel">
+      <div class="cc-panel-header">
+        <div class="cc-panel-title">Recent Activity</div>
+        <div class="cc-panel-meta">Shared-state movement and human dependencies</div>
+      </div>
+      <div id="ccActivityFeed" class="cc-panel-body tight"></div>
+    </section>
+  </div>
+</div>
+
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
   <div id="refHomePanel" style="display:none;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;max-height:40vh;overflow-y:auto;">
@@ -1093,12 +1259,210 @@ const STATE = {
   suggestion_handoffs: [],
   whoopData: null
 };
+const CONTROL_CENTRE_UI = {
+  selectedType: 'suggestion',
+  selectedId: null,
+  snapshot: null
+};
+const CONTROL_AGENT_ORDER = ['claude_code', 'codex', 'cowork', 'chatgpt', 'claude_chat'];
+const CONTROL_AGENT_LABELS = {
+  claude_code: 'Claude Code',
+  codex: 'Codex',
+  cowork: 'Cowork',
+  chatgpt: 'ChatGPT',
+  claude_chat: 'Claude Chat'
+};
+const CONTROL_CENTRE_ENDPOINTS = {
+  website: 'https://www.lauburugrapplingmap.com',
+  mcp: 'https://mcp.lauburugrapplingmap.com/mcp'
+};
+
+function ccEscape(value) {
+  return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/\x3c/g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function ccFormatWhen(value) {
+  if (!value) return 'unknown';
+  var ts = Date.parse(value);
+  if (!isFinite(ts)) return value;
+  return timeAgo(ts);
+}
+
+function ccPrettyStatus(value) {
+  return String(value || 'idle').replace(/_/g, ' ');
+}
+
+function ccNormalizeAgentKey(value) {
+  var key = String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  if (key === 'claudecode') key = 'claude_code';
+  if (key === 'claudechat') key = 'claude_chat';
+  return key;
+}
+
+function ccDeriveAssignedAI(suggestion, index) {
+  var explicit = suggestion.assigned_ai || suggestion.assignee || suggestion.owner;
+  if (explicit) return ccNormalizeAgentKey(explicit);
+  if (suggestion.classification === 'bug') return 'claude_code';
+  if (suggestion.classification === 'improvement') return 'codex';
+  if (suggestion.classification === 'feature_request') return 'chatgpt';
+  if ((suggestion.source || '').indexOf('chat') !== -1) return 'claude_chat';
+  return CONTROL_AGENT_ORDER[index % CONTROL_AGENT_ORDER.length];
+}
+
+function ccInferRecommendation(suggestion) {
+  if (suggestion.approval_status === 'approved') return 'approved';
+  if (suggestion.approval_status === 'rejected') return 'reject';
+  if (suggestion.severity_guess === 'high' || suggestion.classification === 'bug') return 'fast-track';
+  if (suggestion.classification === 'feature_request' || suggestion.classification === 'improvement') return 'approve';
+  return 'review';
+}
+
+function ccInferPriority(suggestion) {
+  if (suggestion.priority) return String(suggestion.priority).toLowerCase();
+  if (suggestion.severity_guess === 'high') return 'urgent';
+  if (suggestion.severity_guess === 'medium') return 'high';
+  return 'normal';
+}
+
+function ccInferStage(suggestion, handoff) {
+  var raw = suggestion.lifecycle_stage || suggestion.implementation_status || suggestion.status || '';
+  var handoffStatus = handoff && handoff.automation_status ? handoff.automation_status : '';
+  var stage = raw || handoffStatus || 'queued';
+  if (stage === 'new' || stage === 'pending') stage = 'queued';
+  if (stage === 'approved') stage = handoff ? handoffStatus || 'queued' : 'queued';
+  if (stage === 'pending_audit') stage = 'queued';
+  if (stage === 'not_started') stage = suggestion.approval_status === 'approved' ? 'queued' : 'triage';
+  if (stage === 'pending_preview') stage = 'ready_for_preview';
+  return stage;
+}
+
+function ccNormalizeSuggestions(rawSuggestions, handoffs) {
+  var seen = {};
+  return (rawSuggestions || []).map(function(suggestion, index) {
+    var baseSummary = suggestion.normalized_summary || suggestion.message_text || suggestion.title || suggestion.id || ('Suggestion ' + (index + 1));
+    var summaryKey = normalizeSegment(baseSummary.slice(0, 80));
+    seen[summaryKey] = (seen[summaryKey] || 0) + 1;
+    var handoff = (handoffs || []).find(function(item) { return item.suggestion_id === suggestion.id; }) || null;
+    var photos = suggestion.photo_urls || suggestion.photos || suggestion.attachments || [];
+    var photoCount = Array.isArray(photos) ? photos.length : (suggestion.photo_count || 0);
+    return {
+      id: suggestion.id || ('SUG-' + (index + 1)),
+      title: suggestion.title || baseSummary.slice(0, 72),
+      fullText: suggestion.message_text || suggestion.detail || suggestion.title || baseSummary,
+      createdAt: suggestion.created_at || suggestion.createdAt || null,
+      source: suggestion.source || 'website',
+      classification: suggestion.classification || 'unclear',
+      approvalStatus: suggestion.approval_status || suggestion.status || 'pending',
+      recommendation: ccInferRecommendation(suggestion),
+      priority: ccInferPriority(suggestion),
+      duplicate: !!suggestion.duplicate || seen[summaryKey] > 1,
+      photoCount: photoCount,
+      photos: Array.isArray(photos) ? photos : [],
+      assignedAI: ccDeriveAssignedAI(suggestion, index),
+      lifecycleStage: ccInferStage(suggestion, handoff),
+      handoffStatus: handoff ? (handoff.automation_status || 'created') : 'none',
+      previewStatus: suggestion.preview_status || suggestion.implementation_status || handoff && handoff.automation_status || 'not_started',
+      waitingOnHuman: !!suggestion.waiting_on_human || ((suggestion.approval_status || 'pending') === 'pending' && (ccInferPriority(suggestion) === 'urgent' || ccInferRecommendation(suggestion) !== 'review')),
+      blocker: suggestion.blocker || suggestion.blocked_reason || '',
+      selectedNode: suggestion.selected_node || null,
+      related: suggestion.related_items || [],
+      handoff: handoff
+    };
+  });
+}
+
+function ccDefaultAgentBoard() {
+  return CONTROL_AGENT_ORDER.map(function(key) {
+    return {
+      key: key,
+      name: CONTROL_AGENT_LABELS[key],
+      status: 'idle',
+      task: 'Awaiting MCP work status',
+      branch: null,
+      lastCommit: null,
+      blockers: key === 'claude_chat' || key === 'chatgpt' || key === 'cowork' ? 'Read-only until remote connector is attached' : '',
+      summary: 'Local fallback snapshot',
+      updatedAt: null
+    };
+  });
+}
+
+function ccNormalizeAgents(workStatus, suggestions) {
+  var sourceAgents = workStatus && workStatus.agents ? workStatus.agents : {};
+  var counts = {};
+  (suggestions || []).forEach(function(item) {
+    counts[item.assignedAI] = (counts[item.assignedAI] || 0) + 1;
+  });
+  return ccDefaultAgentBoard().map(function(agent) {
+    var src = sourceAgents[agent.key] || sourceAgents[ccNormalizeAgentKey(agent.name)] || {};
+    return {
+      key: agent.key,
+      name: agent.name,
+      status: src.status || agent.status,
+      task: src.task || agent.task,
+      branch: src.branch || null,
+      lastCommit: src.last_commit || src.commit || src.lastCommit || null,
+      blockers: src.blockers || src.blocker || agent.blockers || '',
+      summary: src.summary || agent.summary || '',
+      updatedAt: src.updated_at || null,
+      assignedCount: counts[agent.key] || 0
+    };
+  });
+}
+
+function ccGetLocalAutomationState(suggestions, handoffs) {
+  var approved = suggestions.filter(function(item) { return item.approvalStatus === 'approved'; }).length;
+  var blocked = suggestions.filter(function(item) { return item.lifecycleStage === 'blocked'; }).length;
+  var previewReady = suggestions.filter(function(item) { return item.lifecycleStage === 'ready_for_preview'; }).length;
+  var verifyReady = suggestions.filter(function(item) { return item.lifecycleStage === 'verify_ready'; }).length;
+  return {
+    current_phase: approved > 0 ? 'implementation' : 'triage',
+    blocked_count: blocked,
+    preview_ready_count: previewReady,
+    verification_ready_count: verifyReady,
+    handoff_count: handoffs.length,
+    loop: 1
+  };
+}
+
+function ccGetLocalHandoffSummary(handoffs, suggestions) {
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    current_state: handoffs.length ? 'active handoffs in motion' : 'no handoffs yet',
+    commits: [],
+    suggestion_status: suggestions.filter(function(item) { return item.approvalStatus === 'approved'; }).map(function(item) { return item.id; }),
+    smoke_tests: [],
+    remaining: suggestions.filter(function(item) { return item.approvalStatus !== 'approved'; }).map(function(item) { return item.title; }).slice(0, 6)
+  };
+}
+
+var ControlCentreAdapters = {
+  getSnapshot: function() {
+    var injected = window.__GM_CONTROL_CENTRE_DATA__ || {};
+    var rawWorkStatus = injected.get_work_status || injected.work_status || null;
+    var rawSuggestions = injected.list_pending_suggestions || injected.suggestions || STATE.suggestions || [];
+    var rawAutomation = injected.get_automation_state || injected.automation_state || null;
+    var rawHandoff = injected.get_handoff || injected.handoff || null;
+    var handoffs = (STATE.suggestion_handoffs || []).slice();
+    var suggestions = ccNormalizeSuggestions(rawSuggestions, handoffs);
+    var agents = ccNormalizeAgents(rawWorkStatus, suggestions);
+    var automation = rawAutomation || ccGetLocalAutomationState(suggestions, handoffs);
+    var handoff = rawHandoff || ccGetLocalHandoffSummary(handoffs, suggestions);
+    return {
+      agents: agents,
+      suggestions: suggestions,
+      automation: automation,
+      handoff: handoff,
+      updatedAt: rawWorkStatus && rawWorkStatus.updated_at ? rawWorkStatus.updated_at : new Date().toISOString()
+    };
+  }
+};
 
 function saveState() {
   UserStore.saveProgress(STATE.progress);
   UserStore.saveNotes(STATE.notes);
   var appState = {
-    tab: document.getElementById('graph3dView').style.display !== 'none' ? 'graph3d' : 'reference',
+    tab: document.getElementById('controlCentreView').style.display !== 'none' ? 'controlcentre' : (document.getElementById('graph3dView').style.display !== 'none' ? 'graph3d' : 'reference'),
     selected: SELECTED_NODE || null,
     recentViewed: STATE.recentViewed || [],
     lastPracticed: STATE.lastPracticed || {},
@@ -1114,6 +1478,9 @@ function saveState() {
     whoopData: STATE.whoopData || null
   };
   UserStore.saveAppState(appState);
+  if (document.getElementById('controlCentreView').style.display !== 'none' && typeof window.renderControlCentre === 'function') {
+    window.renderControlCentre();
+  }
 }
 // Track recently viewed techniques
 function addRecentView(key, label, section) {
@@ -3013,16 +3380,337 @@ document.getElementById('refExpandAll').addEventListener('click', () => {
   if(window.g3dSyncExpanded) window.g3dSyncExpanded();
 });
 
+function ccBuildActivity(snapshot) {
+  var items = [];
+  snapshot.suggestions.forEach(function(item) {
+    items.push({
+      ts: item.createdAt || '',
+      type: 'suggestion submitted',
+      title: item.title,
+      body: item.fullText,
+      status: item.approvalStatus
+    });
+    if (item.handoff && item.handoff.approved_at) {
+      items.push({
+        ts: item.handoff.approved_at,
+        type: 'handoff created',
+        title: item.id,
+        body: item.handoff.normalized_summary || item.title,
+        status: item.handoff.automation_status || 'pending_audit'
+      });
+    }
+    if (item.lifecycleStage === 'ready_for_preview' || item.lifecycleStage === 'verify_ready') {
+      items.push({
+        ts: item.createdAt || '',
+        type: item.lifecycleStage === 'verify_ready' ? 'verify ready' : 'preview ready',
+        title: item.id,
+        body: item.title,
+        status: item.lifecycleStage
+      });
+    }
+  });
+  snapshot.agents.forEach(function(agent) {
+    if (agent.updatedAt || agent.summary) {
+      items.push({
+        ts: agent.updatedAt || '',
+        type: agent.name + ' status changed',
+        title: agent.task,
+        body: agent.summary || agent.blockers || 'Agent state refreshed',
+        status: agent.status
+      });
+    }
+    if (agent.status === 'blocked') {
+      items.push({
+        ts: agent.updatedAt || '',
+        type: 'blocked items',
+        title: agent.name,
+        body: agent.blockers || 'Waiting on dependency',
+        status: 'blocked'
+      });
+    }
+  });
+  return items.sort(function(a, b) {
+    return (Date.parse(b.ts || 0) || 0) - (Date.parse(a.ts || 0) || 0);
+  }).slice(0, 14);
+}
+
+function ccBuildSnapshot() {
+  var snapshot = ControlCentreAdapters.getSnapshot();
+  var suggestions = snapshot.suggestions.slice();
+  var agents = snapshot.agents.slice();
+  var approved = suggestions.filter(function(item) { return item.approvalStatus === 'approved'; }).length;
+  var rejected = suggestions.filter(function(item) { return item.approvalStatus === 'rejected'; }).length;
+  var deferred = suggestions.filter(function(item) { return item.approvalStatus === 'deferred'; }).length;
+  var pending = suggestions.filter(function(item) { return item.approvalStatus === 'pending'; }).length;
+  var withPhotos = suggestions.filter(function(item) { return item.photoCount > 0; }).length;
+  var recommendedApprove = suggestions.filter(function(item) { return item.recommendation === 'approve' || item.recommendation === 'fast-track'; }).length;
+  var waitingOnHuman = suggestions.filter(function(item) { return item.waitingOnHuman; }).length + agents.filter(function(agent) { return agent.status === 'blocked'; }).length;
+  var blockedAgents = agents.filter(function(agent) { return agent.status === 'blocked'; });
+  var previewReady = suggestions.filter(function(item) { return item.lifecycleStage === 'ready_for_preview'; });
+  var verifyReady = suggestions.filter(function(item) { return item.lifecycleStage === 'verify_ready'; });
+  var urgentSuggestions = suggestions.filter(function(item) { return item.priority === 'urgent'; });
+  var workQueue = {
+    queued: suggestions.filter(function(item) { return item.lifecycleStage === 'queued' || item.lifecycleStage === 'triage'; }).length,
+    in_progress: suggestions.filter(function(item) { return item.lifecycleStage === 'in_progress'; }).length,
+    blocked: suggestions.filter(function(item) { return item.lifecycleStage === 'blocked'; }).length + blockedAgents.length,
+    ready_for_preview: previewReady.length,
+    verify_ready: verifyReady.length
+  };
+  var summaryCards = [
+    { label: 'Pending', value: pending, note: 'Awaiting triage or approval' },
+    { label: 'Approved', value: approved, note: 'Ready to move through workflow' },
+    { label: 'Deferred', value: deferred, note: 'Parked for later review' },
+    { label: 'Rejected', value: rejected, note: 'Closed out or duplicate' },
+    { label: 'With Photos', value: withPhotos, note: 'Visual context attached' },
+    { label: 'Recommended Approve', value: recommendedApprove, note: 'Fast-track candidates' },
+    { label: 'Waiting On Human', value: waitingOnHuman, note: 'Needs your decision' },
+    { label: 'Handoffs', value: snapshot.automation.handoff_count || 0, note: 'Automation artifacts created' }
+  ];
+  var priorities = [
+    { label: 'Approvals Needed', value: pending, copy: pending ? pending + ' suggestion' + (pending !== 1 ? 's' : '') + ' waiting on review.' : 'Queue is clear right now.' },
+    { label: 'Blocked Agents', value: blockedAgents.length, copy: blockedAgents.length ? blockedAgents.map(function(item) { return item.name; }).join(', ') : 'No AI lanes are blocked.' },
+    { label: 'Preview Ready', value: previewReady.length, copy: previewReady.length ? previewReady[0].title : 'Nothing ready for preview yet.' },
+    { label: 'Urgent Suggestions', value: urgentSuggestions.length, copy: urgentSuggestions.length ? urgentSuggestions[0].title : 'No urgent triage items.' }
+  ];
+  snapshot.activity = ccBuildActivity(snapshot);
+  snapshot.summaryCards = summaryCards;
+  snapshot.priorities = priorities;
+  snapshot.workQueue = workQueue;
+  snapshot.pipelineSummary = {
+    currentPhase: snapshot.automation.current_phase || 'triage',
+    handoffCount: snapshot.automation.handoff_count || 0,
+    previewReadyCount: snapshot.automation.preview_ready_count || previewReady.length,
+    verificationReadyCount: snapshot.automation.verification_ready_count || verifyReady.length
+  };
+  return snapshot;
+}
+
+function ccBadge(text, tone) {
+  var className = 'cc-pill';
+  if (tone) className += ' ' + tone;
+  return '<span class="' + className + '">' + ccEscape(text) + '</span>';
+}
+
+function ccRenderPriorityStrip(snapshot) {
+  var root = document.getElementById('ccPriorityStrip');
+  root.innerHTML = snapshot.priorities.map(function(item) {
+    return '<div class="cc-priority-card"><div class="cc-priority-label">' + ccEscape(item.label) + '</div><div class="cc-priority-value">' + ccEscape(item.value) + '</div><div class="cc-priority-copy">' + ccEscape(item.copy) + '</div></div>';
+  }).join('');
+}
+
+function ccRenderAgentBoard(snapshot) {
+  var root = document.getElementById('ccAgentBoard');
+  document.getElementById('ccAgentMeta').textContent = snapshot.agents.length + ' lanes';
+  if (!snapshot.agents.length) {
+    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No agent data yet</div><div class="cc-empty-copy">Attach `get_work_status` to replace the local fallback board.</div></div>';
+    return;
+  }
+  root.innerHTML = '<div class="cc-agent-list">' + snapshot.agents.map(function(agent) {
+    var selected = CONTROL_CENTRE_UI.selectedType === 'agent' && CONTROL_CENTRE_UI.selectedId === agent.key;
+    return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-agent="' + ccEscape(agent.key) + '">' +
+      '<div class="cc-agent-header"><div><div class="cc-agent-name">' + ccEscape(agent.name) + '</div><div class="cc-agent-task">' + ccEscape(agent.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(agent.status || 'idle') + '">' + ccEscape(ccPrettyStatus(agent.status || 'idle')) + '</span></div>' +
+      '<div class="cc-agent-meta">' +
+      '<span><span class="cc-label">Branch</span> ' + ccEscape(agent.branch || 'none') + '</span>' +
+      '<span><span class="cc-label">Commit</span> ' + ccEscape(agent.lastCommit || 'none') + '</span>' +
+      '<span><span class="cc-label">Assigned</span> ' + ccEscape(agent.assignedCount || 0) + '</span>' +
+      '<span><span class="cc-label">Updated</span> ' + ccEscape(ccFormatWhen(agent.updatedAt)) + '</span>' +
+      '</div>' +
+      (agent.blockers ? '<div class="cc-agent-meta"><span><span class="cc-label">Blocker</span> ' + ccEscape(agent.blockers) + '</span></div>' : '') +
+      '</article>';
+  }).join('') + '</div>';
+}
+
+function ccRenderSummaryCards(snapshot) {
+  document.getElementById('ccSuggestionMeta').textContent = snapshot.suggestions.length + ' total suggestions';
+  document.getElementById('ccSummaryCards').innerHTML = snapshot.summaryCards.map(function(card) {
+    return '<div class="cc-summary-card"><div class="cc-summary-label">' + ccEscape(card.label) + '</div><div class="cc-summary-value">' + ccEscape(card.value) + '</div><div class="cc-summary-note">' + ccEscape(card.note) + '</div></div>';
+  }).join('');
+}
+
+function ccRenderSuggestionList(snapshot) {
+  var root = document.getElementById('ccSuggestionList');
+  if (!snapshot.suggestions.length) {
+    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No suggestions yet</div><div class="cc-empty-copy">The queue is empty. Existing suggestion intake still works, and new items will show up here automatically.</div></div>';
+    return;
+  }
+  root.innerHTML = '<div class="cc-suggestion-list">' + snapshot.suggestions.map(function(item) {
+    var selected = CONTROL_CENTRE_UI.selectedType === 'suggestion' && CONTROL_CENTRE_UI.selectedId === item.id;
+    var badges = [
+      ccBadge('triage: ' + item.recommendation),
+      ccBadge('priority: ' + item.priority),
+      ccBadge('stage: ' + item.lifecycleStage),
+      ccBadge('AI: ' + (CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI))
+    ];
+    if (item.duplicate) badges.push(ccBadge('duplicate'));
+    if (item.photoCount) badges.push(ccBadge(item.photoCount + ' photo' + (item.photoCount !== 1 ? 's' : '')));
+    return '<article class="cc-suggestion-card' + (selected ? ' selected' : '') + '" data-cc-suggestion="' + ccEscape(item.id) + '">' +
+      '<div class="cc-suggestion-head"><div><div class="cc-suggestion-title">' + ccEscape(item.title) + '</div><div class="cc-suggestion-body">' + ccEscape(item.fullText.slice(0, 180)) + (item.fullText.length > 180 ? '…' : '') + '</div></div><span class="cc-status ' + ccEscape(item.approvalStatus === 'approved' ? 'done' : item.approvalStatus === 'pending' ? 'waiting' : item.approvalStatus) + '">' + ccEscape(ccPrettyStatus(item.approvalStatus)) + '</span></div>' +
+      '<div class="cc-badge-row">' + badges.join('') + '</div>' +
+      '<div class="cc-inline-meta"><span>' + ccEscape(item.id) + '</span><span>' + ccEscape(item.source) + '</span><span>' + ccEscape(ccFormatWhen(item.createdAt)) + '</span></div>' +
+      '</article>';
+  }).join('') + '</div>';
+}
+
+function ccRenderWorkQueue(snapshot) {
+  var queue = snapshot.workQueue;
+  document.getElementById('ccWorkQueue').innerHTML = [
+    { key: 'queued', label: 'Queued' },
+    { key: 'in_progress', label: 'In Progress' },
+    { key: 'blocked', label: 'Blocked' },
+    { key: 'ready_for_preview', label: 'Ready For Preview' },
+    { key: 'verify_ready', label: 'Verify Ready' }
+  ].map(function(item) {
+    return '<div class="cc-queue-card"><div class="cc-queue-head"><div class="cc-queue-count">' + ccEscape(queue[item.key] || 0) + '</div></div><div class="cc-queue-label">' + ccEscape(item.label) + '</div></div>';
+  }).join('');
+}
+
+function ccRenderPipeline(snapshot) {
+  document.getElementById('ccPipelineSummary').innerHTML =
+    '<div class="cc-detail-grid">' +
+      '<div class="cc-detail-card"><h4>Current Phase</h4><p>' + ccEscape(snapshot.pipelineSummary.currentPhase) + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Handoff Count</h4><p>' + ccEscape(snapshot.pipelineSummary.handoffCount) + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Preview Ready</h4><p>' + ccEscape(snapshot.pipelineSummary.previewReadyCount) + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Verification Ready</h4><p>' + ccEscape(snapshot.pipelineSummary.verificationReadyCount) + '</p></div>' +
+    '</div>' +
+    '<div class="cc-footer-note" style="margin-top:10px;">Handoff summary: ' + ccEscape(snapshot.handoff.current_state || 'No handoff summary yet') + '.</div>';
+}
+
+function ccEnsureSelection(snapshot) {
+  if (CONTROL_CENTRE_UI.selectedType === 'agent' && snapshot.agents.some(function(agent) { return agent.key === CONTROL_CENTRE_UI.selectedId; })) return;
+  if (CONTROL_CENTRE_UI.selectedType === 'suggestion' && snapshot.suggestions.some(function(item) { return item.id === CONTROL_CENTRE_UI.selectedId; })) return;
+  if (snapshot.suggestions.length) {
+    var preferred = snapshot.suggestions.find(function(item) { return item.waitingOnHuman; }) || snapshot.suggestions[0];
+    CONTROL_CENTRE_UI.selectedType = 'suggestion';
+    CONTROL_CENTRE_UI.selectedId = preferred.id;
+    return;
+  }
+  if (snapshot.agents.length) {
+    CONTROL_CENTRE_UI.selectedType = 'agent';
+    CONTROL_CENTRE_UI.selectedId = snapshot.agents[0].key;
+  }
+}
+
+function ccRenderDetail(snapshot) {
+  var root = document.getElementById('ccDetailPanel');
+  var meta = document.getElementById('ccDetailMeta');
+  ccEnsureSelection(snapshot);
+  if (CONTROL_CENTRE_UI.selectedType === 'agent') {
+    var agent = snapshot.agents.find(function(item) { return item.key === CONTROL_CENTRE_UI.selectedId; });
+    if (!agent) return;
+    var assigned = snapshot.suggestions.filter(function(item) { return item.assignedAI === agent.key; }).slice(0, 8);
+    meta.textContent = agent.name;
+    root.innerHTML = '<div class="cc-detail-head"><div><div class="cc-detail-title">' + ccEscape(agent.name) + '</div><div class="cc-detail-copy">' + ccEscape(agent.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(agent.status || 'idle') + '">' + ccEscape(ccPrettyStatus(agent.status || 'idle')) + '</span></div>' +
+      '<div class="cc-detail-grid">' +
+        '<div class="cc-detail-card"><h4>Branch / Commit</h4><p>' + ccEscape(agent.branch || 'none') + '<br>' + ccEscape(agent.lastCommit || 'No recent commit') + '</p></div>' +
+        '<div class="cc-detail-card"><h4>Last Updated</h4><p>' + ccEscape(ccFormatWhen(agent.updatedAt)) + '<br>' + ccEscape(agent.summary || 'No summary yet') + '</p></div>' +
+        '<div class="cc-detail-card"><h4>Blockers</h4><p>' + ccEscape(agent.blockers || 'No blocker reported') + '</p></div>' +
+        '<div class="cc-detail-card"><h4>Assigned Items</h4><p>' + ccEscape(agent.assignedCount || 0) + ' active item' + ((agent.assignedCount || 0) !== 1 ? 's' : '') + '</p></div>' +
+      '</div>' +
+      '<div class="cc-detail-card" style="margin-top:10px;"><h4>Recent Activity</h4><ul>' +
+        (snapshot.activity.filter(function(item) { return item.type.indexOf(agent.name) === 0 || item.body === agent.summary; }).slice(0, 5).map(function(item) {
+          return '<li><span class="cc-label">' + ccEscape(ccFormatWhen(item.ts)) + '</span> ' + ccEscape(item.type) + ' · ' + ccEscape(item.body || item.title) + '</li>';
+        }).join('') || '<li>No recent activity logged for this lane.</li>') +
+      '</ul></div>' +
+      '<div class="cc-detail-card" style="margin-top:10px;"><h4>Assigned Queue</h4><div class="cc-assigned-list">' +
+        (assigned.map(function(item) {
+          return '<div class="cc-activity-card"><div class="cc-activity-head"><div class="cc-suggestion-title" style="font-size:14px;">' + ccEscape(item.title) + '</div><span class="cc-status ' + ccEscape(item.lifecycleStage === 'blocked' ? 'blocked' : item.lifecycleStage === 'ready_for_preview' ? 'ready' : 'waiting') + '">' + ccEscape(ccPrettyStatus(item.lifecycleStage)) + '</span></div><div class="cc-activity-copy">' + ccEscape(item.fullText.slice(0, 120)) + '</div></div>';
+        }).join('') || '<div class="cc-empty"><div class="cc-empty-copy">No items currently assigned to this AI lane.</div></div>') +
+      '</div></div>';
+    return;
+  }
+  var item = snapshot.suggestions.find(function(entry) { return entry.id === CONTROL_CENTRE_UI.selectedId; });
+  if (!item) {
+    meta.textContent = '';
+    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">Nothing selected</div><div class="cc-empty-copy">Pick an AI card or suggestion to inspect more detail.</div></div>';
+    return;
+  }
+  meta.textContent = item.id;
+  root.innerHTML = '<div class="cc-detail-head"><div><div class="cc-detail-title">' + ccEscape(item.title) + '</div><div class="cc-detail-copy">' + ccEscape(item.fullText) + '</div></div><span class="cc-status ' + ccEscape(item.approvalStatus === 'approved' ? 'done' : item.approvalStatus === 'pending' ? 'waiting' : item.approvalStatus) + '">' + ccEscape(ccPrettyStatus(item.approvalStatus)) + '</span></div>' +
+    '<div class="cc-badge-row" style="margin-top:10px;">' +
+      ccBadge('triage: ' + item.recommendation) +
+      ccBadge('priority: ' + item.priority) +
+      ccBadge('assigned: ' + (CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI)) +
+      ccBadge('handoff: ' + item.handoffStatus) +
+      ccBadge('preview: ' + item.previewStatus) +
+      ccBadge('lifecycle: ' + item.lifecycleStage) +
+    '</div>' +
+    '<div class="cc-detail-grid">' +
+      '<div class="cc-detail-card"><h4>Triage Metadata</h4><p>Source: ' + ccEscape(item.source) + '<br>Created: ' + ccEscape(ccFormatWhen(item.createdAt)) + '<br>Classification: ' + ccEscape(item.classification) + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Workflow</h4><p>Approval: ' + ccEscape(item.approvalStatus) + '<br>Handoff: ' + ccEscape(item.handoffStatus) + '<br>Preview: ' + ccEscape(item.previewStatus) + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Assigned AI</h4><p>' + ccEscape(CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI) + '<br>' + ccEscape(item.blocker || 'No blocker recorded') + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Related / Duplicates</h4><p>' + (item.duplicate ? 'Possible duplicate detected.' : 'No duplicate signal.') + '<br>' + ccEscape((item.related || []).join(', ') || 'No related items attached.') + '</p></div>' +
+    '</div>' +
+    '<div class="cc-detail-card" style="margin-top:10px;"><h4>Photos</h4>' +
+      (item.photoCount ? '<div class="cc-photo-strip">' + item.photos.map(function(photo, index) { return '<div class="cc-photo-chip">Photo ' + (index + 1) + '</div>'; }).join('') + '</div>' : '<p>No photos attached yet.</p>') +
+    '</div>' +
+    '<div class="cc-detail-card" style="margin-top:10px;"><h4>Navigation</h4><p>' + ccEscape(item.selectedNode || 'No node linked from capture.') + '</p>' + (item.selectedNode ? '<button class="cc-action-link" data-cc-open-node="' + ccEscape(item.selectedNode) + '">Open linked node →</button>' : '') + '</div>';
+}
+
+function ccRenderActivity(snapshot) {
+  var root = document.getElementById('ccActivityFeed');
+  if (!snapshot.activity.length) {
+    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No recent activity</div><div class="cc-empty-copy">Activity will appear here as suggestions move, handoffs get created, and AI statuses change.</div></div>';
+    return;
+  }
+  root.innerHTML = '<div class="cc-activity-list">' + snapshot.activity.map(function(item) {
+    return '<article class="cc-activity-card"><div class="cc-activity-head"><div class="cc-panel-title" style="font-size:12px;">' + ccEscape(item.type) + '</div><div class="cc-activity-time">' + ccEscape(ccFormatWhen(item.ts)) + '</div></div><div class="cc-activity-copy"><span class="cc-value-strong">' + ccEscape(item.title) + '</span> · ' + ccEscape(item.body || '') + '</div></article>';
+  }).join('') + '</div>';
+}
+
+window.renderControlCentre = function() {
+  var root = document.getElementById('controlCentreView');
+  if (!root) return;
+  var snapshot = ccBuildSnapshot();
+  CONTROL_CENTRE_UI.snapshot = snapshot;
+  ccRenderPriorityStrip(snapshot);
+  ccRenderAgentBoard(snapshot);
+  ccRenderSummaryCards(snapshot);
+  ccRenderSuggestionList(snapshot);
+  ccRenderWorkQueue(snapshot);
+  ccRenderPipeline(snapshot);
+  ccRenderDetail(snapshot);
+  ccRenderActivity(snapshot);
+};
+
+document.getElementById('ccRefreshBtn').addEventListener('click', function() {
+  window.renderControlCentre();
+});
+
+document.getElementById('ccAgentBoard').addEventListener('click', function(event) {
+  var card = event.target.closest('[data-cc-agent]');
+  if (!card) return;
+  CONTROL_CENTRE_UI.selectedType = 'agent';
+  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-agent');
+  window.renderControlCentre();
+});
+
+document.getElementById('ccSuggestionList').addEventListener('click', function(event) {
+  var card = event.target.closest('[data-cc-suggestion]');
+  if (!card) return;
+  CONTROL_CENTRE_UI.selectedType = 'suggestion';
+  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-suggestion');
+  window.renderControlCentre();
+});
+
+document.getElementById('ccDetailPanel').addEventListener('click', function(event) {
+  var button = event.target.closest('[data-cc-open-node]');
+  if (!button) return;
+  var label = button.getAttribute('data-cc-open-node');
+  if (label) switchToReferenceNode(label, '');
+});
+
 // ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
 function switchToTab(view) {
   document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
   const btn = document.querySelector('[data-view="'+view+'"]');
   if (btn) btn.classList.add('active');
+  document.getElementById('controlCentreView').style.display = view === 'controlcentre' ? 'flex' : 'none';
   document.getElementById('referenceView').style.display = view === 'reference' ? 'flex' : 'none';
   document.getElementById('graph3dView').style.display = view === 'graph3d' ? 'flex' : 'none';
   document.getElementById('graph3dView').style.flexDirection = 'column';
   if (view === 'graph3d') { requestAnimationFrame(() => requestAnimationFrame(initGraph3D)); if(window._g3dResume) window._g3dResume(); setTimeout(function(){window.dispatchEvent(new Event('resize'));},100); }
   else { if(window._g3dPause) window._g3dPause(); }
+  if (view === 'controlcentre' && typeof window.renderControlCentre === 'function') window.renderControlCentre();
   // Blur any focused search input on tab switch
   var activeEl = document.activeElement;
   if (activeEl && (activeEl.id === 'refSearch' || activeEl.id === 'g3dSearch')) activeEl.blur();
@@ -6880,7 +7568,9 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
     }
   }
   if (!deepLinked) {
-    if (STATE._resumeTab === 'reference') {
+    if (STATE._resumeTab === 'controlcentre') {
+      switchToTab('controlcentre');
+    } else if (STATE._resumeTab === 'reference') {
       switchToTab('reference');
       if (STATE._resumeSelected && STATE._resumeSelected.label) {
         setTimeout(function() { switchToReferenceNode(STATE._resumeSelected.label, STATE._resumeSelected.section); }, 200);
@@ -6912,12 +7602,12 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
 })();
 // Update hash on tab switch and selection
 function updateHash() {
-  var view = document.getElementById('graph3dView').style.display !== 'none' ? 'net' : 'ref';
+  var view = document.getElementById('controlCentreView').style.display !== 'none' ? 'control' : (document.getElementById('graph3dView').style.display !== 'none' ? 'net' : 'ref');
   var h = view;
   // CW17: Use tech= deep link when a technique is selected with a full key
-  if (SELECTED_NODE && SELECTED_NODE.key && SELECTED_NODE.key.indexOf('|') !== -1) {
+  if (view !== 'control' && SELECTED_NODE && SELECTED_NODE.key && SELECTED_NODE.key.indexOf('|') !== -1) {
     h = 'tech=' + encodeURIComponent(SELECTED_NODE.key);
-  } else if (SELECTED_NODE && SELECTED_NODE.label) {
+  } else if (view !== 'control' && SELECTED_NODE && SELECTED_NODE.label) {
     // Position-level: use pos= format
     h = 'pos=' + encodeURIComponent(SELECTED_NODE.label) + (SELECTED_NODE.section ? '&sec=' + encodeURIComponent(SELECTED_NODE.section) : '');
   } else {
