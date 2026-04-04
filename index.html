@@ -980,92 +980,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
      Codex owns markup structure, visibility, account gating, menu IA, suggestion entry points,
      and operator/public separation in this section.
      Claude Code should limit changes here to polish-only text/icon/spacing work that does not alter logic. -->
-<div id="controlCentreView" style="display:none;flex-direction:column;flex:1;min-height:0;">
-  <div class="cc-shell">
-    <div class="cc-topbar">
-      <div class="cc-topbar-copy">
-        <div class="cc-topbar-kicker">Control Centre</div>
-        <div class="cc-topbar-title">Control Centre</div>
-        <div class="cc-topbar-sub">Single-screen oversight for all five AI lanes, the suggestion queue, automation state, handoffs, and the human approvals that unblock the workflow. The UI is adapter-driven and ready to swap local state for the MCP tools at <span class="cc-value-strong">mcp.lauburugrapplingmap.com/mcp</span>.</div>
-      </div>
-      <div class="cc-topbar-meta">
-        <span id="ccEnvironmentBadge" class="cc-pill cc-env-pill dev">Dev</span>
-        <span id="ccEnvironmentHost" class="cc-pill cc-env-host"></span>
-        <span class="cc-pill">Website: www.lauburugrapplingmap.com</span>
-        <span class="cc-pill">Backend: get_work_status · list_pending_suggestions · get_automation_state · get_handoff</span>
-        <button id="ccRefreshBtn" class="cc-toolbar-btn">Refresh View</button>
-      </div>
-    </div>
-    <div class="cc-mobile-nav" id="ccMobileNav">
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccPriorityStrip">Overview</button>
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccTaskRoutingPanel">Tasks</button>
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccDetailPanelSection">Detail</button>
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccActivityPanel">Activity</button>
-    </div>
-    <div id="ccPriorityStrip" class="cc-priority-strip"></div>
-    <div class="cc-grid">
-      <div class="cc-col">
-        <section class="cc-panel" id="ccAgentPanel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">AI Agent Board</div>
-            <div id="ccAgentMeta" class="cc-panel-meta"></div>
-          </div>
-          <div id="ccAgentBoard" class="cc-panel-body"></div>
-        </section>
-      </div>
-      <div class="cc-col">
-        <section class="cc-panel" id="ccSuggestionsPanel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Suggestions + Workflow</div>
-            <div id="ccSuggestionMeta" class="cc-panel-meta"></div>
-          </div>
-          <div class="cc-panel-body">
-            <div id="ccSummaryCards" class="cc-summary-grid"></div>
-          </div>
-        </section>
-        <section class="cc-panel" id="ccTaskRoutingPanel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Suggestion Queue</div>
-            <div class="cc-panel-meta">Triage, assignment, lifecycle</div>
-          </div>
-          <div id="ccSuggestionList" class="cc-panel-body tight"></div>
-        </section>
-        <section class="cc-panel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Task Routing</div>
-            <div class="cc-panel-meta">Queued to verification-ready</div>
-          </div>
-          <div class="cc-panel-body">
-            <div id="ccWorkQueue" class="cc-queue-grid"></div>
-          </div>
-        </section>
-        <section class="cc-panel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Automation Pipeline</div>
-            <div class="cc-panel-meta">Phase, handoffs, preview flow</div>
-          </div>
-          <div id="ccPipelineSummary" class="cc-panel-body tight"></div>
-        </section>
-      </div>
-      <div class="cc-col">
-        <section class="cc-panel" id="ccDetailPanelSection" style="flex:1;">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Detail Panel</div>
-            <div id="ccDetailMeta" class="cc-panel-meta"></div>
-          </div>
-          <div id="ccDetailPanel" class="cc-panel-body"></div>
-        </section>
-      </div>
-    </div>
-    <section class="cc-panel" id="ccActivityPanel">
-      <div class="cc-panel-header">
-        <div class="cc-panel-title">Recent Activity</div>
-        <div class="cc-panel-meta">Shared-state movement and human dependencies</div>
-      </div>
-      <div id="ccActivityFeed" class="cc-panel-body tight"></div>
-    </section>
-  </div>
-</div>
+<div id="controlCentreView" style="display:none;flex-direction:column;flex:1;min-height:0;" data-cc-mounted="false"></div>
 
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
@@ -1335,22 +1250,107 @@ function isAaronOperatorAccount() {
 function isOperatorUIEnabled() {
   return isAaronOperatorAccount();
 }
-var CONTROL_CENTRE_DOM_STASH = document.createDocumentFragment();
+var CONTROL_CENTRE_SHELL_HTML =
+  '<div class="cc-shell">' +
+    '<div class="cc-topbar">' +
+      '<div class="cc-topbar-copy">' +
+        '<div class="cc-topbar-kicker">Control Centre</div>' +
+        '<div class="cc-topbar-title">Control Centre</div>' +
+        '<div class="cc-topbar-sub">Single-screen oversight for all five AI lanes, the suggestion queue, automation state, handoffs, and the human approvals that unblock the workflow. The UI is adapter-driven and ready to swap local state for the MCP tools at <span class="cc-value-strong">mcp.lauburugrapplingmap.com/mcp</span>.</div>' +
+      '</div>' +
+      '<div class="cc-topbar-meta">' +
+        '<span id="ccEnvironmentBadge" class="cc-pill cc-env-pill dev">Dev</span>' +
+        '<span id="ccEnvironmentHost" class="cc-pill cc-env-host"></span>' +
+        '<span class="cc-pill">Website: www.lauburugrapplingmap.com</span>' +
+        '<span class="cc-pill">Backend: get_work_status · list_pending_suggestions · get_automation_state · get_handoff</span>' +
+        '<button id="ccRefreshBtn" class="cc-toolbar-btn">Refresh View</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="cc-mobile-nav" id="ccMobileNav">' +
+      '<button class="cc-mobile-nav-btn" data-cc-jump="ccPriorityStrip">Overview</button>' +
+      '<button class="cc-mobile-nav-btn" data-cc-jump="ccTaskRoutingPanel">Tasks</button>' +
+      '<button class="cc-mobile-nav-btn" data-cc-jump="ccDetailPanelSection">Detail</button>' +
+      '<button class="cc-mobile-nav-btn" data-cc-jump="ccActivityPanel">Activity</button>' +
+    '</div>' +
+    '<div id="ccPriorityStrip" class="cc-priority-strip"></div>' +
+    '<div class="cc-grid">' +
+      '<div class="cc-col">' +
+        '<section class="cc-panel" id="ccAgentPanel">' +
+          '<div class="cc-panel-header">' +
+            '<div class="cc-panel-title">AI Agent Board</div>' +
+            '<div id="ccAgentMeta" class="cc-panel-meta"></div>' +
+          '</div>' +
+          '<div id="ccAgentBoard" class="cc-panel-body"></div>' +
+        '</section>' +
+      '</div>' +
+      '<div class="cc-col">' +
+        '<section class="cc-panel" id="ccSuggestionsPanel">' +
+          '<div class="cc-panel-header">' +
+            '<div class="cc-panel-title">Suggestions + Workflow</div>' +
+            '<div id="ccSuggestionMeta" class="cc-panel-meta"></div>' +
+          '</div>' +
+          '<div class="cc-panel-body">' +
+            '<div id="ccSummaryCards" class="cc-summary-grid"></div>' +
+          '</div>' +
+        '</section>' +
+        '<section class="cc-panel" id="ccTaskRoutingPanel">' +
+          '<div class="cc-panel-header">' +
+            '<div class="cc-panel-title">Suggestion Queue</div>' +
+            '<div class="cc-panel-meta">Triage, assignment, lifecycle</div>' +
+          '</div>' +
+          '<div id="ccSuggestionList" class="cc-panel-body tight"></div>' +
+        '</section>' +
+        '<section class="cc-panel">' +
+          '<div class="cc-panel-header">' +
+            '<div class="cc-panel-title">Task Routing</div>' +
+            '<div class="cc-panel-meta">Queued to verification-ready</div>' +
+          '</div>' +
+          '<div class="cc-panel-body">' +
+            '<div id="ccWorkQueue" class="cc-queue-grid"></div>' +
+          '</div>' +
+        '</section>' +
+        '<section class="cc-panel">' +
+          '<div class="cc-panel-header">' +
+            '<div class="cc-panel-title">Automation Pipeline</div>' +
+            '<div class="cc-panel-meta">Phase, handoffs, preview flow</div>' +
+          '</div>' +
+          '<div id="ccPipelineSummary" class="cc-panel-body tight"></div>' +
+        '</section>' +
+      '</div>' +
+      '<div class="cc-col">' +
+        '<section class="cc-panel" id="ccDetailPanelSection" style="flex:1;">' +
+          '<div class="cc-panel-header">' +
+            '<div class="cc-panel-title">Detail Panel</div>' +
+            '<div id="ccDetailMeta" class="cc-panel-meta"></div>' +
+          '</div>' +
+          '<div id="ccDetailPanel" class="cc-panel-body"></div>' +
+        '</section>' +
+      '</div>' +
+    '</div>' +
+    '<section class="cc-panel" id="ccActivityPanel">' +
+      '<div class="cc-panel-header">' +
+        '<div class="cc-panel-title">Recent Activity</div>' +
+        '<div class="cc-panel-meta">Shared-state movement and human dependencies</div>' +
+      '</div>' +
+      '<div id="ccActivityFeed" class="cc-panel-body tight"></div>' +
+    '</section>' +
+  '</div>';
+function ensureControlCentreShell(root) {
+  if (!root) return;
+  if (root.getAttribute('data-cc-shell') === 'ready' && root.querySelector('#ccAgentBoard')) return;
+  root.innerHTML = CONTROL_CENTRE_SHELL_HTML;
+  root.setAttribute('data-cc-shell', 'ready');
+}
 function setControlCentreMounted(shouldMount) {
   var root = document.getElementById('controlCentreView');
   if (!root) return;
   if (shouldMount) {
-    if (!root.firstChild && CONTROL_CENTRE_DOM_STASH && CONTROL_CENTRE_DOM_STASH.childNodes.length) {
-      root.appendChild(CONTROL_CENTRE_DOM_STASH);
-    }
+    ensureControlCentreShell(root);
     root.setAttribute('data-cc-mounted', 'true');
     return;
   }
-  if (!root.firstChild) {
-    root.setAttribute('data-cc-mounted', 'false');
-    return;
-  }
-  while (root.firstChild) CONTROL_CENTRE_DOM_STASH.appendChild(root.firstChild);
+  root.innerHTML = '';
+  root.removeAttribute('data-cc-shell');
   root.setAttribute('data-cc-mounted', 'false');
 }
 function updateControlCentreVisibility() {
@@ -4283,44 +4283,41 @@ function ccMaybeRevealDetailOnMobile() {
   ccScrollToSection('ccDetailPanelSection');
 }
 
-document.getElementById('ccRefreshBtn').addEventListener('click', function() {
-  window.renderControlCentre();
-});
-
-document.getElementById('ccMobileNav').addEventListener('click', function(event) {
-  var button = event.target.closest('[data-cc-jump]');
-  if (!button) return;
-  ccScrollToSection(button.getAttribute('data-cc-jump'));
-});
-
-document.getElementById('ccAgentBoard').addEventListener('click', function(event) {
-  var card = event.target.closest('[data-cc-agent]');
-  if (!card) return;
-  CONTROL_CENTRE_UI.selectedType = 'agent';
-  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-agent');
-  window.renderControlCentre();
-  ccMaybeRevealDetailOnMobile();
-});
-
-document.getElementById('ccSuggestionList').addEventListener('click', function(event) {
-  var card = event.target.closest('[data-cc-suggestion]');
-  if (!card) return;
-  CONTROL_CENTRE_UI.selectedType = 'suggestion';
-  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-suggestion');
-  window.renderControlCentre();
-  ccMaybeRevealDetailOnMobile();
-});
-
-document.getElementById('ccWorkQueue').addEventListener('click', function(event) {
-  var card = event.target.closest('[data-cc-task-agent]');
-  if (!card) return;
-  CONTROL_CENTRE_UI.selectedType = 'agent';
-  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-task-agent');
-  window.renderControlCentre();
-  ccMaybeRevealDetailOnMobile();
-});
-
-document.getElementById('ccDetailPanel').addEventListener('click', function(event) {
+document.getElementById('controlCentreView').addEventListener('click', function(event) {
+  if (!isAaronOperatorAccount()) return;
+  if (event.target.closest('#ccRefreshBtn')) {
+    window.renderControlCentre();
+    return;
+  }
+  var jumpButton = event.target.closest('[data-cc-jump]');
+  if (jumpButton) {
+    ccScrollToSection(jumpButton.getAttribute('data-cc-jump'));
+    return;
+  }
+  var agentCard = event.target.closest('[data-cc-agent]');
+  if (agentCard) {
+    CONTROL_CENTRE_UI.selectedType = 'agent';
+    CONTROL_CENTRE_UI.selectedId = agentCard.getAttribute('data-cc-agent');
+    window.renderControlCentre();
+    ccMaybeRevealDetailOnMobile();
+    return;
+  }
+  var suggestionCard = event.target.closest('[data-cc-suggestion]');
+  if (suggestionCard) {
+    CONTROL_CENTRE_UI.selectedType = 'suggestion';
+    CONTROL_CENTRE_UI.selectedId = suggestionCard.getAttribute('data-cc-suggestion');
+    window.renderControlCentre();
+    ccMaybeRevealDetailOnMobile();
+    return;
+  }
+  var taskCard = event.target.closest('[data-cc-task-agent]');
+  if (taskCard) {
+    CONTROL_CENTRE_UI.selectedType = 'agent';
+    CONTROL_CENTRE_UI.selectedId = taskCard.getAttribute('data-cc-task-agent');
+    window.renderControlCentre();
+    ccMaybeRevealDetailOnMobile();
+    return;
+  }
   var button = event.target.closest('[data-cc-open-node]');
   if (!button) return;
   var label = button.getAttribute('data-cc-open-node');
