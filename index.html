@@ -425,7 +425,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
    Claude Code owns visual polish in the .cc-* CSS zone:
    spacing, typography, icons, empty-state copy, keyboard-help wording, and other presentational-only tweaks.
    Codex should avoid changing behavior here unless a structural logic change requires a paired visual hook. */
-.cc-shell { display:flex; flex-direction:column; gap:14px; flex:1; min-height:0; padding:14px; overflow:hidden; }
+.cc-shell { display:flex; flex-direction:column; gap:14px; flex:1; min-height:0; padding:14px; overflow-y:auto; overflow-x:hidden; }
 .cc-topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:16px 18px; background:linear-gradient(135deg, rgba(19,22,30,0.96), rgba(15,18,24,0.96)); border:1px solid rgba(255,255,255,0.08); border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,0.28); }
 .cc-topbar-copy { display:flex; flex-direction:column; gap:6px; min-width:0; }
 .cc-topbar-kicker { font-family:'Barlow Condensed',sans-serif; font-size:13px; letter-spacing:1.8px; text-transform:uppercase; color:var(--accent); }
@@ -471,6 +471,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cc-summary-note { font-size:12px; color:var(--text-dim); margin-top:6px; line-height:1.55; }
 .cc-agent-list, .cc-suggestion-list, .cc-queue-list, .cc-activity-list, .cc-assigned-list { display:flex; flex-direction:column; gap:10px; }
 .cc-agent-card, .cc-suggestion-card, .cc-queue-card, .cc-activity-card { border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); border-radius:12px; padding:14px 15px; transition:all 0.16s ease; }
+.cc-agent-card[data-cc-status="in_progress"] { border-left:3px solid var(--blue); }
+.cc-agent-card[data-cc-status="blocked"] { border-left:3px solid #ff7c70; }
+.cc-agent-card[data-cc-status="done"] { border-left:3px solid var(--green); }
+.cc-agent-card[data-cc-status="waiting"] { border-left:3px solid #ffd166; }
 .cc-agent-card, .cc-suggestion-card { cursor:pointer; }
 .cc-agent-card:hover, .cc-suggestion-card:hover, .cc-queue-card:hover { border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.035); transform:translateY(-1px); }
 .cc-agent-card.selected, .cc-suggestion-card.selected { border-color:rgba(232,255,71,0.42); box-shadow:0 0 0 1px rgba(232,255,71,0.18) inset; background:rgba(232,255,71,0.05); }
@@ -593,7 +597,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   /* List panel: larger close button for touch */
   #listPanelClose { width: 36px !important; height: 36px !important; font-size: 18px !important; }
 
-  /* Header menu: larger touch targets */
+  /* Header menu: larger touch targets + scrollable when tall */
+  #headerMenu { max-height: calc(100vh - 80px) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
   #headerMenu button { min-height: 44px; padding: 12px 16px !important; font-size: 13px !important; }
   #headerMenu button:active { background: rgba(255,255,255,0.04); }
 
@@ -695,27 +700,32 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .cc-topbar-title { font-size:24px; }
   .cc-topbar-meta { justify-content:flex-start; }
   .cc-env-host { max-width:100%; font-size:11px; }
-  .cc-mobile-nav { display:flex; }
+  .cc-mobile-nav { display:flex; position:sticky; top:0; z-index:10; background:rgba(10,12,16,0.95); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); padding:8px 0; margin:-10px -10px 0; padding-left:10px; padding-right:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .cc-mobile-nav-btn { font-size:11px; white-space:nowrap; flex-shrink:0; }
+  .cc-mobile-nav-btn.cc-nav-active { color:var(--accent); border-color:rgba(232,255,71,0.32); background:rgba(232,255,71,0.08); }
   .cc-priority-strip { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .cc-priority-card { min-height:auto; padding:10px 12px; }
+  .cc-priority-value { font-size:26px; }
   .cc-summary-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .cc-grid { grid-template-columns:1fr; overflow:visible; flex:none; }
   .cc-col { min-height:auto; }
-  .cc-panel-body { overflow:visible; }
+  .cc-panel-body { overflow:auto; max-height:60vh; }
   #controlCentreView { overflow:auto; }
   .cc-queue-grid, .cc-detail-grid, .cc-pipeline-grid, .cc-pipeline-progress { grid-template-columns:1fr; }
-  .cc-agent-card, .cc-suggestion-card, .cc-queue-card, .cc-activity-card { padding:14px; }
-  .cc-task-row { padding:13px; }
+  .cc-agent-card, .cc-suggestion-card, .cc-queue-card, .cc-activity-card { padding:12px; }
+  .cc-task-row { padding:11px; }
   .cc-task-head { flex-direction:column; align-items:flex-start; }
   .cc-task-title, .cc-task-preview, .cc-task-meta span { max-width:100%; }
   .cc-toolbar-btn { width:100%; min-height:44px; justify-content:center; }
   .cc-pill, .cc-status { min-height:30px; }
   .cc-agent-task, .cc-suggestion-body, .cc-detail-copy, .cc-activity-copy, .cc-detail-card p, .cc-detail-card li { font-size:13px; }
   .cc-label, .cc-panel-meta, .cc-summary-label, .cc-queue-label, .cc-priority-label, .cc-activity-time { font-size:11px; }
-  .cc-topbar-kicker, .cc-mobile-nav-btn, .cc-env-pill { font-size:11px; }
+  .cc-topbar-kicker, .cc-env-pill { font-size:11px; }
   .cc-agent-meta, .cc-inline-meta, .cc-task-meta, .cc-task-id { font-size:11px; }
   .cc-agent-mono { font-size:10px; }
   .cc-assignment-banner { align-items:flex-start; flex-direction:column; }
   .cc-assignment-value { font-size:16px; }
+  .cc-topbar-sub { font-size:12px; }
 }
 
 /* Diagnostics panel */
@@ -963,6 +973,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">J</kbd><span>Sparring Journal</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">C</kbd><span>Coach Mode</span>
     <kbd id="kbdHelpControlCentreKey" style="display:none;background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">O</kbd><span id="kbdHelpControlCentreLabel" style="display:none;">Open Control Centre</span>
+    <kbd id="kbdHelpRemoteKey" style="display:none;background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">P</kbd><span id="kbdHelpRemoteLabel" style="display:none;">Open Remote Control</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">G</kbd><span>Toggle Reference ↔ Network</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">?</kbd><span>Toggle this help panel</span>
   </div>
@@ -976,96 +987,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <main role="main" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
 <!-- ══ CONTROL CENTRE ═════════════════════════════════════════════════════ -->
-<!-- CONTROL CENTRE: STRUCTURAL MARKUP / IA ZONE
-     Codex owns markup structure, visibility, account gating, menu IA, suggestion entry points,
-     and operator/public separation in this section.
-     Claude Code should limit changes here to polish-only text/icon/spacing work that does not alter logic. -->
-<div id="controlCentreView" style="display:none;flex-direction:column;flex:1;min-height:0;">
-  <div class="cc-shell">
-    <div class="cc-topbar">
-      <div class="cc-topbar-copy">
-        <div class="cc-topbar-kicker">Five AI Coordination Layer</div>
-        <div class="cc-topbar-title">Control Centre</div>
-        <div class="cc-topbar-sub">Single-screen oversight for all five AI lanes, the suggestion queue, automation state, handoffs, and the human approvals that unblock the workflow. The UI is adapter-driven and ready to swap local state for the MCP tools at <span class="cc-value-strong">mcp.lauburugrapplingmap.com/mcp</span>.</div>
-      </div>
-      <div class="cc-topbar-meta">
-        <span id="ccEnvironmentBadge" class="cc-pill cc-env-pill dev">Dev</span>
-        <span id="ccEnvironmentHost" class="cc-pill cc-env-host"></span>
-        <span class="cc-pill">Website: www.lauburugrapplingmap.com</span>
-        <span class="cc-pill">Backend: get_work_status · list_pending_suggestions · get_automation_state · get_handoff</span>
-        <button id="ccRefreshBtn" class="cc-toolbar-btn">Refresh View</button>
-      </div>
-    </div>
-    <div class="cc-mobile-nav" id="ccMobileNav">
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccPriorityStrip">Overview</button>
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccTaskRoutingPanel">Tasks</button>
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccDetailPanelSection">Detail</button>
-      <button class="cc-mobile-nav-btn" data-cc-jump="ccActivityPanel">Activity</button>
-    </div>
-    <div id="ccPriorityStrip" class="cc-priority-strip"></div>
-    <div class="cc-grid">
-      <div class="cc-col">
-        <section class="cc-panel" id="ccAgentPanel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">AI Agent Board</div>
-            <div id="ccAgentMeta" class="cc-panel-meta"></div>
-          </div>
-          <div id="ccAgentBoard" class="cc-panel-body"></div>
-        </section>
-      </div>
-      <div class="cc-col">
-        <section class="cc-panel" id="ccSuggestionsPanel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Suggestions + Workflow</div>
-            <div id="ccSuggestionMeta" class="cc-panel-meta"></div>
-          </div>
-          <div class="cc-panel-body">
-            <div id="ccSummaryCards" class="cc-summary-grid"></div>
-          </div>
-        </section>
-        <section class="cc-panel" id="ccTaskRoutingPanel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Suggestion Queue</div>
-            <div class="cc-panel-meta">Triage, assignment, lifecycle</div>
-          </div>
-          <div id="ccSuggestionList" class="cc-panel-body tight"></div>
-        </section>
-        <section class="cc-panel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Task Routing</div>
-            <div class="cc-panel-meta">Queued to verification-ready</div>
-          </div>
-          <div class="cc-panel-body">
-            <div id="ccWorkQueue" class="cc-queue-grid"></div>
-          </div>
-        </section>
-        <section class="cc-panel">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Automation Pipeline</div>
-            <div class="cc-panel-meta">Phase, handoffs, preview flow</div>
-          </div>
-          <div id="ccPipelineSummary" class="cc-panel-body tight"></div>
-        </section>
-      </div>
-      <div class="cc-col">
-        <section class="cc-panel" id="ccDetailPanelSection" style="flex:1;">
-          <div class="cc-panel-header">
-            <div class="cc-panel-title">Detail Panel</div>
-            <div id="ccDetailMeta" class="cc-panel-meta"></div>
-          </div>
-          <div id="ccDetailPanel" class="cc-panel-body"></div>
-        </section>
-      </div>
-    </div>
-    <section class="cc-panel" id="ccActivityPanel">
-      <div class="cc-panel-header">
-        <div class="cc-panel-title">Recent Activity</div>
-        <div class="cc-panel-meta">Shared-state movement and human dependencies</div>
-      </div>
-      <div id="ccActivityFeed" class="cc-panel-body tight"></div>
-    </section>
-  </div>
-</div>
+<!-- CC DOM injected dynamically by _injectControlCentreDOM() for operator privacy.
+     Non-operators never see structural markup, panel titles, or tool names in page source. -->
+<div id="controlCentreView" style="display:none;flex-direction:column;flex:1;min-height:0;"></div>
 
 <!-- ══ REFERENCE VIEW ══════════════════════════════════════════════════════ -->
 <div id="referenceView" style="display:none;flex-direction:column;flex:1;min-height:0;">
@@ -1343,6 +1267,10 @@ function updateControlCentreVisibility() {
   var ccLabel = document.getElementById('kbdHelpControlCentreLabel');
   if (ccKey) ccKey.style.display = canAccess ? '' : 'none';
   if (ccLabel) ccLabel.style.display = canAccess ? '' : 'none';
+  var remoteKey = document.getElementById('kbdHelpRemoteKey');
+  var remoteLabel = document.getElementById('kbdHelpRemoteLabel');
+  if (remoteKey) remoteKey.style.display = canAccess ? '' : 'none';
+  if (remoteLabel) remoteLabel.style.display = canAccess ? '' : 'none';
   if (!canAccess && document.getElementById('controlCentreView').style.display !== 'none') {
     document.getElementById('controlCentreView').style.display = 'none';
     document.getElementById('referenceView').style.display = 'flex';
@@ -1353,8 +1281,157 @@ function updateControlCentreVisibility() {
     saveState();
   }
 }
+var _ccDomInjected = false;
+function _injectControlCentreDOM() {
+  if (_ccDomInjected) return;
+  _ccDomInjected = true;
+  var root = document.getElementById('controlCentreView');
+  if (!root) return;
+  root.innerHTML =
+    '<div class="cc-shell">' +
+      '<div class="cc-topbar">' +
+        '<div class="cc-topbar-copy">' +
+          '<div class="cc-topbar-kicker">Five AI Coordination Layer</div>' +
+          '<div class="cc-topbar-title">Control Centre</div>' +
+          '<div class="cc-topbar-sub">AI lanes, suggestion queue, automation pipeline, and remote dispatch. <span id="ccAutoRefreshIndicator" style="color:var(--green);font-size:11px;"></span></div>' +
+        '</div>' +
+        '<div class="cc-topbar-meta">' +
+          '<span id="ccEnvironmentBadge" class="cc-pill cc-env-pill dev">Dev</span>' +
+          '<span id="ccEnvironmentHost" class="cc-pill cc-env-host"></span>' +
+          '<span class="cc-pill">Website: www.lauburugrapplingmap.com</span>' +
+          '<span class="cc-pill">Backend: get_work_status \u00b7 list_pending_suggestions \u00b7 get_automation_state \u00b7 get_handoff</span>' +
+          '<button id="ccRefreshBtn" class="cc-toolbar-btn">Refresh View</button>' +
+          '<button id="ccRemoteBtn" class="cc-toolbar-btn" style="border-color:rgba(232,255,71,0.22);color:var(--accent);">Remote Control</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="cc-mobile-nav" id="ccMobileNav">' +
+        '<button class="cc-mobile-nav-btn" data-cc-jump="ccPriorityStrip">Overview</button>' +
+        '<button class="cc-mobile-nav-btn" data-cc-jump="ccAgentPanel">Agents</button>' +
+        '<button class="cc-mobile-nav-btn" data-cc-jump="ccSuggestionList">Queue</button>' +
+        '<button class="cc-mobile-nav-btn" data-cc-jump="ccTaskRoutingPanel">Tasks</button>' +
+        '<button class="cc-mobile-nav-btn" data-cc-jump="ccDetailPanelSection">Detail</button>' +
+        '<button class="cc-mobile-nav-btn" data-cc-jump="ccActivityPanel">Activity</button>' +
+        '<button class="cc-mobile-nav-btn" id="ccMobileRemoteBtn" style="border-color:rgba(232,255,71,0.22);color:var(--accent);">Remote</button>' +
+      '</div>' +
+      '<div id="ccPriorityStrip" class="cc-priority-strip"></div>' +
+      '<div class="cc-grid">' +
+        '<div class="cc-col">' +
+          '<section class="cc-panel" id="ccAgentPanel">' +
+            '<div class="cc-panel-header">' +
+              '<div class="cc-panel-title">AI Agent Board</div>' +
+              '<div id="ccAgentMeta" class="cc-panel-meta"></div>' +
+            '</div>' +
+            '<div id="ccAgentBoard" class="cc-panel-body"></div>' +
+          '</section>' +
+        '</div>' +
+        '<div class="cc-col">' +
+          '<section class="cc-panel" id="ccSuggestionsPanel">' +
+            '<div class="cc-panel-header">' +
+              '<div class="cc-panel-title">Suggestions + Workflow</div>' +
+              '<div id="ccSuggestionMeta" class="cc-panel-meta"></div>' +
+            '</div>' +
+            '<div class="cc-panel-body">' +
+              '<div id="ccSummaryCards" class="cc-summary-grid"></div>' +
+            '</div>' +
+          '</section>' +
+          '<section class="cc-panel" id="ccTaskRoutingPanel">' +
+            '<div class="cc-panel-header">' +
+              '<div class="cc-panel-title">Suggestion Queue</div>' +
+              '<div class="cc-panel-meta">Triage, assignment, lifecycle</div>' +
+            '</div>' +
+            '<div id="ccSuggestionList" class="cc-panel-body tight"></div>' +
+          '</section>' +
+          '<section class="cc-panel">' +
+            '<div class="cc-panel-header">' +
+              '<div class="cc-panel-title">Task Routing</div>' +
+              '<div class="cc-panel-meta">Queued to verification-ready</div>' +
+            '</div>' +
+            '<div class="cc-panel-body">' +
+              '<div id="ccWorkQueue" class="cc-queue-grid"></div>' +
+            '</div>' +
+          '</section>' +
+          '<section class="cc-panel">' +
+            '<div class="cc-panel-header">' +
+              '<div class="cc-panel-title">Automation Pipeline</div>' +
+              '<div class="cc-panel-meta">Phase, handoffs, preview flow</div>' +
+            '</div>' +
+            '<div id="ccPipelineSummary" class="cc-panel-body tight"></div>' +
+          '</section>' +
+        '</div>' +
+        '<div class="cc-col">' +
+          '<section class="cc-panel" id="ccDetailPanelSection" style="flex:1;">' +
+            '<div class="cc-panel-header">' +
+              '<div class="cc-panel-title">Detail Panel</div>' +
+              '<div id="ccDetailMeta" class="cc-panel-meta"></div>' +
+            '</div>' +
+            '<div id="ccDetailPanel" class="cc-panel-body"></div>' +
+          '</section>' +
+        '</div>' +
+      '</div>' +
+      '<section class="cc-panel" id="ccActivityPanel">' +
+        '<div class="cc-panel-header">' +
+          '<div class="cc-panel-title">Recent Activity</div>' +
+          '<div class="cc-panel-meta">Shared-state movement and human dependencies</div>' +
+        '</div>' +
+        '<div id="ccActivityFeed" class="cc-panel-body tight"></div>' +
+      '</section>' +
+    '</div>';
+  // Bind CC event listeners after DOM injection
+  _bindControlCentreEvents();
+}
+
+function _bindControlCentreEvents() {
+  var refreshBtn = document.getElementById('ccRefreshBtn');
+  if (refreshBtn) refreshBtn.addEventListener('click', function() { window.renderControlCentre(); });
+  var remoteBtn = document.getElementById('ccRemoteBtn');
+  if (remoteBtn) remoteBtn.addEventListener('click', function() { if (typeof window.openPromptJobsManager === 'function') window.openPromptJobsManager(); });
+  var mobileRemoteBtn = document.getElementById('ccMobileRemoteBtn');
+  if (mobileRemoteBtn) mobileRemoteBtn.addEventListener('click', function() { if (typeof window.openPromptJobsManager === 'function') window.openPromptJobsManager(); });
+  var mobileNav = document.getElementById('ccMobileNav');
+  if (mobileNav) mobileNav.addEventListener('click', function(event) {
+    var button = event.target.closest('[data-cc-jump]');
+    if (!button) return;
+    ccScrollToSection(button.getAttribute('data-cc-jump'));
+  });
+  var agentBoard = document.getElementById('ccAgentBoard');
+  if (agentBoard) agentBoard.addEventListener('click', function(event) {
+    var card = event.target.closest('[data-cc-agent]');
+    if (!card) return;
+    CONTROL_CENTRE_UI.selectedType = 'agent';
+    CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-agent');
+    window.renderControlCentre();
+    ccMaybeRevealDetailOnMobile();
+  });
+  var suggestionList = document.getElementById('ccSuggestionList');
+  if (suggestionList) suggestionList.addEventListener('click', function(event) {
+    var card = event.target.closest('[data-cc-suggestion]');
+    if (!card) return;
+    CONTROL_CENTRE_UI.selectedType = 'suggestion';
+    CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-suggestion');
+    window.renderControlCentre();
+    ccMaybeRevealDetailOnMobile();
+  });
+  var workQueue = document.getElementById('ccWorkQueue');
+  if (workQueue) workQueue.addEventListener('click', function(event) {
+    var card = event.target.closest('[data-cc-task-agent]');
+    if (!card) return;
+    CONTROL_CENTRE_UI.selectedType = 'agent';
+    CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-task-agent');
+    window.renderControlCentre();
+    ccMaybeRevealDetailOnMobile();
+  });
+  var detailPanel = document.getElementById('ccDetailPanel');
+  if (detailPanel) detailPanel.addEventListener('click', function(event) {
+    var button = event.target.closest('[data-cc-open-node]');
+    if (!button) return;
+    var label = button.getAttribute('data-cc-open-node');
+    if (label) switchToReferenceNode(label, '');
+  });
+}
+
 function updatePrivateOperatorUI() {
   var canAccess = isOperatorUIEnabled();
+  if (canAccess) _injectControlCentreDOM();
   var btn = document.getElementById('menuPromptJobsBtn');
   if (btn) btn.style.display = canAccess ? 'block' : 'none';
   var ccBtn = document.getElementById('menuControlCentreBtn');
@@ -1795,7 +1872,7 @@ function saveState() {
     whoopConnection: STATE.whoopConnection || null
   };
   UserStore.saveAppState(appState);
-  if (document.getElementById('controlCentreView').style.display !== 'none' && typeof window.renderControlCentre === 'function') {
+  if (_ccDomInjected && document.getElementById('controlCentreView').style.display !== 'none' && typeof window.renderControlCentre === 'function') {
     window.renderControlCentre();
   }
 }
@@ -4049,7 +4126,7 @@ function ccRenderAgentBoard(snapshot) {
   }
   root.innerHTML = '<div class="cc-agent-list">' + snapshot.agents.map(function(agent) {
     var selected = CONTROL_CENTRE_UI.selectedType === 'agent' && CONTROL_CENTRE_UI.selectedId === agent.key;
-    return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-agent="' + ccEscape(agent.key) + '">' +
+    return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-agent="' + ccEscape(agent.key) + '" data-cc-status="' + ccEscape(agent.status || 'idle') + '">' +
       '<div class="cc-agent-header"><div><div class="cc-agent-name">' + ccEscape(agent.name) + '</div><div class="cc-agent-task">' + ccEscape(agent.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(agent.status || 'idle') + '">' + ccEscape(ccPrettyStatus(agent.status || 'idle')) + '</span></div>' +
       '<div class="cc-agent-meta">' +
       '<span><span class="cc-label">Branch</span> <span class="cc-agent-mono">' + ccEscape(agent.branch || 'none') + '</span></span>' +
@@ -4248,12 +4325,38 @@ window.renderControlCentre = function() {
   ccRenderPipeline(snapshot);
   ccRenderDetail(snapshot);
   ccRenderActivity(snapshot);
+  var refreshIndicator = document.getElementById('ccAutoRefreshIndicator');
+  if (refreshIndicator) refreshIndicator.textContent = 'Auto-refresh active';
 };
+
+// Auto-refresh Control Centre every 30s while it is the active tab
+var _ccAutoRefreshTimer = null;
+function ccStartAutoRefresh() {
+  ccStopAutoRefresh();
+  _ccAutoRefreshTimer = setInterval(function() {
+    var ccView = document.getElementById('controlCentreView');
+    if (ccView && ccView.style.display !== 'none' && typeof window.renderControlCentre === 'function') {
+      window.renderControlCentre();
+    }
+  }, 30000);
+}
+function ccStopAutoRefresh() {
+  if (_ccAutoRefreshTimer) { clearInterval(_ccAutoRefreshTimer); _ccAutoRefreshTimer = null; }
+  var refreshIndicator = document.getElementById('ccAutoRefreshIndicator');
+  if (refreshIndicator) refreshIndicator.textContent = '';
+}
 
 function ccScrollToSection(targetId) {
   var target = document.getElementById(targetId);
   if (!target) return;
   target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Update mobile nav active state
+  var nav = document.getElementById('ccMobileNav');
+  if (nav) {
+    nav.querySelectorAll('.cc-mobile-nav-btn[data-cc-jump]').forEach(function(btn) {
+      btn.classList.toggle('cc-nav-active', btn.getAttribute('data-cc-jump') === targetId);
+    });
+  }
 }
 
 function ccMaybeRevealDetailOnMobile() {
@@ -4261,49 +4364,7 @@ function ccMaybeRevealDetailOnMobile() {
   ccScrollToSection('ccDetailPanelSection');
 }
 
-document.getElementById('ccRefreshBtn').addEventListener('click', function() {
-  window.renderControlCentre();
-});
-
-document.getElementById('ccMobileNav').addEventListener('click', function(event) {
-  var button = event.target.closest('[data-cc-jump]');
-  if (!button) return;
-  ccScrollToSection(button.getAttribute('data-cc-jump'));
-});
-
-document.getElementById('ccAgentBoard').addEventListener('click', function(event) {
-  var card = event.target.closest('[data-cc-agent]');
-  if (!card) return;
-  CONTROL_CENTRE_UI.selectedType = 'agent';
-  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-agent');
-  window.renderControlCentre();
-  ccMaybeRevealDetailOnMobile();
-});
-
-document.getElementById('ccSuggestionList').addEventListener('click', function(event) {
-  var card = event.target.closest('[data-cc-suggestion]');
-  if (!card) return;
-  CONTROL_CENTRE_UI.selectedType = 'suggestion';
-  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-suggestion');
-  window.renderControlCentre();
-  ccMaybeRevealDetailOnMobile();
-});
-
-document.getElementById('ccWorkQueue').addEventListener('click', function(event) {
-  var card = event.target.closest('[data-cc-task-agent]');
-  if (!card) return;
-  CONTROL_CENTRE_UI.selectedType = 'agent';
-  CONTROL_CENTRE_UI.selectedId = card.getAttribute('data-cc-task-agent');
-  window.renderControlCentre();
-  ccMaybeRevealDetailOnMobile();
-});
-
-document.getElementById('ccDetailPanel').addEventListener('click', function(event) {
-  var button = event.target.closest('[data-cc-open-node]');
-  if (!button) return;
-  var label = button.getAttribute('data-cc-open-node');
-  if (label) switchToReferenceNode(label, '');
-});
+// CC event listeners bound dynamically via _bindControlCentreEvents() after DOM injection
 
 // ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
 function switchToTab(view) {
@@ -4311,6 +4372,7 @@ function switchToTab(view) {
     showToast('Control Centre is private to Aaron’s account');
     view = 'reference';
   }
+  if (view === 'controlcentre') _injectControlCentreDOM();
   document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
   const btn = document.querySelector('[data-view="'+view+'"]');
   if (btn) btn.classList.add('active');
@@ -4320,7 +4382,8 @@ function switchToTab(view) {
   document.getElementById('graph3dView').style.flexDirection = 'column';
   if (view === 'graph3d') { requestAnimationFrame(() => requestAnimationFrame(initGraph3D)); if(window._g3dResume) window._g3dResume(); setTimeout(function(){window.dispatchEvent(new Event('resize'));},100); }
   else { if(window._g3dPause) window._g3dPause(); }
-  if (view === 'controlcentre' && typeof window.renderControlCentre === 'function') window.renderControlCentre();
+  if (view === 'controlcentre' && typeof window.renderControlCentre === 'function') { window.renderControlCentre(); ccStartAutoRefresh(); }
+  else { ccStopAutoRefresh(); }
   // Blur any focused search input on tab switch
   var activeEl = document.activeElement;
   if (activeEl && (activeEl.id === 'refSearch' || activeEl.id === 'g3dSearch')) activeEl.blur();
@@ -6738,6 +6801,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'c' && !inInput) { document.getElementById('menuCoachBtn').click(); }
   // O: open Control Centre
   if (e.key === 'o' && !inInput && isAaronOperatorAccount()) { switchToTab('controlcentre'); }
+  // P: open Remote Control prompt dispatch (operator only)
+  if (e.key === 'p' && !inInput && isAaronOperatorAccount()) { if (typeof window.openPromptJobsManager === 'function') window.openPromptJobsManager(); }
   // ?: toggle help panel
   if (e.key === '?' && !inInput) {
     var hp = document.getElementById('kbdHelpPanel');
@@ -6791,8 +6856,6 @@ document.addEventListener('keydown', e => {
     var showing = menu.style.display === 'none';
     menu.style.display = showing ? 'block' : 'none';
     if (showing && typeof updatePrivateOperatorUI === 'function') updatePrivateOperatorUI();
-    var promptBtn = document.getElementById('menuPromptJobsBtn');
-    if (promptBtn) promptBtn.style.display = (showing && typeof isOperatorUIEnabled === 'function' && isOperatorUIEnabled()) ? 'block' : 'none';
   });
   document.addEventListener('click', function() { menu.style.display = 'none'; });
 })();
@@ -11567,6 +11630,7 @@ function openCoachPanel() {
     openListPanel('Suggestion Queue (' + suggestions.length + (pendingCount > 0 ? ', ' + pendingCount + ' pending' : '') + ')', items);
   }
 
+  window.openPromptJobsManager = openPromptJobsManager;
   async function openPromptJobsManager() {
     if (!isMember()) { requireAuth('open Remote Control'); return; }
     if (!isAaronOperatorAccount()) {
@@ -11578,13 +11642,14 @@ function openCoachPanel() {
     }
 
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:' + (window.innerWidth < 640 ? 'flex-end' : 'center') + ';justify-content:center;padding:' + (window.innerWidth < 640 ? '0' : '20px') + ';';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-label', 'Remote control prompt jobs');
 
     var modal = document.createElement('div');
-    modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:1080px;width:100%;max-height:86vh;overflow:hidden;box-shadow:0 20px 64px rgba(0,0,0,0.45);display:flex;flex-direction:column;gap:14px;';
+    var isMobile = window.innerWidth < 640;
+    modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:' + (isMobile ? '14px 14px 0 0' : '14px') + ';padding:' + (isMobile ? '14px 12px' : '20px') + ';max-width:1080px;width:100%;max-height:' + (isMobile ? '95vh' : '86vh') + ';overflow-y:auto;box-shadow:0 20px 64px rgba(0,0,0,0.45);display:flex;flex-direction:column;gap:' + (isMobile ? '10px' : '14px') + ';' + (isMobile ? 'margin-top:auto;' : '');
 
     var splitStyle = window.innerWidth < 920
       ? 'display:flex;flex-direction:column;gap:14px;min-height:0;'
@@ -11612,9 +11677,16 @@ function openCoachPanel() {
               '<label style="display:flex;flex-direction:column;gap:6px;min-width:0;"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;">Target Agent</span><select id="promptJobsTarget" style="min-height:42px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);padding:0 12px;font-family:DM Mono,monospace;font-size:12px;"><option value="claude_code">Claude Code</option><option value="codex">Codex</option><option value="cowork">Cowork</option><option value="chatgpt">ChatGPT</option><option value="claude_chat">Claude Chat</option></select></label>' +
               '<label style="display:flex;flex-direction:column;gap:6px;min-width:0;"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;">Priority</span><select id="promptJobsPriority" style="min-height:42px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);padding:0 12px;font-family:DM Mono,monospace;font-size:12px;"><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>' +
             '</div>' +
-            '<label style="display:flex;flex-direction:column;gap:6px;margin-top:10px;min-width:0;"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;">Prompt</span><textarea id="promptJobsPrompt" rows="6" placeholder="Dispatch prompt for a specific AI lane…" style="width:100%;resize:vertical;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);padding:12px;font-family:DM Mono,monospace;font-size:12px;line-height:1.55;"></textarea></label>' +
-            '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
-              '<button id="promptJobsCreateBtn" style="min-height:42px;padding:0 16px;background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:14px;letter-spacing:0.75px;text-transform:uppercase;border-radius:10px;cursor:pointer;">Create Prompt Job</button>' +
+            '<label style="display:flex;flex-direction:column;gap:6px;margin-top:10px;min-width:0;"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;">Prompt</span><textarea id="promptJobsPrompt" rows="' + (isMobile ? '3' : '6') + '" placeholder="Dispatch prompt for a specific AI lane…" style="width:100%;resize:vertical;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);padding:' + (isMobile ? '10px' : '12px') + ';font-family:DM Mono,monospace;font-size:' + (isMobile ? '13px' : '12px') + ';line-height:1.55;"></textarea></label>' +
+            '<div id="promptJobsQuickActions" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
+              '<button class="pj-quick" data-pj-quick="Check in: report current status, blockers, and next steps." style="min-height:34px;padding:0 10px;background:rgba(71,200,255,0.08);border:1px solid rgba(71,200,255,0.22);color:var(--blue);font-family:DM Mono,monospace;font-size:10px;border-radius:8px;cursor:pointer;">Status check</button>' +
+              '<button class="pj-quick" data-pj-quick="Continue working on your current task. Pick up where you left off." style="min-height:34px;padding:0 10px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.22);color:var(--green);font-family:DM Mono,monospace;font-size:10px;border-radius:8px;cursor:pointer;">Continue</button>' +
+              '<button class="pj-quick" data-pj-quick="Stop current work, commit progress, update MCP work status to idle, and report what was done." style="min-height:34px;padding:0 10px;background:rgba(255,124,112,0.08);border:1px solid rgba(255,124,112,0.22);color:#ff7c70;font-family:DM Mono,monospace;font-size:10px;border-radius:8px;cursor:pointer;">Wrap up</button>' +
+              '<button class="pj-quick" data-pj-quick="Run npm run ready and report the results." style="min-height:34px;padding:0 10px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.22);color:var(--accent3);font-family:DM Mono,monospace;font-size:10px;border-radius:8px;cursor:pointer;">Run tests</button>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">' +
+              '<span style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-right:auto;">\u2318+Enter to send</span>' +
+              '<button id="promptJobsCreateBtn" style="min-height:' + (isMobile ? '48px' : '42px') + ';padding:0 ' + (isMobile ? '20px' : '16px') + ';background:var(--accent);border:none;color:#000;font-family:Barlow Condensed,sans-serif;font-size:' + (isMobile ? '15px' : '14px') + ';letter-spacing:0.75px;text-transform:uppercase;border-radius:10px;cursor:pointer;' + (isMobile ? 'width:100%;' : '') + '">Create Prompt Job</button>' +
             '</div>' +
           '</div>' +
           '<div style="border:1px solid rgba(255,255,255,0.06);border-radius:12px;background:rgba(255,255,255,0.02);display:flex;flex-direction:column;min-height:0;overflow:hidden;">' +
@@ -11678,7 +11750,7 @@ function openCoachPanel() {
           '<span class="cc-pill">Source: ' + ccEscape(selected.source_client || 'unknown') + '</span>' +
         '</div>' +
         '<div class="cc-detail-grid">' +
-          '<div class="cc-detail-card"><h4>Prompt</h4><p style="white-space:pre-wrap;word-break:break-word;">' + ccEscape(selected.prompt || '') + '</p></div>' +
+          '<div class="cc-detail-card"><h4>Prompt <button data-pj-copy-prompt style="background:none;border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);font-family:DM Mono,monospace;font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer;margin-left:8px;vertical-align:middle;">Copy</button></h4><p style="white-space:pre-wrap;word-break:break-word;">' + ccEscape(selected.prompt || '') + '</p></div>' +
           '<div class="cc-detail-card"><h4>Dispatch State</h4><p>Created: ' + ccEscape(formatPromptJobWhen(selected.created_at)) + '<br>Updated: ' + ccEscape(formatPromptJobWhen(selected.updated_at)) + '<br>Claimed by: ' + ccEscape(selected.claimed_by || 'Unclaimed') + '</p></div>' +
           '<div class="cc-detail-card"><h4>Result Summary</h4><p>' + ccEscape(selected.result_summary || 'No result summary yet.') + '</p></div>' +
           '<div class="cc-detail-card"><h4>Artifacts / Errors</h4><p>' + ccEscape(selected.result_artifact || 'No result artifact yet.') + '<br>' + ccEscape(selected.error || 'No error recorded.') + '</p></div>' +
@@ -11731,7 +11803,8 @@ function openCoachPanel() {
 
     modal.querySelector('#promptJobsClose').addEventListener('click', close);
     modal.querySelector('#promptJobsRefreshBtn').addEventListener('click', function() { loadJobs(state.selectedId); });
-    modal.querySelector('#promptJobsCreateBtn').addEventListener('click', async function() {
+    var createBtn = modal.querySelector('#promptJobsCreateBtn');
+    createBtn.addEventListener('click', async function() {
       var target = modal.querySelector('#promptJobsTarget').value;
       var priority = modal.querySelector('#promptJobsPriority').value;
       var prompt = modal.querySelector('#promptJobsPrompt').value.trim();
@@ -11739,6 +11812,9 @@ function openCoachPanel() {
         setStatus('Prompt text is required before dispatch.', 'error');
         return;
       }
+      createBtn.disabled = true;
+      createBtn.textContent = 'Dispatching…';
+      createBtn.style.opacity = '0.5';
       setStatus('Creating prompt job…');
       var response = await promptJobsRequest('POST', {
         action: 'create',
@@ -11747,22 +11823,55 @@ function openCoachPanel() {
         priority: priority,
         source_client: 'website-operator'
       });
+      createBtn.disabled = false;
+      createBtn.textContent = 'Create Prompt Job';
+      createBtn.style.opacity = '';
       if (!response || response.ok === false || !response.item) {
         setStatus('Could not create prompt job. Check Aaron-only access and backend wiring.', 'error');
         return;
       }
       modal.querySelector('#promptJobsPrompt').value = '';
-      setStatus('Prompt job ' + response.item.id + ' created.');
-      showToast('Prompt job dispatched');
+      setStatus('Dispatched to ' + ((CONTROL_AGENT_LABELS && CONTROL_AGENT_LABELS[target]) || target) + ': ' + response.item.id);
+      showToast('Prompt job dispatched to ' + ((CONTROL_AGENT_LABELS && CONTROL_AGENT_LABELS[target]) || target));
       await loadJobs(response.item.id);
     });
+    // Quick-action presets fill the prompt textarea
+    modal.querySelector('#promptJobsQuickActions').addEventListener('click', function(event) {
+      var btn = event.target.closest('[data-pj-quick]');
+      if (!btn) return;
+      var promptEl = modal.querySelector('#promptJobsPrompt');
+      promptEl.value = btn.getAttribute('data-pj-quick');
+      promptEl.focus();
+    });
+    // Cmd+Enter / Ctrl+Enter to submit prompt
+    modal.querySelector('#promptJobsPrompt').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        modal.querySelector('#promptJobsCreateBtn').click();
+      }
+    });
+    // Auto-focus the prompt textarea
+    setTimeout(function() { modal.querySelector('#promptJobsPrompt').focus(); }, 100);
     listEl.addEventListener('click', function(event) {
       var row = event.target.closest('[data-prompt-job-id]');
       if (!row) return;
       state.selectedId = row.getAttribute('data-prompt-job-id');
       renderList();
     });
+    detailEl.addEventListener('click', function(event) {
+      var copyBtn = event.target.closest('[data-pj-copy-prompt]');
+      if (!copyBtn) return;
+      var selected = null;
+      state.jobs.forEach(function(item) { if (item.id === state.selectedId) selected = item; });
+      if (selected && selected.prompt) {
+        navigator.clipboard.writeText(selected.prompt).then(function() {
+          copyBtn.textContent = 'Copied';
+          setTimeout(function() { copyBtn.textContent = 'Copy'; }, 1500);
+        });
+      }
+    });
     overlay.addEventListener('click', function(event) { if (event.target === overlay) close(); });
+    overlay.addEventListener('keydown', function(event) { if (event.key === 'Escape') close(); });
     loadJobs();
   }
 
