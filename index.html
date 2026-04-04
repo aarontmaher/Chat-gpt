@@ -642,7 +642,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 2px;">Progress</div>
       <button id="menuGameSummaryBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Game Summary</button>
       <button id="menuSuggestionsBtn" style="display:none;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Suggestions</button>
-      <button id="menuAIOpsBtn" style="display:none;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">AI Ops</button>
+      <!-- SECTION: Menu Buttons [OWNER: codex — structure/visibility, claude_code — labels/copy] -->
+      <button id="menuAIOpsBtn" style="display:none;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Control Centre</button>
       <button id="menuProgressBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Dashboard</button>
       <button id="menuExportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Export</button>
       <button id="menuImportBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Import</button>
@@ -675,7 +676,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">J</kbd><span>Sparring Journal</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">C</kbd><span>Coach Mode</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">G</kbd><span>Toggle Reference ↔ Network</span>
-    <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">O</kbd><span>AI Ops Control Centre</span>
+    <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">O</kbd><span>Control Centre (operator only)</span>
     <kbd style="background:#1a1e28;border:1px solid #2a3040;border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);">?</kbd><span>Toggle this help panel</span>
   </div>
 </div>
@@ -5423,7 +5424,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'j' && !inInput) { document.getElementById('menuJournalBtn').click(); }
   // C: coach mode
   if (e.key === 'c' && !inInput) { document.getElementById('menuCoachBtn').click(); }
-  // O: AI Ops Control Centre
+  // O: Control Centre
   if (e.key === 'o' && !inInput) { var ob = document.getElementById('menuAIOpsBtn'); if (ob) ob.click(); }
   // ?: toggle help panel
   if (e.key === '?' && !inInput) {
@@ -5480,7 +5481,7 @@ document.addEventListener('keydown', e => {
     // Show Suggestions button for members only
     var sugBtn = document.getElementById('menuSuggestionsBtn');
     if (sugBtn) sugBtn.style.display = (showing && typeof isMember === 'function' && isMember()) ? 'block' : 'none';
-    // Show AI Ops button for members only
+    // Show Control Centre button for members only
     var opsBtn = document.getElementById('menuAIOpsBtn');
     if (opsBtn) opsBtn.style.display = (showing && typeof isMember === 'function' && isMember()) ? 'block' : 'none';
   });
@@ -7948,6 +7949,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
   updateAuthUI();
 })();
 
+// SECTION: Suggestion Intake [OWNER: codex — structural logic, claude_code — copy/labels]
 // ─── SUGGESTION INTAKE ──────────────────────────────────────────────────────
 function classifySuggestion(text) {
   var t = text.toLowerCase();
@@ -8108,7 +8110,7 @@ function captureSuggestion(text, attachments) {
   if (!STATE.suggestions) STATE.suggestions = [];
   STATE.suggestions.unshift(suggestion);
   saveState();
-  if (typeof srAnnounce === 'function') srAnnounce('Suggestion captured');
+  if (typeof srAnnounce === 'function') srAnnounce('Feedback received');
   return suggestion;
 }
 
@@ -8327,12 +8329,12 @@ function openSuggestionModal(prefillText) {
 
   var descEl = document.createElement('div');
   descEl.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.5;';
-  descEl.textContent = 'Describe your suggestion, bug, or idea. Optionally attach up to 3 screenshots.';
+  descEl.textContent = 'Describe a bug, idea, or improvement. Optionally attach up to 3 screenshots.';
   modal.appendChild(descEl);
 
   var textarea = document.createElement('textarea');
   textarea.style.cssText = 'width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:DM Mono,monospace;font-size:11px;padding:10px;resize:vertical;box-sizing:border-box;';
-  textarea.placeholder = 'Describe your suggestion, bug, or idea...';
+  textarea.placeholder = 'Describe a bug, idea, or improvement...';
   if (prefillText) textarea.value = prefillText;
   modal.appendChild(textarea);
 
@@ -8455,7 +8457,7 @@ function openSuggestionModal(prefillText) {
     if (!text) { showToast('Please describe your suggestion'); return; }
     var sug = captureSuggestion(text, pendingAttachments);
     var clsLabel = {bug:'\uD83D\uDD34 Bug', feature_request:'\uD83D\uDD35 Feature', improvement:'\uD83D\uDFE1 Improvement', unclear:'\u26AA Feedback'}[sug.classification] || 'Feedback';
-    renderResponse({ title: 'Suggestion captured \u2713', body: clsLabel + '\n' + sug.normalized_summary + (pendingAttachments.length > 0 ? '\n' + pendingAttachments.length + ' photo(s) attached' : '') + '\n\nSaved as ' + sug.id });
+    renderResponse({ title: 'Feedback received \u2713', body: clsLabel + '\n' + sug.normalized_summary + (pendingAttachments.length > 0 ? '\n' + pendingAttachments.length + ' photo(s) attached' : '') + '\n\nSaved as ' + sug.id });
     closeModal();
   });
 
@@ -10148,7 +10150,7 @@ function openCoachPanel() {
     openSuggestionDashboard();
   });
 
-  // AI Ops dashboard (member-only)
+  // Control Centre dashboard (member-only)
   document.getElementById('menuAIOpsBtn').addEventListener('click', function() {
     document.getElementById('headerMenu').style.display = 'none';
     openAIOpsDashboard();
@@ -10675,7 +10677,7 @@ function openCoachPanel() {
   var openSuggestionQueue = openSuggestionDashboard;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // AI Ops Control Centre — full operational control dashboard
+  // Control Centre — full operational control dashboard
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ── updateWorkStatus: merge updates into STATE.workStatus for an agent ──
@@ -10709,7 +10711,13 @@ function openCoachPanel() {
     return 'TASK-' + String(maxNum + 1).padStart(2, '0');
   }
 
+  // SECTION: Control Centre [OWNER: codex — structural logic/gating, claude_code — CSS/polish/mobile]
   function openAIOpsDashboard() {
+    // If non-Aaron user somehow reaches this, show a polite access-denied message
+    if (!isMember()) {
+      showToast('Control Centre is operator-only');
+      return;
+    }
     // ── Data Adapters (isolate from rendering for future MCP swap) ──
     function getWorkStatus() {
       // Read from STATE.workStatus first, fall back to window._workStatus, then defaults
@@ -10793,8 +10801,9 @@ function openCoachPanel() {
     overlay.className = 'ops-dashboard';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', 'AI Ops Control Centre');
+    overlay.setAttribute('aria-label', 'Control Centre');
 
+    // SECTION: Control Centre Styles [OWNER: claude_code — presentation only]
     // ── CSS (inject once) ──
     if (!document.getElementById('aiOpsDashboardStyles')) {
       var styleEl = document.createElement('style');
@@ -10850,7 +10859,7 @@ function openCoachPanel() {
     titleWrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
     var titleEl = document.createElement('span');
     titleEl.style.cssText = 'font-size:14px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;font-weight:600;';
-    titleEl.textContent = 'AI Ops Control Centre';
+    titleEl.textContent = 'Control Centre';
     titleWrap.appendChild(titleEl);
     if (waitingCount > 0) {
       var waitBadge = document.createElement('span');
@@ -10861,7 +10870,7 @@ function openCoachPanel() {
     }
     header.appendChild(titleWrap);
     var closeBtn = document.createElement('button');
-    closeBtn.setAttribute('aria-label', 'Close AI Ops Dashboard');
+    closeBtn.setAttribute('aria-label', 'Close Control Centre');
     closeBtn.style.cssText = 'background:none;border:none;color:#8892a4;font-size:20px;cursor:pointer;padding:4px 8px;';
     closeBtn.textContent = '\u00D7';
     closeBtn.addEventListener('click', closeDashboard);
@@ -11257,7 +11266,7 @@ function openCoachPanel() {
     if (displaySugs.length === 0) {
       var emptyMsg = document.createElement('div');
       emptyMsg.style.cssText = 'font-size:11px;color:#556;text-align:center;padding:16px 0;';
-      emptyMsg.textContent = 'No suggestions yet.';
+      emptyMsg.textContent = 'No feedback yet. Suggestions from users and testers appear here.';
       sugList.appendChild(emptyMsg);
     }
     displaySugs.forEach(function(sug) {
@@ -12544,7 +12553,7 @@ function openCoachPanel() {
     removeFocusTrap = trapFocus(overlay);
 
     // Screen reader announce
-    srAnnounce('AI Ops Control Centre opened');
+    srAnnounce('Control Centre opened');
 
     // Focus close button
     closeBtn.focus();
