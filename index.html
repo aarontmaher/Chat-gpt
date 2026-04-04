@@ -904,7 +904,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button id="authUserBtn" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;display:none;"></button>
     <button id="suggestBtn" aria-label="Send tester feedback" style="background:rgba(232,255,71,0.1);border:1px solid rgba(232,255,71,0.28);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;">Send feedback</button>
     <button id="headerMenuToggle" style="background:none;border:1px solid rgba(255,255,255,0.1);color:#4a5568;font-family:'DM Mono',monospace;font-size:14px;padding:4px 10px;border-radius:4px;cursor:pointer;" title="Menu" aria-label="Open menu" aria-haspopup="true">&#8942;</button>
-    <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;">
+    <div id="headerMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:rgba(14,16,21,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 0;z-index:50;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;max-height:min(78vh, calc(100dvh - 88px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">
       <div style="font-size:9px;color:#556;letter-spacing:1px;text-transform:uppercase;padding:6px 14px 2px;">Browse</div>
       <button id="menuRecentBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Recent techniques</button>
       <button id="menuWatchedBtn" style="display:block;width:100%;text-align:left;background:none;border:none;color:#8892a4;font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;">Recently Watched</button>
@@ -984,7 +984,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   <div class="cc-shell">
     <div class="cc-topbar">
       <div class="cc-topbar-copy">
-        <div class="cc-topbar-kicker">Five AI Coordination Layer</div>
+        <div class="cc-topbar-kicker">Control Centre</div>
         <div class="cc-topbar-title">Control Centre</div>
         <div class="cc-topbar-sub">Single-screen oversight for all five AI lanes, the suggestion queue, automation state, handoffs, and the human approvals that unblock the workflow. The UI is adapter-driven and ready to swap local state for the MCP tools at <span class="cc-value-strong">mcp.lauburugrapplingmap.com/mcp</span>.</div>
       </div>
@@ -1335,16 +1335,36 @@ function isAaronOperatorAccount() {
 function isOperatorUIEnabled() {
   return isAaronOperatorAccount();
 }
+var CONTROL_CENTRE_DOM_STASH = document.createDocumentFragment();
+function setControlCentreMounted(shouldMount) {
+  var root = document.getElementById('controlCentreView');
+  if (!root) return;
+  if (shouldMount) {
+    if (!root.firstChild && CONTROL_CENTRE_DOM_STASH && CONTROL_CENTRE_DOM_STASH.childNodes.length) {
+      root.appendChild(CONTROL_CENTRE_DOM_STASH);
+    }
+    root.setAttribute('data-cc-mounted', 'true');
+    return;
+  }
+  if (!root.firstChild) {
+    root.setAttribute('data-cc-mounted', 'false');
+    return;
+  }
+  while (root.firstChild) CONTROL_CENTRE_DOM_STASH.appendChild(root.firstChild);
+  root.setAttribute('data-cc-mounted', 'false');
+}
 function updateControlCentreVisibility() {
+  var root = document.getElementById('controlCentreView');
   var tab = document.querySelector('.view-tab[data-view="controlcentre"]');
   var canAccess = isAaronOperatorAccount();
+  setControlCentreMounted(canAccess);
   if (tab) tab.style.display = canAccess ? '' : 'none';
   var ccKey = document.getElementById('kbdHelpControlCentreKey');
   var ccLabel = document.getElementById('kbdHelpControlCentreLabel');
   if (ccKey) ccKey.style.display = canAccess ? '' : 'none';
   if (ccLabel) ccLabel.style.display = canAccess ? '' : 'none';
-  if (!canAccess && document.getElementById('controlCentreView').style.display !== 'none') {
-    document.getElementById('controlCentreView').style.display = 'none';
+  if (!canAccess && root && root.style.display !== 'none') {
+    root.style.display = 'none';
     document.getElementById('referenceView').style.display = 'flex';
     document.getElementById('graph3dView').style.display = 'none';
     document.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
@@ -4237,6 +4257,8 @@ function ccRenderActivity(snapshot) {
 window.renderControlCentre = function() {
   var root = document.getElementById('controlCentreView');
   if (!root) return;
+  if (!isAaronOperatorAccount()) return;
+  if (root.getAttribute('data-cc-mounted') === 'false') return;
   var snapshot = ccBuildSnapshot();
   CONTROL_CENTRE_UI.snapshot = snapshot;
   ccRenderEnvironmentBadge();
@@ -4311,6 +4333,7 @@ function switchToTab(view) {
     showToast('Control Centre is private to Aaron’s account');
     view = 'reference';
   }
+  if (view === 'controlcentre') setControlCentreMounted(true);
   document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
   const btn = document.querySelector('[data-view="'+view+'"]');
   if (btn) btn.classList.add('active');
@@ -8270,9 +8293,10 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
 })();
 // Deep linking + resume
 (function() {
-  var hash = location.hash.slice(1);
-  var deepLinked = false;
-  if (hash) {
+  function applyHashRoute() {
+    var hash = location.hash.slice(1);
+    var deepLinked = false;
+    if (!hash) return false;
     // CW17: Parse new deep link formats: #tech=key, #pos=label&sec=section
     if (hash.indexOf('tech=') === 0) {
       var techKey = decodeURIComponent(hash.slice(5).split('&')[0]);
@@ -8287,6 +8311,10 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
       hash.split('&').forEach(function(p) { var kv = p.split('='); if (kv.length === 2) _posParams[kv[0]] = decodeURIComponent(kv[1]); });
       switchToTab('reference');
       setTimeout(function() { switchToReferenceNode(_posParams.pos || '', _posParams.sec || ''); }, 200);
+      deepLinked = true;
+    } else if (hash === 'control' || hash === 'controlcentre' || hash === 'control-centre') {
+      if (isAaronOperatorAccount()) switchToTab('controlcentre');
+      else switchToTab('reference');
       deepLinked = true;
     } else {
       // Legacy formats: #ref/label/section, #net/label/section
@@ -8306,7 +8334,9 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
         deepLinked = true;
       }
     }
+    return deepLinked;
   }
+  var deepLinked = applyHashRoute();
   if (!deepLinked) {
     if (STATE._resumeTab === 'controlcentre' && isAaronOperatorAccount()) {
       switchToTab('controlcentre');
@@ -8321,6 +8351,9 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
       setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 150);
     }
   }
+  window.addEventListener('hashchange', function() {
+    applyHashRoute();
+  });
   // Safety: if deep link handled the view but graph wasn't inited, ensure it inits when user switches
   // Also verify sections rendered — defensive fallback
   // Safety fallback: catch any remaining silent boot failures
@@ -8342,12 +8375,12 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
 })();
 // Update hash on tab switch and selection
 function updateHash() {
-  var view = document.getElementById('controlCentreView').style.display !== 'none' ? 'control' : (document.getElementById('graph3dView').style.display !== 'none' ? 'net' : 'ref');
+  var view = document.getElementById('controlCentreView').style.display !== 'none' ? 'control-centre' : (document.getElementById('graph3dView').style.display !== 'none' ? 'net' : 'ref');
   var h = view;
   // CW17: Use tech= deep link when a technique is selected with a full key
-  if (view !== 'control' && SELECTED_NODE && SELECTED_NODE.key && SELECTED_NODE.key.indexOf('|') !== -1) {
+  if (view !== 'control-centre' && SELECTED_NODE && SELECTED_NODE.key && SELECTED_NODE.key.indexOf('|') !== -1) {
     h = 'tech=' + encodeURIComponent(SELECTED_NODE.key);
-  } else if (view !== 'control' && SELECTED_NODE && SELECTED_NODE.label) {
+  } else if (view !== 'control-centre' && SELECTED_NODE && SELECTED_NODE.label) {
     // Position-level: use pos= format
     h = 'pos=' + encodeURIComponent(SELECTED_NODE.label) + (SELECTED_NODE.section ? '&sec=' + encodeURIComponent(SELECTED_NODE.section) : '');
   } else {
