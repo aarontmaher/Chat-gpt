@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('Visual snapshots', () => {
 
   test('Reference panel default state', async ({ page }) => {
-    await page.goto('https://aarontmaher.github.io/Chat-gpt/');
+    await page.goto('https://www.lauburugrapplingmap.com/');
     await page.waitForFunction(() =>
       typeof window.__APP_DEBUG__ !== 'undefined' &&
       window.__APP_DEBUG__.getState().guard > 0,
@@ -14,7 +14,7 @@ test.describe('Visual snapshots', () => {
   });
 
   test('3D graph loaded state', async ({ page }) => {
-    await page.goto('https://aarontmaher.github.io/Chat-gpt/');
+    await page.goto('https://www.lauburugrapplingmap.com/');
     await page.waitForFunction(() =>
       typeof window.__APP_DEBUG__ !== 'undefined' &&
       window.__APP_DEBUG__.getState().guard > 0,
@@ -27,7 +27,7 @@ test.describe('Visual snapshots', () => {
   });
 
   test('Section expanded state', async ({ page }) => {
-    await page.goto('https://aarontmaher.github.io/Chat-gpt/');
+    await page.goto('https://www.lauburugrapplingmap.com/');
     await page.waitForFunction(() =>
       typeof window.__APP_DEBUG__ !== 'undefined' &&
       window.__APP_DEBUG__.getState().guard > 0,

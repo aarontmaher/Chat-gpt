@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('GrapplingMap smoke suite', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://aarontmaher.github.io/Chat-gpt/');
+    await page.goto('https://www.lauburugrapplingmap.com/');
     // Wait for debug API + data to be ready
     await page.waitForFunction(() =>
       typeof window.__APP_DEBUG__ !== 'undefined' &&

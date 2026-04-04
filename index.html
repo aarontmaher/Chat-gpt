@@ -1225,12 +1225,17 @@ try {
 var AUTH_STATE = 'guest'; // 'guest' or 'member' — now starts as guest, set to member on auth
 var AUTH_USER = null;      // Will hold { id, email, displayName } when logged in
 var AUTH_PROFILE = null;   // Optional profile with membership_status for operator UI gating
+var CONTROL_CENTRE_PENDING_ROUTE = '';
 
 function isGuest() { return AUTH_STATE === 'guest'; }
 function isMember() { return AUTH_STATE === 'member'; }
 function isOperatorRole(role) { return role === 'operator' || role === 'admin'; }
 function normalizeIdentity(value) {
   return String(value || '').trim().toLowerCase();
+}
+function isKnownAaronOwnerEmail(value) {
+  var normalized = normalizeIdentity(value);
+  return normalized === 'aaron.t.maher@gmail.com';
 }
 function looksLikeAaronIdentity(value) {
   var normalized = normalizeIdentity(value);
@@ -1244,16 +1249,36 @@ function looksLikeAaronIdentity(value) {
 }
 function isAaronOperatorAccount() {
   if (window.__GM_CONTROL_CENTRE_OWNER__ === true || window.__GM_OPERATOR_UI__ === true) return true;
-  if (!(AUTH_PROFILE && isOperatorRole(AUTH_PROFILE.membership_status))) return false;
-  return [
+  if (!isMember()) return false;
+  var identities = [
     AUTH_PROFILE && AUTH_PROFILE.email,
     AUTH_PROFILE && AUTH_PROFILE.display_name,
     AUTH_USER && AUTH_USER.email,
     AUTH_USER && AUTH_USER.displayName
-  ].some(looksLikeAaronIdentity);
+  ];
+  if (identities.some(isKnownAaronOwnerEmail)) return true;
+  if (AUTH_PROFILE && isOperatorRole(AUTH_PROFILE.membership_status)) return identities.some(looksLikeAaronIdentity);
+  return false;
 }
 function isOperatorUIEnabled() {
   return isAaronOperatorAccount();
+}
+function isControlCentreHash(hash) {
+  return hash === 'control' || hash === 'controlcentre' || hash === 'control-centre';
+}
+function maybeResumeControlCentreAccess() {
+  if (!isAaronOperatorAccount()) return;
+  var requestedHash = CONTROL_CENTRE_PENDING_ROUTE || location.hash.slice(1);
+  if (isControlCentreHash(requestedHash)) {
+    CONTROL_CENTRE_PENDING_ROUTE = '';
+    if (document.getElementById('controlCentreView').style.display === 'none') {
+      switchToTab('controlcentre');
+    }
+    return;
+  }
+  if (STATE._resumeTab === 'controlcentre' && document.getElementById('controlCentreView').style.display === 'none') {
+    switchToTab('controlcentre');
+  }
 }
 var CONTROL_CENTRE_SHELL_HTML =
   '<div class="cc-shell">' +
@@ -1397,6 +1422,7 @@ function updatePrivateOperatorUI() {
   var label = document.getElementById('menuOperatorLabel');
   if (label) label.style.display = canAccess ? '' : 'none';
   updateControlCentreVisibility();
+  if (canAccess) maybeResumeControlCentreAccess();
 }
 async function refreshAuthProfile() {
   if (!isMember() || !_supabase) {
@@ -4370,6 +4396,7 @@ document.getElementById('controlCentreView').addEventListener('click', function(
 // ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
 function switchToTab(view) {
   if (view === 'controlcentre' && !isAaronOperatorAccount()) {
+    CONTROL_CENTRE_PENDING_ROUTE = 'control-centre';
     showToast('Control Centre is private to Aaron’s account');
     view = 'reference';
   }
@@ -8351,9 +8378,15 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
       switchToTab('reference');
       setTimeout(function() { switchToReferenceNode(_posParams.pos || '', _posParams.sec || ''); }, 200);
       deepLinked = true;
-    } else if (hash === 'control' || hash === 'controlcentre' || hash === 'control-centre') {
-      if (isAaronOperatorAccount()) switchToTab('controlcentre');
-      else switchToTab('reference');
+    } else if (isControlCentreHash(hash)) {
+      if (isAaronOperatorAccount()) {
+        CONTROL_CENTRE_PENDING_ROUTE = '';
+        switchToTab('controlcentre');
+      } else {
+        CONTROL_CENTRE_PENDING_ROUTE = hash;
+        switchToTab('reference');
+        history.replaceState(null, '', '#' + hash);
+      }
       deepLinked = true;
     } else {
       // Legacy formats: #ref/label/section, #net/label/section
