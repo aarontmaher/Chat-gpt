@@ -12,12 +12,12 @@
     },
     "claude_code": {
       "task": "CC Cowork audit fixes: live data, mobile, WHOOP, gating",
-      "status": "in_progress",
+      "status": "idle",
       "branch": "main",
-      "commit": "4776f44",
-      "last_commit": "4776f44",
-      "summary": "CC live data fetch from WORK_STATUS.json, mobile toolbar fix, WHOOP CORS for health endpoint. Deploying now.",
-      "updated_at": "2026-04-05T03:10:00Z"
+      "commit": "ede606a",
+      "last_commit": "ede606a",
+      "summary": "Cowork audit fixes deployed. Priority 1: CC now fetches WORK_STATUS.json on each render for real agent data (branch/task/status/timestamps). Priority 3: mobile toolbar buttons tighter. Priority 4: WHOOP health endpoint now has CORS header \u2014 CC modal can reach it from browser. WORK_STATUS.json updated with real state. 8/8 live checks pass.",
+      "updated_at": "2026-04-05T03:11:19Z"
     },
     "codex": {
       "task": "WHOOP remote data hydration",
@@ -47,5 +47,5 @@
       "updated_at": null
     }
   },
-  "updated_at": "2026-04-05T03:10:00Z"
+  "updated_at": "2026-04-05T03:11:19Z"
 }
