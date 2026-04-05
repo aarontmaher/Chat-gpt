@@ -11,7 +11,7 @@ from typing import Any
 from mcp.server.fastmcp import Context, FastMCP
 
 from audit import log_tool_call
-from auth import check_auth
+from auth import authenticate_request, can_access_user, check_auth
 from config import (
     AUDIT_LOG_FILE,
     AUDIT_STATE_PATH,
@@ -960,7 +960,7 @@ async def api_prompt_jobs(request) -> JSONResponse:
         return Response("", headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
         })
     # Read jobs
     data = _read_json_file(PROMPT_JOBS_FILE) or {"items": []}
@@ -1032,7 +1032,7 @@ async def api_shared_memory(request) -> JSONResponse:
         return Response("", headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
         })
     if request.method == "GET":
         user_id = request.query_params.get("user_id", "default")
@@ -1040,7 +1040,10 @@ async def api_shared_memory(request) -> JSONResponse:
         data = _read_json_file(path) or _empty_memory()
         data["user_id"] = user_id
         return _cors_json({"ok": True, "item": data, "user_id": user_id})
-    # POST: save per-user store (user_id required for writes)
+    # POST: save per-user store (auth + user_id required for writes)
+    caller_uid, caller_role, _ = authenticate_request(request)
+    if not caller_uid:
+        return _cors_json({"ok": False, "error": "auth_required"}, 401)
     try:
         body = await request.json()
     except Exception:
@@ -1048,6 +1051,8 @@ async def api_shared_memory(request) -> JSONResponse:
     user_id = body.get("user_id")
     if not user_id or user_id == "default":
         return _cors_json({"ok": False, "error": "user_id required for writes"}, 400)
+    if not can_access_user(caller_uid, caller_role, user_id):
+        return _cors_json({"ok": False, "error": "forbidden"}, 403)
     item = body.get("item")
     if not item:
         return _cors_json({"ok": False, "error": "missing item"}, 400)
@@ -1074,7 +1079,7 @@ async def api_user_health(request) -> JSONResponse:
         return Response("", headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
         })
     user_id = request.query_params.get("user_id", "default")
     path = _user_health_path(user_id)
@@ -1082,7 +1087,10 @@ async def api_user_health(request) -> JSONResponse:
         data = _read_json_file(path) or {"user_id": user_id, "records": [], "providers": []}
         data["user_id"] = user_id
         return _cors_json({"ok": True, "item": data, "user_id": user_id})
-    # POST: append or replace health records
+    # POST: append or replace health records (auth + ownership enforced)
+    caller_uid, caller_role, _ = authenticate_request(request)
+    if not caller_uid:
+        return _cors_json({"ok": False, "error": "auth_required"}, 401)
     try:
         body = await request.json()
     except Exception:
@@ -1090,6 +1098,8 @@ async def api_user_health(request) -> JSONResponse:
     uid = body.get("user_id") or user_id
     if not uid or uid == "default":
         return _cors_json({"ok": False, "error": "user_id required for writes"}, 400)
+    if not can_access_user(caller_uid, caller_role, uid):
+        return _cors_json({"ok": False, "error": "forbidden"}, 403)
     action = body.get("action", "append")
     records = body.get("records", [])
     existing = _read_json_file(_user_health_path(uid)) or {"user_id": uid, "records": [], "providers": []}
@@ -1134,14 +1144,18 @@ async def api_providers(_request) -> JSONResponse:
 
 @mcp.custom_route("/api/ingest/polar", methods=["POST", "OPTIONS"], include_in_schema=False)
 async def api_ingest_polar(request) -> JSONResponse:
-    """Ingest Polar health data for a specific user. Normalizes and stores per-user."""
+    """Ingest Polar health data for a specific user. Requires auth. Enforces user ownership."""
     from starlette.responses import Response
     if request.method == "OPTIONS":
         return Response("", headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
         })
+    # Auth required
+    caller_uid, caller_role, token_info = authenticate_request(request)
+    if not caller_uid:
+        return _cors_json({"ok": False, "error": "auth_required", "detail": "Bearer token required"}, 401)
     try:
         body = await request.json()
     except Exception:
@@ -1149,6 +1163,8 @@ async def api_ingest_polar(request) -> JSONResponse:
     user_id = body.get("user_id")
     if not user_id:
         return _cors_json({"ok": False, "error": "user_id required"}, 400)
+    if not can_access_user(caller_uid, caller_role, user_id):
+        return _cors_json({"ok": False, "error": "forbidden", "detail": "You can only ingest data for your own user_id"}, 403)
     raw_records = body.get("records", body.get("days", []))
     if not raw_records:
         return _cors_json({"ok": False, "error": "no records provided"}, 400)

@@ -1,4 +1,4 @@
-"""Token-based auth with role tiers for GrapplingMap MCP tools."""
+"""Token-based auth with role tiers and user_id binding for GrapplingMap MCP."""
 from __future__ import annotations
 
 import json
@@ -13,6 +13,8 @@ ROLE_TIERS = {
     "operator": 3,
     "admin": 4,
 }
+
+ADMIN_ROLES = {"operator", "admin"}
 
 
 def load_tokens(path: str = TOKENS_FILE) -> dict[str, dict[str, Any]]:
@@ -43,9 +45,7 @@ def check_auth(
 ) -> tuple[bool, str, dict[str, Any]]:
     """Return (allowed, role, token_info) for a tool call.
 
-    Tier 1 tools are public and do not require a token.
-    For Tier 2+ tools, bearer auth is read from the explicit authorization string
-    or the FastMCP request context when available.
+    token_info now includes 'user_id' when present in the token record.
     """
     required_tier = get_tool_tier(tool_name) or 1
     if required_tier <= 1:
@@ -62,6 +62,45 @@ def check_auth(
     role = str(token_info.get("role", "viewer"))
     role_tier = ROLE_TIERS.get(role, 0)
     return role_tier >= required_tier, role, token_info
+
+
+def authenticate_request(request: Any) -> tuple[str | None, str, dict[str, Any]]:
+    """Authenticate an HTTP request. Returns (user_id, role, token_info) or (None, 'none', {})."""
+    auth_header = None
+    if hasattr(request, "headers"):
+        auth_header = request.headers.get("authorization")
+    if not auth_header:
+        return None, "none", {}
+
+    token = None
+    parts = auth_header.strip().split(" ", 1)
+    if len(parts) == 2 and parts[0].lower() == "bearer":
+        token = parts[1].strip()
+    if not token:
+        return None, "none", {}
+
+    token_info = load_tokens().get(token)
+    if not token_info:
+        return None, "invalid", {}
+
+    role = str(token_info.get("role", "viewer"))
+    user_id = token_info.get("user_id")
+    return user_id, role, token_info
+
+
+def can_access_user(caller_user_id: str | None, caller_role: str, target_user_id: str) -> bool:
+    """Check if the caller can access the target user's data.
+
+    Rules:
+    - admin/operator can access any user's data
+    - other callers can only access their own data
+    - anonymous callers (no user_id) cannot access anyone's data
+    """
+    if caller_role in ADMIN_ROLES:
+        return True
+    if not caller_user_id:
+        return False
+    return caller_user_id == target_user_id
 
 
 def extract_bearer_token(*, ctx: Any | None = None, authorization: str | None = None) -> str | None:
