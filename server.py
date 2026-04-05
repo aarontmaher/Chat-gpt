@@ -857,6 +857,57 @@ def approve_batch(loop: int, reviewer: str, ctx: Context | None = None) -> dict[
     return approve_batch_impl(loop, reviewer, ctx=ctx)
 
 
+# ─── MCP TOOLS: Per-user health + shared memory ─────────────────────────────
+
+@mcp.tool()
+def get_user_health_summary(user_id: str, days: int = 30) -> str:
+    """Get a per-user health data summary from the normalized multi-provider store."""
+    path = os.path.join(os.path.dirname(SHARED_MEMORY_FILE), "user_health", f"health_{user_id}.json")
+    data = None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except Exception:
+        pass
+    if not data or not data.get("records"):
+        return json.dumps({"ok": True, "user_id": user_id, "records": 0, "providers": [], "message": "No health data yet for this user."})
+    records = data["records"]
+    if days > 0:
+        cutoff = (datetime.now(timezone.utc) - __import__('datetime').timedelta(days=days)).strftime("%Y-%m-%d")
+        records = [r for r in records if (r.get("date") or "") >= cutoff]
+    providers = list({r.get("provider") for r in records if r.get("provider")})
+    return json.dumps({"ok": True, "user_id": user_id, "records": len(records), "providers": providers, "latest_date": max((r.get("date") or "") for r in records) if records else None})
+
+
+@mcp.tool()
+def get_user_shared_memory(user_id: str) -> str:
+    """Get a per-user shared memory store (facts, context, insights, rules, questions)."""
+    path = os.path.join(os.path.dirname(SHARED_MEMORY_FILE), "user_memory", f"memory_{user_id}.json")
+    data = None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except Exception:
+        pass
+    if not data:
+        data = {"schema_version": 1, "user_id": user_id, "facts": [], "context": [], "substance_timeline": [], "insights": [], "open_questions": [], "approved_rules": []}
+    data["user_id"] = user_id
+    return json.dumps({"ok": True, "item": data})
+
+
+@mcp.tool()
+def list_provider_registry() -> str:
+    """List all supported health data providers and their field capabilities."""
+    return json.dumps({"ok": True, "providers": [
+        {"id": "whoop", "name": "WHOOP", "status": "production"},
+        {"id": "polar", "name": "Polar", "status": "supported"},
+        {"id": "apple_health", "name": "Apple Health", "status": "planned"},
+        {"id": "garmin", "name": "Garmin", "status": "planned"},
+        {"id": "cronometer", "name": "Cronometer", "status": "planned"},
+        {"id": "manual", "name": "Manual", "status": "production"}
+    ]})
+
+
 # ─── HTTP API endpoints for website Control Centre ──────────────────────────
 # These serve live state to the browser without requiring MCP protocol.
 # CORS enabled so the website can fetch directly.
@@ -957,9 +1008,25 @@ async def api_suggestions(_request) -> JSONResponse:
     return _cors_json({"ok": True, "items": items, "count": len(items)})
 
 
+def _user_memory_path(user_id: str) -> str:
+    """Per-user shared memory file. Falls back to global if no user_id."""
+    if not user_id or user_id == 'default':
+        return SHARED_MEMORY_FILE
+    safe_id = "".join(c for c in user_id if c.isalnum() or c in "-_")[:64]
+    mem_dir = os.path.join(os.path.dirname(SHARED_MEMORY_FILE), "user_memory")
+    os.makedirs(mem_dir, exist_ok=True)
+    return os.path.join(mem_dir, f"memory_{safe_id}.json")
+
+
+def _empty_memory() -> dict:
+    return {"schema_version": 1, "updated_at": None, "user_id": None,
+            "facts": [], "context": [], "substance_timeline": [],
+            "insights": [], "open_questions": [], "approved_rules": []}
+
+
 @mcp.custom_route("/api/shared-memory", methods=["GET", "POST", "OPTIONS"], include_in_schema=False)
 async def api_shared_memory(request) -> JSONResponse:
-    """Shared structured memory — read/write for CC, ChatGPT, Claude."""
+    """Per-user structured memory — read/write for CC, ChatGPT, Claude."""
     from starlette.responses import Response
     if request.method == "OPTIONS":
         return Response("", headers={
@@ -968,21 +1035,97 @@ async def api_shared_memory(request) -> JSONResponse:
             "Access-Control-Allow-Headers": "Content-Type",
         })
     if request.method == "GET":
-        data = _read_json_file(SHARED_MEMORY_FILE)
-        if not data:
-            data = {"schema_version": 1, "updated_at": None, "facts": [], "context": [], "substance_timeline": [], "insights": [], "open_questions": [], "approved_rules": []}
-        return _cors_json({"ok": True, "item": data})
-    # POST: save entire store
+        user_id = request.query_params.get("user_id", "default")
+        path = _user_memory_path(user_id)
+        data = _read_json_file(path) or _empty_memory()
+        data["user_id"] = user_id
+        return _cors_json({"ok": True, "item": data, "user_id": user_id})
+    # POST: save per-user store
     try:
         body = await request.json()
     except Exception:
         return _cors_json({"ok": False, "error": "invalid_json"}, 400)
+    user_id = body.get("user_id", "default")
     item = body.get("item")
     if not item:
         return _cors_json({"ok": False, "error": "missing item"}, 400)
     item["updated_at"] = _now_iso()
-    _write_json_file(SHARED_MEMORY_FILE, item)
-    return _cors_json({"ok": True, "saved": True})
+    item["user_id"] = user_id
+    path = _user_memory_path(user_id)
+    _write_json_file(path, item)
+    return _cors_json({"ok": True, "saved": True, "user_id": user_id})
+
+
+def _user_health_path(user_id: str) -> str:
+    """Per-user health data file."""
+    safe_id = "".join(c for c in (user_id or "default") if c.isalnum() or c in "-_")[:64]
+    health_dir = os.path.join(os.path.dirname(SHARED_MEMORY_FILE), "user_health")
+    os.makedirs(health_dir, exist_ok=True)
+    return os.path.join(health_dir, f"health_{safe_id}.json")
+
+
+@mcp.custom_route("/api/user-health", methods=["GET", "POST", "OPTIONS"], include_in_schema=False)
+async def api_user_health(request) -> JSONResponse:
+    """Per-user health data — normalized daily records from any provider."""
+    from starlette.responses import Response
+    if request.method == "OPTIONS":
+        return Response("", headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        })
+    user_id = request.query_params.get("user_id", "default")
+    path = _user_health_path(user_id)
+    if request.method == "GET":
+        data = _read_json_file(path) or {"user_id": user_id, "records": [], "providers": []}
+        data["user_id"] = user_id
+        return _cors_json({"ok": True, "item": data, "user_id": user_id})
+    # POST: append or replace health records
+    try:
+        body = await request.json()
+    except Exception:
+        return _cors_json({"ok": False, "error": "invalid_json"}, 400)
+    uid = body.get("user_id", user_id)
+    action = body.get("action", "append")
+    records = body.get("records", [])
+    existing = _read_json_file(_user_health_path(uid)) or {"user_id": uid, "records": [], "providers": []}
+    if action == "replace":
+        existing["records"] = records
+    else:
+        # Append, deduplicating by date+provider
+        existing_keys = {(r.get("date"), r.get("provider")) for r in existing["records"]}
+        for r in records:
+            r["user_id"] = uid
+            key = (r.get("date"), r.get("provider"))
+            if key not in existing_keys:
+                existing["records"].append(r)
+                existing_keys.add(key)
+            else:
+                # Update existing record
+                for i, er in enumerate(existing["records"]):
+                    if (er.get("date"), er.get("provider")) == key:
+                        existing["records"][i] = r
+                        break
+    # Track providers
+    providers = list({r.get("provider") for r in existing["records"] if r.get("provider")})
+    existing["providers"] = providers
+    existing["user_id"] = uid
+    existing["updated_at"] = _now_iso()
+    _write_json_file(_user_health_path(uid), existing)
+    return _cors_json({"ok": True, "user_id": uid, "record_count": len(existing["records"]), "providers": providers})
+
+
+@mcp.custom_route("/api/providers", methods=["GET"], include_in_schema=False)
+async def api_providers(_request) -> JSONResponse:
+    """Registry of supported health data providers."""
+    return _cors_json({"ok": True, "providers": [
+        {"id": "whoop", "name": "WHOOP", "status": "production", "fields": ["recovery","hrv","resting_hr","sleep_detail","strain","spo2","skin_temp","workouts","hr_zones"]},
+        {"id": "polar", "name": "Polar", "status": "supported", "fields": ["nightly_recharge","hrv","resting_hr","sleep_stages","training_load","workouts","steps"]},
+        {"id": "apple_health", "name": "Apple Health", "status": "planned", "fields": ["hrv","resting_hr","sleep","active_energy","steps","spo2","weight","workouts"]},
+        {"id": "garmin", "name": "Garmin", "status": "planned", "fields": ["hrv","resting_hr","sleep","body_battery","stress","steps","spo2","workouts"]},
+        {"id": "cronometer", "name": "Cronometer", "status": "planned", "fields": ["nutrition"]},
+        {"id": "manual", "name": "Manual", "status": "production", "fields": ["subjective","grappling_session","substances","nutrition","weight"]}
+    ]})
 
 
 @mcp.custom_route("/api/healthz", methods=["GET"], include_in_schema=False)
