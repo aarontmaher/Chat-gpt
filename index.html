@@ -2368,6 +2368,30 @@ function syncPolarData(data) {
   }
   if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
   showToast('Polar data synced for ' + normalized.date);
+  
+  // Send to backend asynchronously: fire-and-forget with backend persistence
+  // health-import will: normalize, deduplicate by (user, date, provider), store raw import, update provider_connections
+  if (typeof providerRequest === 'function') {
+    (async function() {
+      try {
+        var backendResult = await providerRequest('health-import', 'POST', {
+          provider: 'polar',
+          import_mode: 'manual_upload',
+          raw_payload: data
+        });
+        if (backendResult && backendResult.ok && backendResult.import_id) {
+          // Silent success: backend stored the import
+          console.log('Polar import stored serverside:', backendResult.import_id);
+        } else if (backendResult && backendResult.error) {
+          console.warn('Polar backend import failed:', backendResult.error);
+        }
+      } catch (e) {
+        console.warn('Polar backend call error:', e);
+        // Intentionally silent — local sync succeeded, backend optional
+      }
+    })(); // IIFE for fire-and-forget async
+  }
+  
   return true;
 }
 
