@@ -15,23 +15,75 @@ WHOOP_API_BASE = "https://api.prod.whoop.com/developer/v2"
 WHOOP_TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token"
 
 
+RAILWAY_WHOOP_HEALTH_URL = "https://whoop-mcp-production-032e.up.railway.app/healthz"
+RAILWAY_WHOOP_DIAG_URL = "https://whoop-mcp-production-032e.up.railway.app/diag/token-check"
+
+
+def _get_from_railway_health(date: str) -> dict[str, Any] | None:
+    """Try to get WHOOP daily info from the Railway production backend."""
+    try:
+        resp = requests.get(RAILWAY_WHOOP_HEALTH_URL, timeout=8)
+        if resp.status_code != 200:
+            return None
+        health = resp.json()
+        if not health.get("ok"):
+            return None
+        auth = health.get("auth") or {}
+        latest_sync = health.get("latest_sync") or {}
+        return {
+            "date": health.get("latest_local_date") or date,
+            "requested_date": date,
+            "source": "railway_production",
+            "latest_local_date": health.get("latest_local_date"),
+            "recovery": None,  # Health endpoint doesn't return daily metrics
+            "strain": None,
+            "sleep": None,
+            "workouts": None,
+            "auth": {
+                "state": "connected" if not auth.get("reauth_required") else "reauth_required",
+                "token_source": auth.get("token_source"),
+                "last_api_success_at": auth.get("last_api_success_at"),
+                "sync_blocked": auth.get("sync_blocked_by_auth", False),
+            },
+            "freshness": {
+                "state": "fresh" if health.get("latest_local_date") == date else "stale",
+                "latest_date": health.get("latest_local_date"),
+                "last_sync": latest_sync.get("finished_at"),
+                "sync_source": latest_sync.get("source"),
+            },
+        }
+    except Exception:
+        return None
+
+
 def get_normalized_daily(
     date: str,
     tokens_path: str = WHOOP_TOKENS_FILE,
     sqlite_path: str = WHOOP_SQLITE_FILE,
 ) -> dict[str, Any]:
-    """Return a normalized WHOOP daily object for the requested ISO date."""
+    """Return a normalized WHOOP daily object for the requested ISO date.
+
+    Priority: Railway production backend → local SQLite → local WHOOP API.
+    """
     normalized_date = normalize_date(date)
     if not normalized_date:
         return {"error": "invalid_date"}
 
+    # 1. Try Railway production backend (canonical source)
+    railway_item = _get_from_railway_health(normalized_date)
+    if railway_item is not None:
+        return railway_item
+
+    # 2. Fallback: local SQLite
     sqlite_item = get_normalized_daily_from_sqlite(normalized_date, sqlite_path=sqlite_path)
     if sqlite_item is not None:
+        sqlite_item["source"] = "whoop_sqlite_local_fallback"
         return sqlite_item
 
+    # 3. Fallback: local WHOOP API (stale tokens)
     live_item = get_normalized_daily_from_api(normalized_date, tokens_path=tokens_path)
     live_item.setdefault("requested_date", normalized_date)
-    live_item.setdefault("source", "whoop_live_api")
+    live_item.setdefault("source", "whoop_live_api_local_fallback")
     live_item.setdefault("freshness", {"state": "unknown"})
     live_item.setdefault("auth", {"state": "unknown"})
     return live_item

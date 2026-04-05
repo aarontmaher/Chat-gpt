@@ -856,5 +856,111 @@ def approve_batch(loop: int, reviewer: str, ctx: Context | None = None) -> dict[
     return approve_batch_impl(loop, reviewer, ctx=ctx)
 
 
+# ─── HTTP API endpoints for website Control Centre ──────────────────────────
+# These serve live state to the browser without requiring MCP protocol.
+# CORS enabled so the website can fetch directly.
+
+from starlette.responses import JSONResponse
+
+
+def _cors_json(data: dict, status_code: int = 200) -> JSONResponse:
+    return JSONResponse(data, status_code=status_code, headers={"Access-Control-Allow-Origin": "*"})
+
+
+def _read_json_file(path: str) -> dict | None:
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+@mcp.custom_route("/api/work-status", methods=["GET", "OPTIONS"], include_in_schema=False)
+async def api_work_status(_request) -> JSONResponse:
+    """Live work status for all agents — consumed by website Control Centre."""
+    data = _read_json_file(WORK_STATUS_FILE)
+    if not data:
+        return _cors_json({"ok": False, "error": "work_status_not_found"}, 404)
+    return _cors_json({"ok": True, "item": data})
+
+
+def _write_json_file(path: str, data: Any) -> bool:
+    try:
+        import tempfile
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=d, suffix=".tmp")
+        with os.fdopen(fd, "w") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp, path)
+        return True
+    except Exception:
+        return False
+
+
+@mcp.custom_route("/api/prompt-jobs", methods=["GET", "POST", "OPTIONS"], include_in_schema=False)
+async def api_prompt_jobs(request) -> JSONResponse:
+    """Live prompt jobs for operator — consumed by website Control Centre."""
+    from starlette.responses import Response
+    # CORS preflight
+    if request.method == "OPTIONS":
+        return Response("", headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        })
+    # Read jobs
+    data = _read_json_file(PROMPT_JOBS_FILE) or {"items": []}
+    items = data if isinstance(data, list) else data.get("items", data.get("jobs", []))
+    if not isinstance(items, list):
+        items = []
+    if request.method == "GET":
+        return _cors_json({"ok": True, "items": items})
+    # POST: create a new prompt job
+    try:
+        body = await request.json()
+    except Exception:
+        return _cors_json({"ok": False, "error": "invalid_json"}, 400)
+    if body.get("action") != "create":
+        return _cors_json({"ok": False, "error": "unsupported_action"}, 400)
+    import secrets as _sec
+    job = {
+        "id": "PJ-" + str(int(datetime.now(timezone.utc).timestamp() * 1000)) + "-" + _sec.token_hex(3),
+        "target_agent": body.get("target_agent", "claude_code"),
+        "prompt": body.get("prompt", ""),
+        "priority": body.get("priority", "normal"),
+        "status": "pending",
+        "source_client": body.get("source_client", "website-operator"),
+        "claimed_by": None,
+        "result_summary": None,
+        "result_artifact": None,
+        "error": None,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    items.insert(0, job)
+    if len(items) > 50:
+        items = items[:50]
+    _write_json_file(PROMPT_JOBS_FILE, {"items": items})
+    return _cors_json({"ok": True, "item": job, "source": "mcp"})
+
+
+@mcp.custom_route("/api/suggestions", methods=["GET"], include_in_schema=False)
+async def api_suggestions(_request) -> JSONResponse:
+    """Live suggestion queue — consumed by website Control Centre."""
+    data = _read_json_file(AUTOMATION_SUGGESTIONS_PATH)
+    if not data:
+        return _cors_json({"ok": True, "items": []})
+    items = data if isinstance(data, list) else data.get("items", [])
+    return _cors_json({"ok": True, "items": items, "count": len(items)})
+
+
+@mcp.custom_route("/api/healthz", methods=["GET"], include_in_schema=False)
+async def api_healthz(_request) -> JSONResponse:
+    """Health check for website to verify MCP is reachable."""
+    return _cors_json({"ok": True, "service": "GrapplingMap MCP", "ts": _now_iso()})
+
+
 if __name__ == "__main__":
     mcp.run(transport="streamable-http")
