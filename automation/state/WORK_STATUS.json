@@ -14,10 +14,10 @@
       "task": "Unify WHOOP canonical data source",
       "status": "idle",
       "branch": "main",
-      "commit": "3e6ba33",
-      "last_commit": "3e6ba33",
-      "summary": "WHOOP unified: website refreshWhoopFromBackend now falls back to Railway production. Local MCP whoop_proxy proxies to Railway first. Source fields mark railway_production vs local_fallback. Root cause: local SQLite stuck at Apr 3, Railway at Apr 5.",
-      "updated_at": "2026-04-05T05:41:00Z"
+      "commit": "b91ab40",
+      "last_commit": "b91ab40",
+      "summary": "WHOOP unified. MCP proxy committed (0786bd9). Railway-first for all production surfaces. Website, ChatGPT, Claude, CC all aligned to Railway canonical source.",
+      "updated_at": "2026-04-05T05:46:00Z"
     },
     "codex": {
       "task": "WHOOP remote data hydration",
@@ -47,5 +47,5 @@
       "updated_at": null
     }
   },
-  "updated_at": "2026-04-05T05:41:00Z"
+  "updated_at": "2026-04-05T05:46:00Z"
 }
