@@ -2005,7 +2005,7 @@ function normalizeWhoopDailyForApp(item) {
   };
 }
 
-async function whoopRequest(endpoint, method, body) {
+async function providerRequest(endpoint, method, body) {
   if (window.__GM_WHOOP_BRIDGE__ && typeof window.__GM_WHOOP_BRIDGE__.request === 'function') {
     try { return await window.__GM_WHOOP_BRIDGE__.request(endpoint, method || 'GET', body || null); }
     catch(e) { return { ok: false, error: e && e.message ? e.message : 'WHOOP bridge failed' }; }
@@ -2125,7 +2125,7 @@ var WHOOP_MCP_HEALTH_URL = 'https://whoop-mcp-production-032e.up.railway.app/hea
 
 async function fetchWhoopStatus() {
   // 1. Try Supabase edge function
-  var response = await whoopRequest('whoop-status', 'GET');
+  var response = await providerRequest('whoop-status', 'GET');
   if (response && response.ok) {
     var item = response.item || response.data || response;
     return {
@@ -2171,7 +2171,7 @@ async function fetchWhoopStatus() {
 
 async function refreshWhoopFromBackend() {
   // 1. Try Supabase edge function (original path)
-  var response = await whoopRequest('whoop-refresh', 'POST', { date: new Date().toISOString().slice(0, 10) });
+  var response = await providerRequest('whoop-refresh', 'POST', { date: new Date().toISOString().slice(0, 10) });
   if (response && response.ok) {
     var item = response.item || response.data || response.daily || response;
     var normalized = normalizeWhoopDailyForApp(item);
@@ -2219,7 +2219,7 @@ function _applyWhoopRefresh(normalized) {
 }
 
 async function startWhoopConnectFlow() {
-  var response = await whoopRequest('whoop-connect', 'POST', { redirect_to: window.location.href });
+  var response = await providerRequest('whoop-connect', 'POST', { redirect_to: window.location.href });
   if (!response || response.ok === false) return response || { ok: false, error: 'connect_unavailable' };
   var url = response.connect_url || response.url || response.redirect_to || response.auth_url;
   if (url) {
