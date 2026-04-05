@@ -2008,16 +2008,20 @@ async function promptJobsRequest(method, body, query) {
     try { return await window.__GM_PROMPT_JOBS_BRIDGE__.request(method || 'GET', body || null, query || null); }
     catch(e) { return { ok: false, error: e && e.message ? e.message : 'prompt_jobs_bridge_failed' }; }
   }
-  // 2. Try GrapplingMap MCP API (live backend)
-  if ((method || 'GET') === 'GET') {
-    try {
-      var mcpResp = await fetch(_CC_API_BASE + '/prompt-jobs', { signal: AbortSignal.timeout(6000) });
-      if (mcpResp.ok) {
-        var mcpData = await mcpResp.json();
-        if (mcpData && mcpData.ok) return { ok: true, items: mcpData.items || [], source: 'mcp' };
-      }
-    } catch(e) { /* fall through */ }
-  }
+  // 2. Try GrapplingMap MCP API (live backend — supports GET and POST)
+  try {
+    var mcpOpts = { signal: AbortSignal.timeout(6000) };
+    if ((method || 'GET') === 'POST' && body) {
+      mcpOpts.method = 'POST';
+      mcpOpts.headers = { 'Content-Type': 'application/json' };
+      mcpOpts.body = JSON.stringify(body);
+    }
+    var mcpResp = await fetch(_CC_API_BASE + '/prompt-jobs', mcpOpts);
+    if (mcpResp.ok) {
+      var mcpData = await mcpResp.json();
+      if (mcpData && mcpData.ok) return Object.assign({ source: 'mcp' }, mcpData);
+    }
+  } catch(e) { /* fall through */ }
   // 3. Try Supabase edge function
   var headers = await UserStore._getAuthHeaders();
   if (headers) {
