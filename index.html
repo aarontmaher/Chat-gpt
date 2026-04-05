@@ -1984,21 +1984,6 @@ function setWhoopConnectionMeta(meta) {
   return next;
 }
 
-function getPolarConnectionMeta() {
-  return STATE.polarConnection || {};
-}
-
-function setPolarConnectionMeta(meta) {
-  var next = Object.assign({}, getPolarConnectionMeta(), meta || {});
-  next.updated_at = new Date().toISOString();
-  STATE.polarConnection = next;
-  saveState();
-  updateWhoopReadinessCard();
-  if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
-  updateWhoopMenuLabel();
-  return next;
-}
-
 function normalizeWhoopDailyForApp(item) {
   if (!item || item.error || !item.date) return null;
   var recovery = item.recovery || {};
@@ -2184,23 +2169,6 @@ async function fetchWhoopStatus() {
   }
 }
 
-async function fetchPolarStatus() {
-  // Try Supabase edge function for Polar
-  var response = await whoopRequest('polar-status', 'GET');
-  if (response && response.ok) {
-    var item = response.item || response.data || response;
-    return {
-      ok: true,
-      connected: !!(item && (item.connected || item.is_connected)),
-      last_sync_at: item && (item.last_sync_at || item.synced_at || item.updated_at) || null,
-      latest_date: item && (item.latest_date || item.date) || null,
-      status_text: item && (item.status_text || item.status) || '',
-      provider: item && item.provider || 'polar'
-    };
-  }
-  return { ok: false, error: 'status_unavailable' };
-}
-
 async function refreshWhoopFromBackend() {
   // 1. Try Supabase edge function (original path)
   var response = await whoopRequest('whoop-refresh', 'POST', { date: new Date().toISOString().slice(0, 10) });
@@ -2234,47 +2202,6 @@ async function refreshWhoopFromBackend() {
     return { ok: false, error: 'railway_unreachable' };
   }
 }
-
-async function refreshPolarFromBackend() {
-  // Try Supabase edge function for Polar
-  var response = await whoopRequest('polar-refresh', 'POST', { date: new Date().toISOString().slice(0, 10) });
-  if (response && response.ok) {
-    var item = response.item || response.data || response.daily || response;
-    var normalized = normalizePolarDailyForApp(item);
-    if (normalized) {
-      _applyPolarRefresh(normalized);
-      return { ok: true, item: normalized };
-    }
-  }
-  return { ok: false, error: 'refresh_unavailable' };
-}
-
-function _applyPolarRefresh(normalized) {
-  STATE.polarData = normalized;
-  setPolarConnectionMeta({
-    connected: true,
-    last_sync_at: normalized.synced_at,
-    latest_date: normalized.date,
-    source: 'backend'
-  });
-  showToast('Polar refreshed for ' + normalized.date);
-  updateGreeting();
-  if (window.GrapplingIntelligence) {
-    window.GrapplingIntelligence.appendDay(normalized);
-    window.GrapplingIntelligence.runPipeline();
-  }
-}
-
-async function startPolarConnectFlow() {
-  var response = await whoopRequest('polar-connect', 'POST', { redirect_to: window.location.href });
-  if (!response || response.ok === false) return response || { ok: false, error: 'connect_unavailable' };
-  var url = response.connect_url || response.url || response.redirect_to || response.auth_url;
-  if (url) {
-    window.location.href = url;
-    return { ok: true, redirecting: true };
-  }
-  return { ok: false, error: 'missing_connect_url' };
-}
 function _applyWhoopRefresh(normalized) {
   STATE.whoopData = normalized;
   setWhoopConnectionMeta({
@@ -2305,20 +2232,6 @@ async function startWhoopConnectFlow() {
 function getWhoopUiState() {
   var meta = getWhoopConnectionMeta();
   var localData = STATE.whoopData;
-  var debugDataOnly = !!(localData && (!meta.connected || meta.source === 'debug'));
-  return {
-    connected: !!meta.connected,
-    lastSyncAt: meta.last_sync_at || (localData && localData.synced_at) || null,
-    latestDate: meta.latest_date || (localData && localData.date) || null,
-    hasLocalData: !!localData,
-    debugDataOnly: debugDataOnly,
-    source: meta.source || (debugDataOnly ? 'debug' : 'unknown')
-  };
-}
-
-function getPolarUiState() {
-  var meta = getPolarConnectionMeta();
-  var localData = STATE.polarData;
   var debugDataOnly = !!(localData && (!meta.connected || meta.source === 'debug'));
   return {
     connected: !!meta.connected,
@@ -2418,33 +2331,8 @@ function syncWhoopData(data) {
   return true;
 }
 
-  return true;
-}
-
 // Programmatic API
 window._syncWhoop = function(data) { return syncWhoopData(data); };
-
-async function maybeAutoRefreshPolar(reason) {
-  if (!isMember()) return false;
-  var state = getPolarUiState();
-  var looksConnected = state.connected;
-  if (!looksConnected) {
-    var status = await fetchPolarStatus();
-    if (status && status.ok && status.connected) {
-      setPolarConnectionMeta({
-        connected: true,
-        last_sync_at: status.last_sync_at,
-        latest_date: status.latest_date,
-        source: 'backend'
-      });
-      looksConnected = true;
-    }
-  }
-  if (!looksConnected) return false;
-  if (STATE.polarData && isPolarDataRecent(STATE.polarData) && reason !== 'force') return true;
-  var refreshed = await refreshPolarFromBackend();
-  return !!(refreshed && refreshed.ok);
-}
 
 // ─── POLAR NORMALIZATION ───────────────────────────────────────
 // Polar Flow / Polar API field mapping → shared app schema
@@ -2474,8 +2362,6 @@ function syncPolarData(data) {
   if (!normalized) { showToast('Polar sync: normalization failed'); return false; }
   STATE.polarData = normalized;
   saveState();
-  updateWhoopReadinessCard();
-  updateWhoopMenuLabel();
   if (window.GrapplingIntelligence) {
     window.GrapplingIntelligence.appendDay(normalized);
     window.GrapplingIntelligence.runPipeline();
@@ -7596,20 +7482,14 @@ function openHealthMetricsManager() {
     );
 
     // ── Polar section (any user) ───────────────────────────
-    var polarState = getPolarUiState();
     var polarData = STATE.polarData && isWhoopDataRecent(STATE.polarData) ? STATE.polarData : null;
     sections.push(
-      '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;" id="hmPolarSection">' +
+      '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
           '<span style="font-family:Barlow Condensed,sans-serif;font-size:14px;letter-spacing:0.4px;color:var(--text);">Polar</span>' +
-          '<span style="font-family:DM Mono,monospace;font-size:9px;color:' + (polarState.connected ? '#34d399' : polarState.debugDataOnly ? '#d29922' : '#8892a4') + ';border:1px solid rgba(255,255,255,0.08);padding:2px 6px;border-radius:999px;">' + (polarState.connected ? 'Connected' : polarState.debugDataOnly ? 'DEBUG' : 'NOT CONNECTED') + '</span>' +
+          '<span style="font-family:DM Mono,monospace;font-size:9px;color:' + (polarData ? '#34d399' : '#8892a4') + ';border:1px solid rgba(255,255,255,0.08);padding:2px 6px;border-radius:999px;">' + (polarData ? 'DATA LOADED' : 'NOT CONNECTED') + '</span>' +
         '</div>' +
-        (polarData ? dataSummaryHtml(Object.assign({}, polarData, { _providerLabel: 'Polar' })) : '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);">No recent data — use Connect to link your Polar account.</div>') +
-        '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">' +
-          (isMember()
-            ? '<button id="hmPolarRefreshBtn" style="background:var(--accent);color:#000;border:none;font-family:DM Mono,monospace;font-size:10px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;">' + (polarState.connected ? 'Refresh data' : 'Connect') + '</button>'
-            : '<button id="hmPolarAuthBtn" style="background:var(--accent);color:#000;border:none;font-family:DM Mono,monospace;font-size:10px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;">Sign in to connect</button>') +
-        '</div>' +
+        (polarData ? dataSummaryHtml(polarData) : '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);">Upload today\'s Polar export file to enable training recommendations.</div>') +
         '<details style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">' +
           '<summary style="cursor:pointer;font-family:DM Mono,monospace;font-size:10px;color:#8892a4;">Upload Polar file</summary>' +
           '<div id="polarDropZone" style="border:2px dashed rgba(255,255,255,0.2);border-radius:6px;padding:16px;text-align:center;margin-top:8px;background:rgba(255,255,255,0.02);transition:border-color 0.2s;">' +
@@ -7675,26 +7555,6 @@ function openHealthMetricsManager() {
     });
     var whoopAuthBtn = document.getElementById('hmWhoopAuthBtn');
     if (whoopAuthBtn) whoopAuthBtn.addEventListener('click', function() { requireAuth('connect WHOOP'); });
-
-    // Polar buttons
-    var polarRefreshBtn = document.getElementById('hmPolarRefreshBtn');
-    if (polarRefreshBtn) polarRefreshBtn.addEventListener('click', async function() {
-      polarRefreshBtn.textContent = 'Working...';
-      polarRefreshBtn.disabled = true;
-      var polarState = getPolarUiState();
-      if (polarState.connected) {
-        var refreshed = await refreshPolarFromBackend();
-        if (refreshed && refreshed.ok) { closeModal(); return; }
-        polarRefreshBtn.textContent = 'Refresh unavailable';
-      } else {
-        var flow = await startPolarConnectFlow();
-        if (flow && flow.ok) { closeModal(); return; }
-        polarRefreshBtn.textContent = 'Connect unavailable';
-      }
-      polarRefreshBtn.disabled = false;
-    });
-    var polarAuthBtn = document.getElementById('hmPolarAuthBtn');
-    if (polarAuthBtn) polarAuthBtn.addEventListener('click', function() { requireAuth('connect Polar'); });
 
     // WHOOP JSON import
     var whoopImportBtn = document.getElementById('whoopImportJsonBtn');
@@ -7773,22 +7633,6 @@ function openHealthMetricsManager() {
         });
         render(); // re-render with updated connection state
         if (status.connected && !STATE.whoopData) maybeAutoRefreshWhoop('force');
-      }
-    }).catch(function() {});
-  }
-
-  // Auto-check Polar status for any member
-  if (isMember()) {
-    fetchPolarStatus().then(function(status) {
-      if (status && status.ok) {
-        setPolarConnectionMeta({
-          connected: status.connected,
-          last_sync_at: status.last_sync_at,
-          latest_date: status.latest_date,
-          source: status.connected ? 'backend' : getPolarConnectionMeta().source || 'backend'
-        });
-        render(); // re-render with updated connection state
-        if (status.connected && !STATE.polarData) maybeAutoRefreshPolar('force');
       }
     }).catch(function() {});
   }
@@ -10363,19 +10207,6 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
     setTimeout(function() { maybeAutoRefreshWhoop('force'); }, 0);
     params.delete('whoop_connected');
     if (params.get('whoop') === 'connected') params.delete('whoop');
-    var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
-    window.history.replaceState({}, '', next);
-  }
-  if (params.get('polar_auth') === 'success') {
-    setPolarConnectionMeta({
-      connected: true,
-      last_sync_at: new Date().toISOString(),
-      latest_date: new Date().toISOString().slice(0, 10),
-      source: 'backend'
-    });
-    setTimeout(function() { maybeAutoRefreshPolar('force'); }, 0);
-    params.delete('polar_auth');
-    params.delete('mock');
     var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
     window.history.replaceState({}, '', next);
   }
