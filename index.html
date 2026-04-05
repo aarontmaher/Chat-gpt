@@ -1429,7 +1429,6 @@ function updatePrivateOperatorUI() {
   var label = document.getElementById('menuOperatorLabel');
   if (label) label.style.display = canAccess ? '' : 'none';
   updateControlCentreVisibility();
-  if (canAccess) maybeResumeControlCentreAccess();
 }
 async function refreshAuthProfile() {
   if (!isMember() || !_supabase) {
@@ -9566,6 +9565,8 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
       authUserBtn.textContent = AUTH_USER ? AUTH_USER.displayName || (AUTH_USER.email ? AUTH_USER.email.split('@')[0] : 'Account') : 'Account';
     }
     updatePrivateOperatorUI();
+    // Resume CC after auth profile loads (operator access may only be known now)
+    if (isAaronOperatorAccount()) maybeResumeControlCentreAccess();
   }
 
   authBtn.addEventListener('click', showAuthModal);
@@ -9750,6 +9751,8 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
 
   updateAuthUI();
   updatePrivateOperatorUI();
+  // Resume CC tab once on boot if it was the last active tab (not on every menu open)
+  if (isAaronOperatorAccount()) maybeResumeControlCentreAccess();
 })();
 
 (function() {
