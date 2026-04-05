@@ -2075,18 +2075,52 @@ function formatPromptJobWhen(value) {
   return ccFormatWhen(value);
 }
 
+var WHOOP_MCP_HEALTH_URL = 'https://whoop-mcp-production-032e.up.railway.app/healthz';
+
 async function fetchWhoopStatus() {
+  // 1. Try Supabase edge function
   var response = await whoopRequest('whoop-status', 'GET');
-  if (!response || response.ok === false) return response || { ok: false, error: 'status_unavailable' };
-  var item = response.item || response.data || response;
-  return {
-    ok: true,
-    connected: !!(item && (item.connected || item.is_connected)),
-    last_sync_at: item && (item.last_sync_at || item.synced_at || item.updated_at) || null,
-    latest_date: item && (item.latest_date || item.date) || null,
-    status_text: item && (item.status_text || item.status) || '',
-    provider: item && item.provider || 'whoop'
-  };
+  if (response && response.ok) {
+    var item = response.item || response.data || response;
+    return {
+      ok: true,
+      connected: !!(item && (item.connected || item.is_connected)),
+      last_sync_at: item && (item.last_sync_at || item.synced_at || item.updated_at) || null,
+      latest_date: item && (item.latest_date || item.date) || null,
+      status_text: item && (item.status_text || item.status) || '',
+      provider: item && item.provider || 'whoop'
+    };
+  }
+  // 2. Fallback: fetch directly from live WHOOP MCP health endpoint
+  try {
+    var resp = await fetch(WHOOP_MCP_HEALTH_URL, { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) return { ok: false, error: 'health_fetch_failed' };
+    var health = await resp.json();
+    if (!health || !health.ok) return { ok: false, error: 'health_not_ok' };
+    var auth = health.auth || {};
+    var lastSync = health.latest_sync || {};
+    var isConnected = health.token_file_present && !auth.reauth_required && !auth.sync_blocked_by_auth;
+    var syncAt = lastSync.finished_at || lastSync.started_at || auth.last_api_success_at || null;
+    return {
+      ok: true,
+      connected: isConnected,
+      last_sync_at: syncAt,
+      latest_date: health.latest_local_date || null,
+      status_text: isConnected
+        ? 'Connected via WHOOP MCP' + (auth.last_api_success_at ? ' • API ok ' + ccFormatWhen(auth.last_api_success_at) : '')
+        : (auth.reauth_required ? 'Reauthorization needed' : 'Token present but sync may be blocked'),
+      provider: 'whoop',
+      auth_detail: {
+        token_source: auth.token_source,
+        reauth_required: auth.reauth_required,
+        sync_blocked: auth.sync_blocked_by_auth,
+        last_api_success: auth.last_api_success_at,
+        last_refresh_success: auth.last_refresh_success_at
+      }
+    };
+  } catch (e) {
+    return { ok: false, error: 'health_unreachable' };
+  }
 }
 
 async function refreshWhoopFromBackend() {
@@ -7087,8 +7121,8 @@ function openWhoopManager() {
     var helper = model.connected
       ? 'WHOOP is connected. Pull the latest daily performance object whenever you need a fresh sync.'
       : (isMember() ? 'Connect your WHOOP account to sync recovery automatically after auth.' : 'Sign in to connect WHOOP and keep recovery data synced automatically.');
-    var lastSync = state.lastSyncAt ? ccFormatWhen(state.lastSyncAt) : 'never';
-    var latestDate = state.latestDate || 'none';
+    var lastSync = state.lastSyncAt ? ccFormatWhen(state.lastSyncAt) : (model.last_sync_at ? ccFormatWhen(model.last_sync_at) : 'never');
+    var latestDate = state.latestDate || model.latest_date || 'none';
     body.innerHTML =
       '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;background:rgba(255,255,255,0.02);">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">' +
@@ -7138,7 +7172,7 @@ function openWhoopManager() {
       }
       var connected = await startWhoopConnectFlow();
       if (!connected || !connected.ok) {
-        renderPanel({ connected: false, statusText: 'WHOOP connect is not wired in this deployment yet. Backend auth/connect wiring is still required.', primaryDisabled: false });
+        renderPanel({ connected: false, statusText: 'WHOOP connect flow unavailable from website. Use the WHOOP MCP direct auth at the service endpoint instead.', primaryDisabled: false });
       }
     });
   }
@@ -7160,18 +7194,20 @@ function openWhoopManager() {
       });
       renderPanel({
         connected: status.connected,
-        statusText: status.connected
-          ? ('Connected' + (status.last_sync_at ? ' • last sync ' + ccFormatWhen(status.last_sync_at) : ''))
-          : 'Connect WHOOP to pull recovery automatically after auth.'
+        last_sync_at: status.last_sync_at,
+        latest_date: status.latest_date,
+        statusText: status.status_text || (status.connected
+          ? ('Connected' + (status.last_sync_at ? ' \u00b7 last sync ' + ccFormatWhen(status.last_sync_at) : ''))
+          : 'Connect WHOOP to pull recovery automatically after auth.')
       });
       if (status.connected && !STATE.whoopData) await maybeAutoRefreshWhoop('force');
       return;
     }
     renderPanel({
-      connected: state.connected,
+      connected: state.connected || state.debugDataOnly,
       statusText: state.debugDataOnly
-        ? 'Using locally imported debug data. Backend WHOOP status is unavailable in this deployment.'
-        : 'WHOOP backend status is unavailable right now. The connect/refresh UX is ready, but auth/backend wiring is still needed.'
+        ? 'Using locally imported debug data. Live WHOOP MCP was unreachable.'
+        : 'Could not reach WHOOP backend. Check network or service status.'
     });
   })();
 }
