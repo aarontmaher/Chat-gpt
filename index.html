@@ -2393,46 +2393,71 @@ function syncAppleHealthData(data) {
   if (!data || !data.date) { showToast('Apple Health sync: missing date field'); return false; }
   var normalized = normalizeAppleHealthDailyForApp(data);
   if (!normalized) { showToast('Apple Health sync: normalization failed'); return false; }
+  
+  // ─── CANONICAL PATH FOR MEMBERS: Append to MultiUserHealth first ───────
+  // For members, MultiUserHealth is the canonical source; localStorage is cache
+  var backendAppended = false;
+  if (isMember() && AUTH_USER && AUTH_USER.id && window.MultiUserHealth) {
+    try {
+      var record = window.MultiUserHealth.createDailyRecord({
+        user_id: AUTH_USER.id,
+        date: normalized.date,
+        provider: 'apple_health',
+        health_metrics: {
+          hrv_ms: normalized.hrv_ms,
+          resting_hr: normalized.resting_hr,
+          sleep_hours: normalized.sleep_hours,
+          daily_strain: normalized.daily_strain
+        },
+        raw_payload: data,
+        data_source: 'manual_apple_health_import',
+        synced_at: normalized.synced_at
+      });
+      window.MultiUserHealth.appendDay(AUTH_USER.id, record);
+      backendAppended = true;
+      _log('[Apple Health] CANONICAL: Appended to MultiUserHealth');
+    } catch(e) {
+      _log('[Apple Health] MultiUserHealth append failed:', e.message);
+      // Continue with localStorage as fallback
+    }
+  }
+  
+  // ─── CACHE: Save to localStorage ────────────────────────────────────
+  // For guests, localStorage is the truth; for members, it's a cache
   STATE.appleHealthData = normalized;
   saveState();
+  
+  // ─── AI INTEGRATION ────────────────────────────────────────────────
   if (window.GrapplingIntelligence) {
     window.GrapplingIntelligence.appendDay(normalized);
     window.GrapplingIntelligence.runPipeline();
   }
   if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
   
-  // ─── BACKEND-READY: Append to MultiUserHealth if authenticated ───────
-  // This wires Apple Health toward backend persistence while keeping local storage
-  if (isMember() && AUTH_USER && AUTH_USER.id && window.MultiUserHealth) {
-    (function() {
-      try {
-        var record = window.MultiUserHealth.createDailyRecord({
-          user_id: AUTH_USER.id,
-          date: normalized.date,
-          provider: 'apple_health',
-          health_metrics: {
-            hrv_ms: normalized.hrv_ms,
-            resting_hr: normalized.resting_hr,
-            sleep_hours: normalized.sleep_hours,
-            daily_strain: normalized.daily_strain
-          },
-          raw_payload: data,
-          data_source: 'manual_apple_health_import',
-          synced_at: normalized.synced_at
-        });
-        window.MultiUserHealth.appendDay(AUTH_USER.id, record);
-        _log('[Apple Health] Appended to MultiUserHealth for backend persistence');
-      } catch(e) {
-        _log('[Apple Health] MultiUserHealth append failed (non-fatal):', e.message);
-      }
-    })();
+  var msg = 'Apple Health data synced for ' + normalized.date;
+  if (isMember() && backendAppended) {
+    msg += ' (saved to your account)';
   }
-  
-  showToast('Apple Health data synced for ' + normalized.date);
+  showToast(msg);
   return true;
 }
 
 window._syncAppleHealth = function(data) { return syncAppleHealthData(data); };
+
+// ─── CANONICAL READ: Load Apple Health from backend (MultiUserHealth) first ───
+// For members: backend is canonical. For guests: localStorage is canonical.
+function getAppleHealthCanonical() {
+  // For members, check backend first
+  if (isMember() && AUTH_USER && AUTH_USER.id && window.MultiUserHealth) {
+    var backendData = loadAppleHealthFromBackend();
+    if (backendData) {
+      _log('[Apple Health] CANONICAL: Using backend MultiUserHealth');
+      return backendData;
+    }
+  }
+  // Fallback to STATE (which may be from localStorage for guests)
+  return STATE.appleHealthData || null;
+}
 
 // ─── BACKEND-READ: Load Apple Health from MultiUserHealth on member login ───
 // This enables reading back Apple Health data that was saved to MultiUserHealth
@@ -2457,7 +2482,8 @@ function loadAppleHealthFromBackend() {
           readiness_state: 'unknown',
           synced_at: rec.synced_at || rec.created_at,
           source: 'apple_health',
-          raw_daily: rec.raw_payload || {}
+          raw_daily: rec.raw_payload || {},
+          _isCanonicalBackend: true
         };
       }
     }
@@ -2466,6 +2492,15 @@ function loadAppleHealthFromBackend() {
   }
   return null;
 }
+
+// ─── MCP/BACKEND-FACING: Query canonical Apple Health data ──────────────────
+// Exposes Apple Health to the MCP/backend health layer
+window.getCanonicalAppleHealth = function() {
+  if (typeof getAppleHealthCanonical === 'function') {
+    return getAppleHealthCanonical();
+  }
+  return STATE.appleHealthData || null;
+};
 
 // ─── HEALTH CONNECT NORMALIZATION ────────────────────────────────
 // Health Connect export field mapping → shared app schema
@@ -2547,11 +2582,18 @@ window.HealthProvider = {
     return null;
   },
 
-  // Raw data object for a provider
+  // Raw data object for a provider (uses canonical path for Apple Health)
   _dataFor: function(provider) {
     if (provider === 'whoop') return STATE.whoopData;
     if (provider === 'polar') return STATE.polarData;
-    if (provider === 'apple_health') return STATE.appleHealthData;
+    if (provider === 'apple_health') {
+      // For Apple Health, use canonical path: backend-first for members
+      if (typeof getAppleHealthCanonical === 'function') {
+        var canonical = getAppleHealthCanonical();
+        if (canonical) return canonical;
+      }
+      return STATE.appleHealthData;
+    }
     if (provider === 'health_connect') return STATE.healthConnectData;
     return null;
   },
@@ -10126,6 +10168,7 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
       var backendAppleHealth = loadAppleHealthFromBackend();
       if (backendAppleHealth) {
         STATE.appleHealthData = backendAppleHealth;
+        _log('[Apple Health] CANONICAL: Loaded from backend on login');
       }
     }
     if (typeof loadPolarFromBackend === 'function') {
