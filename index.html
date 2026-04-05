@@ -12000,7 +12000,7 @@ function openCoachPanel() {
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;">' +
         '<div>' +
           '<div style="font-family:Bebas Neue,sans-serif;font-size:24px;color:var(--accent);letter-spacing:1px;">Remote Control</div>' +
-          '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.6;margin-top:4px;">Private operator prompt dispatch. Separate from public Suggestions and website feedback.</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.6;margin-top:4px;">Dispatch prompts to AI agents. Private to operator.</div>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
           '<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(232,255,71,0.18);background:rgba(232,255,71,0.08);font-family:DM Mono,monospace;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;">Operator only</span>' +
@@ -12012,8 +12012,8 @@ function openCoachPanel() {
       '<div style="' + splitStyle + '">' +
         '<div style="display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0;">' +
           '<div style="border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px;background:rgba(255,255,255,0.02);">' +
-            '<div style="font-family:Barlow Condensed,sans-serif;font-size:15px;letter-spacing:1.1px;text-transform:uppercase;color:var(--text);">Dispatch Prompt Job</div>' +
-            '<div style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-top:6px;">Create a private remote prompt for one AI lane. Full prompt text stays in the detail view, not the list row.</div>' +
+            '<div style="font-family:Barlow Condensed,sans-serif;font-size:15px;letter-spacing:1.1px;text-transform:uppercase;color:var(--text);">New Prompt</div>' +
+            '<div style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-top:6px;">Choose an agent, set priority, and write or select a prompt.</div>' +
             '<div style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:10px;margin-top:12px;">' +
               '<label style="display:flex;flex-direction:column;gap:6px;min-width:0;"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;">Target Agent</span><select id="promptJobsTarget" style="min-height:42px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);padding:0 12px;font-family:DM Mono,monospace;font-size:12px;"><option value="claude_code">Claude Code</option><option value="codex">Codex</option><option value="cowork">Cowork</option><option value="chatgpt">ChatGPT</option><option value="claude_chat">Claude Chat</option></select></label>' +
               '<label style="display:flex;flex-direction:column;gap:6px;min-width:0;"><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;">Priority</span><select id="promptJobsPriority" style="min-height:42px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);padding:0 12px;font-family:DM Mono,monospace;font-size:12px;"><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>' +
@@ -12080,7 +12080,7 @@ function openCoachPanel() {
       var selected = null;
       state.jobs.forEach(function(item) { if (item.id === state.selectedId) selected = item; });
       if (!selected) {
-        detailEl.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No prompt selected</div><div class="cc-empty-copy">Select a prompt job to inspect the full prompt body, result summary, and dispatch metadata.</div></div>';
+        detailEl.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No job selected</div><div class="cc-empty-copy">Select a prompt job from the list to see its full prompt, status, and result.</div></div>';
         return;
       }
       detailEl.innerHTML =
@@ -12104,7 +12104,7 @@ function openCoachPanel() {
     var renderList = function() {
       countEl.textContent = state.jobs.length + ' job' + (state.jobs.length === 1 ? '' : 's');
       if (!state.jobs.length) {
-        listEl.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No prompt jobs yet</div><div class="cc-empty-copy">Operator-created remote prompts will appear here after dispatch. Public Suggestions stay separate.</div></div>';
+        listEl.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No jobs yet</div><div class="cc-empty-copy">Create a prompt above to dispatch work to an AI agent.</div></div>';
         renderDetail();
         return;
       }
