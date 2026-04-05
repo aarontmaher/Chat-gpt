@@ -25,6 +25,7 @@ PROJECT_IMPLEMENTATION_DIR = os.path.join(PROJECT_STATE_DIR, "implementation")
 PROJECT_HANDOFF_DIR = os.path.join(PROJECT_STATE_DIR, "suggestion-handoffs")
 PROJECT_HANDOFF_ARTIFACTS_DIR = os.path.join(PROJECT_STATE_DIR, "handoffs")
 PROMPT_JOBS_FILE = os.path.join(PROJECT_STATE_DIR, "PROMPT_JOBS.json")
+SHARED_MEMORY_FILE = os.path.join(PROJECT_STATE_DIR, "SHARED_MEMORY.json")
 
 CHATGPT_ROOT = os.path.expanduser("~/Chat-gpt")
 CHATGPT_AUTOMATION_DIR = os.path.join(CHATGPT_ROOT, "automation")

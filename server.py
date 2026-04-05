@@ -24,6 +24,7 @@ from config import (
     IMPLEMENTATION_RESULTS_DIR,
     ORCHESTRATE_SCRIPT,
     PROMPT_JOBS_FILE,
+    SHARED_MEMORY_FILE,
     PROJECT_HANDOFF_ARTIFACTS_DIR,
     TOKENS_FILE,
     WORK_STATUS_FILE,
@@ -954,6 +955,34 @@ async def api_suggestions(_request) -> JSONResponse:
         return _cors_json({"ok": True, "items": []})
     items = data if isinstance(data, list) else data.get("items", [])
     return _cors_json({"ok": True, "items": items, "count": len(items)})
+
+
+@mcp.custom_route("/api/shared-memory", methods=["GET", "POST", "OPTIONS"], include_in_schema=False)
+async def api_shared_memory(request) -> JSONResponse:
+    """Shared structured memory — read/write for CC, ChatGPT, Claude."""
+    from starlette.responses import Response
+    if request.method == "OPTIONS":
+        return Response("", headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        })
+    if request.method == "GET":
+        data = _read_json_file(SHARED_MEMORY_FILE)
+        if not data:
+            data = {"schema_version": 1, "updated_at": None, "facts": [], "context": [], "substance_timeline": [], "insights": [], "open_questions": [], "approved_rules": []}
+        return _cors_json({"ok": True, "item": data})
+    # POST: save entire store
+    try:
+        body = await request.json()
+    except Exception:
+        return _cors_json({"ok": False, "error": "invalid_json"}, 400)
+    item = body.get("item")
+    if not item:
+        return _cors_json({"ok": False, "error": "missing item"}, 400)
+    item["updated_at"] = _now_iso()
+    _write_json_file(SHARED_MEMORY_FILE, item)
+    return _cors_json({"ok": True, "saved": True})
 
 
 @mcp.custom_route("/api/healthz", methods=["GET"], include_in_schema=False)
