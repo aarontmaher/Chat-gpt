@@ -1011,6 +1011,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <span id="whoopReadinessText"></span>
     <button id="whoopReadinessDismiss" aria-label="Dismiss readiness card" style="position:absolute;top:4px;right:6px;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:0 4px;line-height:1;">&times;</button>
   </div>
+  <div id="aiTrainingCard" style="display:none;margin:6px 16px 0;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:'Barlow Condensed',sans-serif;flex-shrink:0;position:relative;overflow:hidden;">
+    <button id="aiTrainingDismiss" aria-label="Dismiss training card" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:0 4px;line-height:1;z-index:1;">&times;</button>
+    <div id="aiTrainingContent" style="padding:10px 14px;"></div>
+  </div>
   <div class="sections" id="sections" style="flex:1;overflow-y:auto;"></div>
   <div id="refOnboarding" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;display:none;transition:opacity 0.5s;">
     <div style="background:rgba(14,16,21,0.85);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 20px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-family:'Barlow Condensed',sans-serif;color:#667;">
@@ -1943,6 +1947,7 @@ function setWhoopConnectionMeta(meta) {
   STATE.whoopConnection = next;
   saveState();
   updateWhoopReadinessCard();
+  if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
   updateWhoopMenuLabel();
   return next;
 }
@@ -2201,6 +2206,7 @@ function syncWhoopData(data) {
     window.GrapplingIntelligence.appendDay(normalized);
     window.GrapplingIntelligence.runPipeline();
   }
+  if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
   showToast('WHOOP data synced for ' + normalized.date);
   return true;
 }
@@ -7199,8 +7205,102 @@ document.getElementById('whoopReadinessDismiss').addEventListener('click', funct
   document.getElementById('whoopReadinessCard').style.display = 'none';
 });
 
-// Initialize readiness card on load
+// ─── AI Training Card — automatic WHOOP intelligence output ────────────
+function updateAITrainingCard() {
+  var card = document.getElementById('aiTrainingCard');
+  var content = document.getElementById('aiTrainingContent');
+  if (!card || !content) return;
+
+  // Dismissed for this session?
+  if (sessionStorage.getItem('gm_aiTrainingDismissed') === '1') {
+    card.style.display = 'none';
+    return;
+  }
+
+  // Get coaching from intelligence layer
+  var coaching = window.GrapplingIntelligence ? window.GrapplingIntelligence.getDailyCoaching() : null;
+  if (!coaching || !coaching.data_quality.has_today) {
+    // No WHOOP data today — show gentle prompt
+    if (STATE.whoopData && isWhoopDataRecent(STATE.whoopData)) {
+      // Basic WHOOP data exists but intelligence layer may not have enough history
+      card.style.display = 'none'; // let the basic readiness card show instead
+    } else {
+      card.style.display = 'none';
+    }
+    return;
+  }
+
+  var r = coaching.readiness;
+  var t = coaching.training;
+  var dq = coaching.data_quality;
+
+  // Build the card
+  var html = '';
+
+  // Header: readiness level with colored indicator
+  var borderColor = r.color || '#7f8ba3';
+  card.style.borderLeftWidth = '3px';
+  card.style.borderLeftStyle = 'solid';
+  card.style.borderLeftColor = borderColor;
+
+  // Readiness line
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+  html += '<span style="width:8px;height:8px;border-radius:50%;background:' + r.color + ';flex-shrink:0;"></span>';
+  html += '<span style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:0.3px;">' + r.label + '</span>';
+  if (STATE.whoopData && STATE.whoopData.recovery_score != null) {
+    html += '<span style="font-size:12px;color:' + r.color + ';font-weight:500;">' + STATE.whoopData.recovery_score + '%</span>';
+  }
+  html += '</div>';
+
+  // Training recommendation
+  html += '<div style="font-size:12px;color:var(--text);font-weight:500;margin-bottom:4px;">';
+  html += 'Suggested: <span style="color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">' + t.intensity + '</span>';
+  html += ' intensity, <span style="color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">' + t.focus + '</span> focus';
+  html += '</div>';
+
+  // Why — evidence-based reasons
+  if (t.reason && t.reason !== 'Default — no WHOOP data available.') {
+    html += '<div style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:4px;">' + ccEscape(t.reason) + '</div>';
+  }
+
+  // Applicable approved rules
+  if (coaching.applicable_rules && coaching.applicable_rules.length > 0) {
+    var rule = coaching.applicable_rules[0];
+    html += '<div style="font-size:10px;color:var(--text-muted);line-height:1.45;margin-top:4px;padding:4px 8px;background:rgba(232,255,71,0.05);border-radius:4px;border:1px solid rgba(232,255,71,0.12);">';
+    html += '<span style="color:var(--accent);font-weight:500;">Insight:</span> ' + ccEscape(rule.rule);
+    if (rule.confidence != null) {
+      html += ' <span style="color:var(--text-muted);">(' + Math.round(rule.confidence * 100) + '% confidence)</span>';
+    }
+    html += '</div>';
+  }
+
+  // Data quality caveat
+  var caveats = [];
+  if (dq.days_of_history < 7) caveats.push('Limited history (' + dq.days_of_history + ' days)');
+  if (dq.missing.grappling_sessions && dq.missing.grappling_workout) caveats.push('no grappling session context');
+  if (dq.missing.sleep_detail) caveats.push('basic sleep only');
+  if (caveats.length > 0) {
+    html += '<div style="font-size:9px;color:var(--text-muted);margin-top:4px;font-style:italic;">Based on WHOOP data. ' + caveats.join(', ') + '.</div>';
+  }
+
+  content.innerHTML = html;
+  card.style.display = 'block';
+
+  // Hide the basic readiness card when AI card is showing
+  var basicCard = document.getElementById('whoopReadinessCard');
+  if (basicCard) basicCard.style.display = 'none';
+}
+
+document.getElementById('aiTrainingDismiss').addEventListener('click', function() {
+  sessionStorage.setItem('gm_aiTrainingDismissed', '1');
+  document.getElementById('aiTrainingCard').style.display = 'none';
+  // Show basic readiness card as fallback after dismissing AI card
+  updateWhoopReadinessCard();
+});
+
+// Initialize both cards on load
 updateWhoopReadinessCard();
+updateAITrainingCard();
 updateWhoopMenuLabel();
 
 // CC4: Weekly Summary modal
