@@ -1294,7 +1294,7 @@ var CONTROL_CENTRE_SHELL_HTML =
       '<div class="cc-topbar-copy">' +
         '<div class="cc-topbar-kicker">Control Centre</div>' +
         '<div class="cc-topbar-title">Control Centre</div>' +
-        '<div class="cc-topbar-sub">AI lanes, suggestion queue, automation pipeline, and remote dispatch. <span id="ccAutoRefreshIndicator" style="color:var(--green);font-size:11px;"></span></div>' +
+        '<div class="cc-topbar-sub">Coordinate agents, route work, dispatch prompts. <span id="ccAutoRefreshIndicator" style="color:var(--green);font-size:11px;"></span></div>' +
       '</div>' +
       '<div class="cc-topbar-meta">' +
         '<span id="ccEnvironmentBadge" class="cc-pill cc-env-pill dev">Dev</span>' +
@@ -4230,13 +4230,14 @@ function ccRenderAgentBoard(snapshot) {
   }
   root.innerHTML = '<div class="cc-agent-list">' + snapshot.agents.map(function(agent) {
     var selected = CONTROL_CENTRE_UI.selectedType === 'agent' && CONTROL_CENTRE_UI.selectedId === agent.key;
+    var hasBranchOrCommit = agent.branch || agent.lastCommit;
     return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-agent="' + ccEscape(agent.key) + '">' +
       '<div class="cc-agent-header"><div><div class="cc-agent-name">' + ccEscape(agent.name) + '</div><div class="cc-agent-task">' + ccEscape(agent.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(agent.status || 'idle') + '">' + ccEscape(ccPrettyStatus(agent.status || 'idle')) + '</span></div>' +
       '<div class="cc-agent-meta">' +
-      '<span><span class="cc-label">Branch</span> <span class="cc-agent-mono">' + ccEscape(agent.branch || 'none') + '</span></span>' +
-      '<span><span class="cc-label">Commit</span> <span class="cc-agent-mono">' + ccEscape(agent.lastCommit || 'none') + '</span></span>' +
+      (hasBranchOrCommit ? '<span><span class="cc-label">Branch</span> <span class="cc-agent-mono">' + ccEscape(agent.branch || '\u2014') + '</span></span>' +
+      '<span><span class="cc-label">Commit</span> <span class="cc-agent-mono">' + ccEscape(agent.lastCommit || '\u2014') + '</span></span>' : '') +
       '<span><span class="cc-label">Assigned</span> ' + ccEscape(agent.assignedCount || 0) + '</span>' +
-      '<span><span class="cc-label">Updated</span> ' + ccEscape(ccFormatWhen(agent.updatedAt)) + '</span>' +
+      '<span><span class="cc-label">Updated</span> ' + (agent.updatedAt ? ccEscape(ccFormatWhen(agent.updatedAt)) : '\u2014') + '</span>' +
       '</div>' +
       (agent.blockers ? '<div class="cc-agent-meta"><span class="cc-agent-blocker"><span class="cc-label">Blocker</span> ' + ccEscape(agent.blockers) + '</span></div>' : '') +
       '</article>';
@@ -4302,7 +4303,7 @@ function ccRenderWorkQueue(snapshot) {
       '</div>' +
     '</article>';
   }).join('');
-  document.getElementById('ccWorkQueue').innerHTML = counts + '<div class="cc-task-list">' + (tasks || '<div class="cc-empty"><div class="cc-empty-copy">No queued tasks yet.</div></div>') + '</div>';
+  document.getElementById('ccWorkQueue').innerHTML = counts + '<div class="cc-task-list">' + (tasks || '<div class="cc-empty"><div class="cc-empty-copy">All lanes idle. Dispatch a prompt to assign work.</div></div>') + '</div>';
 }
 
 function ccRenderPipeline(snapshot) {
@@ -4365,19 +4366,19 @@ function ccRenderDetail(snapshot) {
       '<div class="cc-detail-card" style="margin-top:10px;"><h4>Recent Activity</h4><ul>' +
         (snapshot.activity.filter(function(item) { return item.type.indexOf(agent.name) === 0 || item.body === agent.summary; }).slice(0, 5).map(function(item) {
           return '<li><span class="cc-label">' + ccEscape(ccFormatWhen(item.ts)) + '</span> ' + ccEscape(item.type) + ' · ' + ccEscape(item.body || item.title) + '</li>';
-        }).join('') || '<li>No recent activity logged for this lane.</li>') +
+        }).join('') || '<li>No recent activity for this agent.</li>') +
       '</ul></div>' +
       '<div class="cc-detail-card" style="margin-top:10px;"><h4>Assigned Queue</h4><div class="cc-assigned-list">' +
         (assigned.map(function(item) {
           return '<div class="cc-activity-card"><div class="cc-activity-head"><div class="cc-suggestion-title" style="font-size:14px;">' + ccEscape(item.title) + '</div><span class="cc-status ' + ccEscape(item.lifecycleStage === 'blocked' ? 'blocked' : item.lifecycleStage === 'ready_for_preview' ? 'ready' : 'waiting') + '">' + ccEscape(ccPrettyStatus(item.lifecycleStage)) + '</span></div><div class="cc-activity-copy">' + ccEscape(item.fullText.slice(0, 120)) + '</div></div>';
-        }).join('') || '<div class="cc-empty"><div class="cc-empty-copy">No items currently assigned to this AI lane.</div></div>') +
+        }).join('') || '<div class="cc-empty"><div class="cc-empty-copy">No items assigned to this agent.</div></div>') +
       '</div></div>';
     return;
   }
   var item = snapshot.suggestions.find(function(entry) { return entry.id === CONTROL_CENTRE_UI.selectedId; });
   if (!item) {
     meta.textContent = '';
-    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">Nothing selected</div><div class="cc-empty-copy">Pick an AI card or suggestion to inspect more detail.</div></div>';
+    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">Select an item</div><div class="cc-empty-copy">Tap an agent card or suggestion to see detail here. Use Remote Control to dispatch prompts.</div></div>';
     return;
   }
   meta.textContent = item.id;
