@@ -1,6 +1,8 @@
 {
   "name": "Grappling Map",
   "short_name": "Grappling",
+  "id": "/Chat-gpt/",
+  "scope": "/Chat-gpt/",
   "description": "No-Gi grappling reference and training map",
   "start_url": "/Chat-gpt/",
   "display": "standalone",

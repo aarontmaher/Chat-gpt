@@ -234,7 +234,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .toolbar-btn:hover { color: var(--accent); border-color: var(--accent); }
 
 /* ── REFERENCE VIEW ── */
-#referenceView { }
 .sections { padding: 12px 16px; }
 .section { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: var(--surface); overflow: hidden; }
 .section-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s; min-height: 48px; }
@@ -483,7 +482,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cc-agent-name, .cc-suggestion-title, .cc-detail-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; color:var(--text); letter-spacing:0.3px; line-height:1.2; }
 .cc-agent-task, .cc-suggestion-body, .cc-detail-copy, .cc-empty-copy { font-size:12px; color:var(--text-dim); line-height:1.55; min-width:0; }
 .cc-agent-header .cc-status { flex-shrink:0; }
-.cc-agent-task { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; }
+.cc-agent-task { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; overflow-wrap:anywhere; }
 .cc-agent-meta, .cc-inline-meta { display:flex; flex-wrap:wrap; gap:5px 10px; font-size:11px; color:var(--text-muted); margin-top:6px; }
 .cc-agent-meta > span, .cc-inline-meta > span { min-width:0; max-width:100%; overflow-wrap:anywhere; }
 .cc-agent-mono { font-family:'DM Mono',monospace; font-size:11px; color:#9ba7c0; }
@@ -1316,7 +1315,7 @@ var CONTROL_CENTRE_SHELL_HTML =
     '</div>' +
     '<div class="cc-mobile-nav" id="ccMobileNav">' +
       '<button class="cc-mobile-nav-btn" data-cc-jump="ccPriorityStrip">Overview</button>' +
-      '<button class="cc-mobile-nav-btn" data-cc-jump="ccAgentPanel">Agents</button>' +
+      '<button class="cc-mobile-nav-btn" data-cc-jump="ccAgentPanel">Lanes</button>' +
       '<button class="cc-mobile-nav-btn" data-cc-jump="ccSuggestionList">Queue</button>' +
       '<button class="cc-mobile-nav-btn" data-cc-jump="ccTaskRoutingPanel">Tasks</button>' +
       '<button class="cc-mobile-nav-btn" data-cc-jump="ccDetailPanelSection">Detail</button>' +
@@ -1328,7 +1327,7 @@ var CONTROL_CENTRE_SHELL_HTML =
       '<div class="cc-col">' +
         '<section class="cc-panel" id="ccAgentPanel">' +
           '<div class="cc-panel-header">' +
-            '<div class="cc-panel-title">Agents</div>' +
+            '<div class="cc-panel-title">Lanes</div>' +
             '<div id="ccAgentMeta" class="cc-panel-meta"></div>' +
           '</div>' +
           '<div id="ccAgentBoard" class="cc-panel-body"></div>' +
@@ -1578,7 +1577,8 @@ const STATE = {
   whoopData: null,
   whoopConnection: null,
   polarData: null,
-  appleHealthData: null
+  appleHealthData: null,
+  cronometerData: null
 };
 // CONTROL CENTRE: STRUCTURAL LOGIC ZONE
 // Codex owns selection state, gating, menu/navigation rules, suggestion entry logic,
@@ -1588,20 +1588,242 @@ const STATE = {
 const CONTROL_CENTRE_UI = {
   selectedType: 'suggestion',
   selectedId: null,
-  snapshot: null
+  snapshot: null,
+  laneOverrides: {},
+  humanOverrides: {},
+  laneThreads: null
 };
-const CONTROL_AGENT_ORDER = ['claude_code', 'codex', 'cowork', 'chatgpt', 'claude_chat'];
+const CONTROL_AGENT_ORDER = ['copilot', 'claude_code', 'codex', 'cowork', 'chatgpt', 'claude_chat'];
 const CONTROL_AGENT_LABELS = {
+  copilot: 'Copilot',
   claude_code: 'Claude Code',
   codex: 'Codex',
   cowork: 'Cowork',
   chatgpt: 'ChatGPT',
   claude_chat: 'Claude Chat'
 };
+const CONTROL_LANE_CONFIG = {
+  coding: {
+    id: 'coding',
+    name: 'Coding Lane',
+    agents: ['copilot', 'codex', 'claude_code']
+  },
+  chat: {
+    id: 'chat',
+    name: 'Chat Lane',
+    agents: ['chatgpt', 'claude_chat']
+  },
+  audit: {
+    id: 'audit',
+    name: 'Audit Lane',
+    agents: ['cowork']
+  }
+};
+const CONTROL_LANE_ORDER = ['coding', 'chat', 'audit'];
 const CONTROL_CENTRE_ENDPOINTS = {
   website: 'https://www.lauburugrapplingmap.com',
   mcp: 'https://mcp.lauburugrapplingmap.com/mcp'
 };
+const CONTROL_CENTRE_LANE_THREADS_KEY = 'gm_cc_lane_threads_v1';
+
+function ccDefaultLaneThreadsState() {
+  var lanes = {};
+  CONTROL_LANE_ORDER.forEach(function(laneId) {
+    lanes[laneId] = { draft: '', messages: [] };
+  });
+  return {
+    version: 1,
+    lanes: lanes,
+    processed_jobs: {}
+  };
+}
+
+function ccLoadLaneThreadsState() {
+  try {
+    var raw = localStorage.getItem(CONTROL_CENTRE_LANE_THREADS_KEY);
+    var parsed = raw ? JSON.parse(raw) : null;
+    var base = ccDefaultLaneThreadsState();
+    if (!parsed || typeof parsed !== 'object') return base;
+    var sourceLanes = parsed.lanes || {};
+    CONTROL_LANE_ORDER.forEach(function(laneId) {
+      var lane = sourceLanes[laneId] || {};
+      base.lanes[laneId] = {
+        draft: String(lane.draft || ''),
+        messages: Array.isArray(lane.messages) ? lane.messages.slice(-50) : []
+      };
+    });
+    base.processed_jobs = parsed.processed_jobs && typeof parsed.processed_jobs === 'object' ? parsed.processed_jobs : {};
+    return base;
+  } catch(e) {
+    return ccDefaultLaneThreadsState();
+  }
+}
+
+function ccSaveLaneThreadsState() {
+  try {
+    localStorage.setItem(CONTROL_CENTRE_LANE_THREADS_KEY, JSON.stringify(CONTROL_CENTRE_UI.laneThreads));
+  } catch(e) {}
+}
+
+function ccEnsureLaneThreadState() {
+  if (!CONTROL_CENTRE_UI.laneThreads || typeof CONTROL_CENTRE_UI.laneThreads !== 'object') {
+    CONTROL_CENTRE_UI.laneThreads = ccLoadLaneThreadsState();
+  }
+  CONTROL_LANE_ORDER.forEach(function(laneId) {
+    if (!CONTROL_CENTRE_UI.laneThreads.lanes[laneId]) {
+      CONTROL_CENTRE_UI.laneThreads.lanes[laneId] = { draft: '', messages: [] };
+    }
+  });
+}
+
+function ccGetLaneThread(laneId) {
+  ccEnsureLaneThreadState();
+  return CONTROL_CENTRE_UI.laneThreads.lanes[laneId] || { draft: '', messages: [] };
+}
+
+function ccSetLaneDraft(laneId, draft) {
+  ccEnsureLaneThreadState();
+  if (!CONTROL_CENTRE_UI.laneThreads.lanes[laneId]) CONTROL_CENTRE_UI.laneThreads.lanes[laneId] = { draft: '', messages: [] };
+  CONTROL_CENTRE_UI.laneThreads.lanes[laneId].draft = String(draft || '');
+  ccSaveLaneThreadsState();
+}
+
+function ccAppendLaneMessage(laneId, message) {
+  ccEnsureLaneThreadState();
+  if (!CONTROL_CENTRE_UI.laneThreads.lanes[laneId]) CONTROL_CENTRE_UI.laneThreads.lanes[laneId] = { draft: '', messages: [] };
+  var lane = CONTROL_CENTRE_UI.laneThreads.lanes[laneId];
+  lane.messages.push(message);
+  if (lane.messages.length > 50) lane.messages = lane.messages.slice(lane.messages.length - 50);
+  ccSaveLaneThreadsState();
+}
+
+function ccLaneThreadPlaceholder(laneId) {
+  if (laneId === 'chat') return 'Ask for planning, guidance, or workflow help for this lane...';
+  if (laneId === 'audit') return 'Request verification/audit checks for this lane...';
+  return 'Request implementation work for this lane...';
+}
+
+function ccLaneThreadMessageKind(laneId, role) {
+  if (role === 'assistant' && laneId === 'audit') return 'finding';
+  if (role === 'assistant') return 'result';
+  return 'request';
+}
+
+function ccMessageTaskContext(snapshot, laneId) {
+  var lane = (snapshot && snapshot.lanes || []).find(function(entry) { return entry.id === laneId; }) || null;
+  var selectedSuggestion = null;
+  if (snapshot && CONTROL_CENTRE_UI.selectedType === 'suggestion') {
+    selectedSuggestion = (snapshot.suggestions || []).find(function(entry) { return entry.id === CONTROL_CENTRE_UI.selectedId; }) || null;
+  }
+  return {
+    task_id: lane ? (lane.taskId || null) : null,
+    suggestion_id: selectedSuggestion ? selectedSuggestion.id : null,
+    branch: lane ? (lane.branch || null) : null
+  };
+}
+
+async function sendLaneMessage(laneId) {
+  var snapshot = CONTROL_CENTRE_UI.snapshot || ccBuildSnapshot();
+  var lane = (snapshot.lanes || []).find(function(entry) { return entry.id === laneId; });
+  if (!lane) { showToast('Lane not found'); return; }
+  var thread = ccGetLaneThread(laneId);
+  var text = String(thread.draft || '').trim();
+  if (!text) { showToast('Type a message first'); return; }
+  var agent = lane.activeAgent || (lane.fallbackAgents && lane.fallbackAgents[0]) || null;
+  if (!agent) { showToast('No active agent for this lane'); return; }
+  var ctx = ccMessageTaskContext(snapshot, laneId);
+  var now = new Date().toISOString();
+  ccAppendLaneMessage(laneId, {
+    id: 'LMSG-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+    lane: laneId,
+    role: 'user',
+    kind: 'request',
+    text: text,
+    task_id: ctx.task_id,
+    suggestion_id: ctx.suggestion_id,
+    branch: ctx.branch,
+    job_id: null,
+    created_at: now,
+    status: 'queued'
+  });
+  ccSetLaneDraft(laneId, '');
+  window.renderControlCentre();
+  var response = await promptJobsRequest('POST', {
+    action: 'create',
+    target_agent: agent,
+    prompt: text,
+    priority: 'normal',
+    source_client: 'website-control-centre-lane'
+  });
+  if (!response || response.ok === false || !response.item) {
+    ccAppendLaneMessage(laneId, {
+      id: 'LMSG-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      lane: laneId,
+      role: 'system',
+      kind: 'result',
+      text: 'Dispatch failed. Check Remote Control backend connection.',
+      task_id: ctx.task_id,
+      suggestion_id: ctx.suggestion_id,
+      branch: ctx.branch,
+      job_id: null,
+      created_at: new Date().toISOString(),
+      status: 'failed'
+    });
+    showToast('Lane dispatch failed');
+    window.renderControlCentre();
+    return;
+  }
+  ccAppendLaneMessage(laneId, {
+    id: 'LMSG-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+    lane: laneId,
+    role: 'system',
+    kind: 'result',
+    text: 'Dispatched to ' + (CONTROL_AGENT_LABELS[agent] || agent) + ' (' + response.item.id + ')',
+    task_id: ctx.task_id,
+    suggestion_id: ctx.suggestion_id,
+    branch: ctx.branch,
+    job_id: response.item.id,
+    created_at: new Date().toISOString(),
+    status: 'sent'
+  });
+  showToast('Lane prompt sent to ' + (CONTROL_AGENT_LABELS[agent] || agent));
+  window.renderControlCentre();
+}
+
+function ccSyncLaneThreadFromPromptJobs(snapshot) {
+  ccEnsureLaneThreadState();
+  var jobs = Array.isArray(window.__GM_CC_LIVE_PROMPT_JOBS__) && window.__GM_CC_LIVE_PROMPT_JOBS__.length
+    ? window.__GM_CC_LIVE_PROMPT_JOBS__
+    : (_loadLocalPromptJobs ? _loadLocalPromptJobs() : []);
+  var changed = false;
+  jobs.forEach(function(job) {
+    if (!job || !job.id) return;
+    if (job.status !== 'completed' && job.status !== 'failed') return;
+    var summary = job.status === 'completed' ? (job.result_summary || '') : (job.error || job.result_summary || 'Failed');
+    if (!summary) return;
+    var sig = job.id + '|' + job.status + '|' + (job.updated_at || job.created_at || '');
+    if (CONTROL_CENTRE_UI.laneThreads.processed_jobs[sig]) return;
+    var laneId = ccLaneForAgent(job.target_agent || 'codex');
+    var lane = (snapshot && snapshot.lanes || []).find(function(entry) { return entry.id === laneId; }) || null;
+    ccAppendLaneMessage(laneId, {
+      id: 'LMSG-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      lane: laneId,
+      role: 'assistant',
+      kind: ccLaneThreadMessageKind(laneId, 'assistant'),
+      text: summary,
+      task_id: lane ? (lane.taskId || null) : null,
+      suggestion_id: null,
+      branch: lane ? (lane.branch || null) : null,
+      job_id: job.id,
+      created_at: job.updated_at || new Date().toISOString(),
+      status: job.status === 'completed' ? 'done' : 'failed'
+    });
+    CONTROL_CENTRE_UI.laneThreads.processed_jobs[sig] = true;
+    changed = true;
+  });
+  if (changed) ccSaveLaneThreadsState();
+  return changed;
+}
 
 function ccEscape(value) {
   return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/\x3c/g, '&lt;').replace(/>/g, '&gt;');
@@ -1640,9 +1862,18 @@ function ccTaskPreview(value) {
 
 function ccNormalizeAgentKey(value) {
   var key = String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  if (key === 'github_copilot' || key === 'copilot_chat') key = 'copilot';
   if (key === 'claudecode') key = 'claude_code';
   if (key === 'claudechat') key = 'claude_chat';
   return key;
+}
+
+function ccLaneForAgent(agentKey) {
+  var normalized = ccNormalizeAgentKey(agentKey);
+  var laneId = CONTROL_LANE_ORDER.find(function(id) {
+    return CONTROL_LANE_CONFIG[id].agents.indexOf(normalized) !== -1;
+  });
+  return laneId || 'coding';
 }
 
 function ccDeriveAssignedAI(suggestion, index) {
@@ -1682,6 +1913,14 @@ function ccInferStage(suggestion, handoff) {
   return stage;
 }
 
+function ccInferWaitingOn(suggestion) {
+  if (suggestion.waitingOnHuman || suggestion.approvalStatus === 'pending') return 'human';
+  if (suggestion.lifecycleStage === 'ready_for_preview' || suggestion.lifecycleStage === 'verify_ready') return 'audit';
+  if (suggestion.lifecycleStage === 'blocked') return suggestion.assignedLane || 'coding';
+  if (suggestion.lifecycleStage === 'queued' || suggestion.lifecycleStage === 'triage' || suggestion.lifecycleStage === 'in_progress') return suggestion.assignedLane || 'coding';
+  return suggestion.assignedLane || 'coding';
+}
+
 function ccNormalizeSuggestions(rawSuggestions, handoffs) {
   var seen = {};
   return (rawSuggestions || []).map(function(suggestion, index) {
@@ -1691,8 +1930,14 @@ function ccNormalizeSuggestions(rawSuggestions, handoffs) {
     var handoff = (handoffs || []).find(function(item) { return item.suggestion_id === suggestion.id; }) || null;
     var photos = suggestion.photo_urls || suggestion.photos || suggestion.attachments || [];
     var photoCount = Array.isArray(photos) ? photos.length : (suggestion.photo_count || 0);
+    var assignedAI = ccDeriveAssignedAI(suggestion, index);
+    var assignedLane = suggestion.assigned_lane || suggestion.assignedLane || CONTROL_CENTRE_UI.laneOverrides[(suggestion.id || ('SUG-' + (index + 1)))] || ccLaneForAgent(assignedAI);
+    assignedLane = CONTROL_LANE_CONFIG[assignedLane] ? assignedLane : ccLaneForAgent(assignedAI);
+    var lifecycleStage = ccInferStage(suggestion, handoff);
+    var suggestionId = suggestion.id || ('SUG-' + (index + 1));
+    var waitingOnHuman = !!suggestion.waiting_on_human || ((suggestion.approval_status || 'pending') === 'pending' && (ccInferPriority(suggestion) === 'urgent' || ccInferRecommendation(suggestion) !== 'review')) || !!CONTROL_CENTRE_UI.humanOverrides[suggestionId];
     return {
-      id: suggestion.id || ('SUG-' + (index + 1)),
+      id: suggestionId,
       title: suggestion.title || baseSummary.slice(0, 72),
       fullText: suggestion.message_text || suggestion.detail || suggestion.title || baseSummary,
       createdAt: suggestion.created_at || suggestion.createdAt || null,
@@ -1704,16 +1949,21 @@ function ccNormalizeSuggestions(rawSuggestions, handoffs) {
       duplicate: !!suggestion.duplicate || seen[summaryKey] > 1,
       photoCount: photoCount,
       photos: Array.isArray(photos) ? photos : [],
-      assignedAI: ccDeriveAssignedAI(suggestion, index),
-      lifecycleStage: ccInferStage(suggestion, handoff),
+      assignedAI: assignedAI,
+      assignedLane: assignedLane,
+      lifecycleStage: lifecycleStage,
       handoffStatus: handoff ? (handoff.automation_status || 'created') : 'none',
       previewStatus: suggestion.preview_status || suggestion.implementation_status || handoff && handoff.automation_status || 'not_started',
-      waitingOnHuman: !!suggestion.waiting_on_human || ((suggestion.approval_status || 'pending') === 'pending' && (ccInferPriority(suggestion) === 'urgent' || ccInferRecommendation(suggestion) !== 'review')),
+      waitingOnHuman: waitingOnHuman,
+      waitingOn: '',
       blocker: suggestion.blocker || suggestion.blocked_reason || '',
       selectedNode: suggestion.selected_node || null,
       related: suggestion.related_items || [],
       handoff: handoff
     };
+  }).map(function(item) {
+    item.waitingOn = ccInferWaitingOn(item);
+    return item;
   });
 }
 
@@ -1757,6 +2007,106 @@ function ccNormalizeAgents(workStatus, suggestions) {
   });
 }
 
+function ccAgentStatusPriority(status) {
+  var key = String(status || '').toLowerCase();
+  if (key === 'blocked' || key === 'failed') return 0;
+  if (key === 'in_progress' || key === 'working' || key === 'active' || key === 'busy') return 1;
+  if (key === 'queued' || key === 'waiting') return 2;
+  if (key === 'idle' || key === 'standby') return 4;
+  return 3;
+}
+
+function ccPickActiveLaneAgent(laneAgents, laneConfig) {
+  if (!laneAgents.length) return laneConfig.agents[0] || null;
+  var ranked = laneAgents.slice().sort(function(a, b) {
+    var av = ccAgentStatusPriority(a.status);
+    var bv = ccAgentStatusPriority(b.status);
+    if (av !== bv) return av - bv;
+    var at = Date.parse(a.updatedAt || 0) || 0;
+    var bt = Date.parse(b.updatedAt || 0) || 0;
+    return bt - at;
+  });
+  return ranked[0].key;
+}
+
+function ccLaneStatusFromAgent(agent, assignedCount) {
+  var raw = String(agent && agent.status || 'idle').toLowerCase();
+  if (raw === 'blocked' || raw === 'failed') return 'blocked';
+  if (raw === 'in_progress' || raw === 'working' || raw === 'active' || raw === 'busy') return 'in_progress';
+  if (raw === 'queued' || raw === 'waiting') return 'queued';
+  if (assignedCount > 0) return 'queued';
+  return 'idle';
+}
+
+function ccNormalizeLaneInput(rawLane, laneConfig, laneAgents, laneSuggestions) {
+  var computedActive = ccPickActiveLaneAgent(laneAgents, laneConfig);
+  var requestedActive = rawLane && rawLane.active_agent ? ccNormalizeAgentKey(rawLane.active_agent) : null;
+  var activeAgent = requestedActive && laneConfig.agents.indexOf(requestedActive) !== -1 ? requestedActive : computedActive;
+  if (!activeAgent || laneConfig.agents.indexOf(activeAgent) === -1) activeAgent = laneConfig.agents[0] || null;
+  var activeAgentRecord = laneAgents.find(function(agent) { return agent.key === activeAgent; }) || {
+    key: activeAgent,
+    name: CONTROL_AGENT_LABELS[activeAgent] || activeAgent,
+    status: 'idle',
+    task: 'No active task',
+    taskId: null,
+    branch: null,
+    lastCommit: null,
+    blockers: '',
+    summary: '',
+    updatedAt: null,
+    assignedCount: 0
+  };
+  var fallback = (rawLane && Array.isArray(rawLane.fallback_agents) ? rawLane.fallback_agents.map(ccNormalizeAgentKey) : laneConfig.agents.slice()).filter(function(agentKey) {
+    return agentKey !== activeAgent && laneConfig.agents.indexOf(agentKey) !== -1;
+  });
+  if (!fallback.length) {
+    fallback = laneConfig.agents.filter(function(agentKey) { return agentKey !== activeAgent; });
+  }
+  var latestUpdate = laneAgents.reduce(function(best, item) {
+    var a = Date.parse(best || 0) || 0;
+    var b = Date.parse(item.updatedAt || 0) || 0;
+    return b > a ? item.updatedAt : best;
+  }, activeAgentRecord.updatedAt || null);
+  var blockers = [];
+  laneAgents.forEach(function(agent) {
+    if (agent.blockers) blockers.push(agent.name + ': ' + agent.blockers);
+  });
+  laneSuggestions.filter(function(item) { return item.lifecycleStage === 'blocked' && item.blocker; }).forEach(function(item) {
+    blockers.push(item.id + ': ' + item.blocker);
+  });
+  var status = rawLane && rawLane.status ? String(rawLane.status).toLowerCase() : ccLaneStatusFromAgent(activeAgentRecord, laneSuggestions.length);
+  if (['in_progress', 'idle', 'blocked', 'queued'].indexOf(status) === -1) status = ccLaneStatusFromAgent(activeAgentRecord, laneSuggestions.length);
+  return {
+    id: laneConfig.id,
+    name: laneConfig.name,
+    activeAgent: activeAgent,
+    activeAgentLabel: CONTROL_AGENT_LABELS[activeAgent] || activeAgent,
+    fallbackAgents: fallback,
+    status: status,
+    taskId: rawLane && rawLane.task_id || activeAgentRecord.taskId || null,
+    taskTitle: rawLane && rawLane.task_title || ccTaskTitle(activeAgentRecord.task),
+    task: activeAgentRecord.task,
+    branch: rawLane && rawLane.branch || activeAgentRecord.branch || null,
+    summary: rawLane && rawLane.summary || activeAgentRecord.summary || '',
+    blockers: blockers,
+    assignedItems: laneSuggestions.map(function(item) { return item.id; }),
+    assignedCount: laneSuggestions.length,
+    updatedAt: rawLane && rawLane.updated_at || latestUpdate || null,
+    agents: laneAgents
+  };
+}
+
+function ccNormalizeLanes(workStatus, agents, suggestions) {
+  var sourceLanes = workStatus && workStatus.lanes ? workStatus.lanes : {};
+  return CONTROL_LANE_ORDER.map(function(laneId) {
+    var laneConfig = CONTROL_LANE_CONFIG[laneId];
+    var laneAgents = (agents || []).filter(function(agent) { return laneConfig.agents.indexOf(agent.key) !== -1; });
+    var laneSuggestions = (suggestions || []).filter(function(item) { return item.assignedLane === laneId; });
+    var rawLane = sourceLanes && sourceLanes[laneId] ? sourceLanes[laneId] : null;
+    return ccNormalizeLaneInput(rawLane, laneConfig, laneAgents, laneSuggestions);
+  });
+}
+
 function ccGetLocalAutomationState(suggestions, handoffs) {
   var approved = suggestions.filter(function(item) { return item.approvalStatus === 'approved'; }).length;
   var blocked = suggestions.filter(function(item) { return item.lifecycleStage === 'blocked'; }).length;
@@ -1793,10 +2143,12 @@ var ControlCentreAdapters = {
     var handoffs = (STATE.suggestion_handoffs || []).slice();
     var suggestions = ccNormalizeSuggestions(rawSuggestions, handoffs);
     var agents = ccNormalizeAgents(rawWorkStatus, suggestions);
+    var lanes = ccNormalizeLanes(rawWorkStatus, agents, suggestions);
     var automation = rawAutomation || ccGetLocalAutomationState(suggestions, handoffs);
     var handoff = rawHandoff || ccGetLocalHandoffSummary(handoffs, suggestions);
     return {
       agents: agents,
+      lanes: lanes,
       suggestions: suggestions,
       automation: automation,
       handoff: handoff,
@@ -1826,7 +2178,8 @@ function saveState() {
     whoopConnection: STATE.whoopConnection || null,
     whoopDataUserId: (typeof getCurrentUserId === 'function' ? getCurrentUserId() : null) || null,
     polarData: STATE.polarData || null,
-    appleHealthData: STATE.appleHealthData || null
+    appleHealthData: STATE.appleHealthData || null,
+    cronometerData: STATE.cronometerData || null
   };
   UserStore.saveAppState(appState);
   if (document.getElementById('controlCentreView').style.display !== 'none' && typeof window.renderControlCentre === 'function') {
@@ -1890,9 +2243,11 @@ function loadState() {
     if (storedWhoopUserId && currentUid && storedWhoopUserId !== currentUid) {
       STATE.polarData = null;
       STATE.appleHealthData = null;
+      STATE.cronometerData = null;
     } else {
       STATE.polarData = appState.polarData || null;
       STATE.appleHealthData = appState.appleHealthData || null;
+      STATE.cronometerData = appState.cronometerData || null;
     }
   }
 }
@@ -1939,23 +2294,27 @@ function setWhoopConnectionMeta(meta) {
 }
 
 function normalizeWhoopDailyForApp(item) {
-  if (!item || item.error || !item.date) return null;
-  var recovery = item.recovery || {};
-  var strain = item.strain || {};
-  var sleep = item.sleep || {};
-  var score = recovery.score != null ? recovery.score : null;
+  if (!item || item.error) return null;
+  var src = item.latest_day || item.data || item.today || item;
+  if (!src || src.error) return null;
+  var date = src.date || src.local_date;
+  if (!date) return null;
+  var recovery = src.recovery || {};
+  var strain = src.strain || {};
+  var sleep = src.sleep || {};
+  var score = recovery.score != null ? recovery.score : (src.recovery_score != null ? src.recovery_score : null);
   return {
-    date: item.date,
+    date: date,
     recovery_score: score,
-    hrv_ms: recovery.hrv_ms != null ? recovery.hrv_ms : null,
-    resting_hr: recovery.rhr_bpm != null ? recovery.rhr_bpm : null,
-    sleep_hours: sleep.total_hours != null ? sleep.total_hours : null,
-    sleep_performance_pct: sleep.performance_pct != null ? sleep.performance_pct : null,
-    daily_strain: strain.day_strain != null ? strain.day_strain : null,
+    hrv_ms: recovery.hrv_ms != null ? recovery.hrv_ms : (src.hrv_ms != null ? src.hrv_ms : null),
+    resting_hr: recovery.rhr_bpm != null ? recovery.rhr_bpm : (src.resting_hr != null ? src.resting_hr : null),
+    sleep_hours: sleep.total_hours != null ? sleep.total_hours : (src.sleep_hours != null ? src.sleep_hours : null),
+    sleep_performance_pct: sleep.performance_pct != null ? sleep.performance_pct : (src.sleep_performance_pct != null ? src.sleep_performance_pct : null),
+    daily_strain: strain.day_strain != null ? strain.day_strain : (src.daily_strain != null ? src.daily_strain : null),
     readiness_state: computeReadiness(score),
     synced_at: new Date().toISOString(),
     source: 'whoop_backend',
-    raw_daily: item
+    raw_daily: src
   };
 }
 
@@ -2076,13 +2435,171 @@ function formatPromptJobWhen(value) {
 }
 
 var WHOOP_MCP_HEALTH_URL = 'https://whoop-mcp-production-032e.up.railway.app/healthz';
+var WHOOP_FETCH_TIMEOUT_MS = 25000;
+
+function isLocalDevHost() {
+  return location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+}
+
+async function whoopBridgeAuthState() {
+  var out = {
+    member: isMember(),
+    has_supabase: !!_supabase,
+    has_session: false,
+    has_access_token: false,
+    user_id: null
+  };
+  if (!_supabase || !_supabase.auth || !_supabase.auth.getSession) return out;
+  try {
+    var session = await _supabase.auth.getSession();
+    var s = session && session.data && session.data.session ? session.data.session : null;
+    out.has_session = !!s;
+    out.has_access_token = !!(s && s.access_token);
+    out.user_id = s && s.user && s.user.id ? s.user.id : null;
+  } catch(e) {}
+  return out;
+}
+
+async function whoopBridgeHeaders() {
+  // Reuse the same authenticated edge-function header path used elsewhere.
+  // Retry briefly on startup to avoid race with auth session restore.
+  var tries = 4;
+  while (tries-- > 0) {
+    try {
+      if (typeof UserStore !== 'undefined' && UserStore && typeof UserStore._getAuthHeaders === 'function') {
+        var headers = await UserStore._getAuthHeaders();
+        if (headers && headers.Authorization) {
+          headers.apikey = SUPABASE_ANON_KEY;
+          return headers;
+        }
+      }
+    } catch(e) {}
+    if (tries > 0) {
+      try { await new Promise(function(resolve) { setTimeout(resolve, 200); }); } catch(e) {}
+    }
+  }
+  return null;
+}
+
+async function whoopRequireBridgeAuth(stage) {
+  if (!isLocalDevHost()) return { ok: true, headers: null, state: null, auth_model: 'production_fetch' };
+  var state = await whoopBridgeAuthState();
+  return { ok: true, headers: null, state: state, auth_model: 'bridge_no_jwt' };
+}
+
+async function whoopRequest(path, opts) {
+  var options = opts || {};
+  var timeoutMs = options.timeoutMs || WHOOP_FETCH_TIMEOUT_MS;
+  var method = (options.method || 'GET').toUpperCase();
+
+  if (isLocalDevHost()) {
+    var authGate = await whoopRequireBridgeAuth(path);
+    if (!_supabase || !_supabase.functions || typeof _supabase.functions.invoke !== 'function') {
+      return { ok: false, status: null, error: 'invoke_unavailable', mode: 'invoke', auth: authGate.state || null };
+    }
+    try {
+      var result = await _supabase.functions.invoke('whoop-bridge', {
+        body: {
+          path: path,
+          method: method
+        }
+      });
+      if (result && result.error) {
+        var invokeStatus = result.error && result.error.context && result.error.context.status ? result.error.context.status : null;
+        return {
+          ok: false,
+          status: invokeStatus,
+          error: 'invoke_failed',
+          detail: { message: result.error.message || String(result.error || ''), path: path, method: method },
+          mode: 'invoke',
+          auth: authGate.state || null
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        data: result ? result.data : null,
+        mode: 'invoke',
+        auth: authGate.state || null
+      };
+    } catch(e) {
+      return {
+        ok: false,
+        status: null,
+        error: 'invoke_exception',
+        detail: { message: e && e.message ? e.message : String(e || ''), path: path, method: method },
+        mode: 'invoke',
+        auth: authGate.state || null
+      };
+    }
+  }
+
+  var url = whoopEndpoint(path);
+  try {
+    var resp = await fetch(url, await whoopFetchOptions(timeoutMs, { method: method }));
+    var text = '';
+    try { text = await resp.text(); } catch(e) { text = ''; }
+    var parsed = null;
+    try { parsed = text ? JSON.parse(text) : null; } catch(e) { parsed = null; }
+    return {
+      ok: !!resp.ok,
+      status: resp.status,
+      data: parsed,
+      text: text,
+      mode: 'fetch',
+      url: url
+    };
+  } catch(e) {
+    return {
+      ok: false,
+      status: null,
+      error: 'fetch_exception',
+      detail: { message: e && e.message ? e.message : String(e || ''), path: path },
+      mode: 'fetch',
+      url: url
+    };
+  }
+}
+
+function whoopEndpoint(path) {
+  if (isLocalDevHost()) {
+    return SUPABASE_FUNCTIONS_URL + '/whoop-bridge?path=' + encodeURIComponent(path);
+  }
+  return WHOOP_MCP_HEALTH_URL.replace('/healthz', path);
+}
+
+function whoopErrorDetail(stage, url, timeoutMs, err, status, bodySnippet) {
+  return {
+    stage: stage,
+    url: url,
+    timeout_ms: timeoutMs,
+    exception_name: err && err.name ? err.name : null,
+    exception_message: err && err.message ? err.message : String(err || ''),
+    response_status_exists: status != null,
+    status: status != null ? status : null,
+    body_snippet: bodySnippet || null
+  };
+}
+
+function logWhoopFetch(stage, detail) {
+  try { console.warn('[WHOOP]', stage, detail); } catch(e) {}
+}
+
+async function whoopFetchOptions(timeoutMs, extra) {
+  var opts = Object.assign({}, extra || {});
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    opts.signal = AbortSignal.timeout(timeoutMs);
+  }
+  opts.cache = 'no-store';
+  return opts;
+}
 
 async function fetchWhoopStatus() {
-  // Use Railway WHOOP MCP as primary backend (Supabase functions don't exist)
+  // Localhost uses Supabase Edge bridge; production hits Railway directly.
   try {
-    var resp = await fetch(WHOOP_MCP_HEALTH_URL, { signal: AbortSignal.timeout(8000) });
-    if (!resp.ok) return { ok: false, error: 'health_fetch_failed' };
-    var health = await resp.json();
+    var req = await whoopRequest('/healthz', { timeoutMs: WHOOP_FETCH_TIMEOUT_MS, method: 'GET' });
+    if (!req.ok) return { ok: false, error: req.error || 'health_fetch_failed', detail: req.detail || null, status: req.status || null, mode: req.mode || null };
+    var health = req.data;
     if (!health || !health.ok) return { ok: false, error: 'health_not_ok' };
     var auth = health.auth || {};
     var lastSync = health.latest_sync || {};
@@ -2111,30 +2628,155 @@ async function fetchWhoopStatus() {
 }
 
 async function refreshWhoopFromBackend() {
-  // Use Railway WHOOP MCP as primary backend (Supabase functions don't exist)
-  try {
-    // Trigger sync on Railway
-    await fetch(WHOOP_MCP_HEALTH_URL.replace('/healthz', '/diag/trigger-sync'), { method: 'POST', signal: AbortSignal.timeout(30000) });
-  } catch(e) { /* sync trigger is best-effort */ }
+  // Localhost uses Supabase Edge bridge; production hits Railway directly.
+  var metadataDegraded = false;
+  // Trigger sync in background; don't block data hydration on this call.
+  whoopRequest('/diag/trigger-sync', { timeoutMs: 5000, method: 'POST' }).then(function(triggerResp) {
+    if (!triggerResp || !triggerResp.ok) {
+      metadataDegraded = true;
+      logWhoopFetch('trigger-sync non-200', {
+        stage: 'trigger-sync',
+        status: triggerResp ? triggerResp.status : null,
+        error: triggerResp ? triggerResp.error : 'request_failed',
+        detail: triggerResp ? triggerResp.detail || null : null,
+        mode: triggerResp ? triggerResp.mode : null
+      });
+    }
+  }).catch(function(e) {
+    metadataDegraded = true;
+    logWhoopFetch('trigger-sync exception', { stage: 'trigger-sync', message: e && e.message ? e.message : String(e || '') });
+  });
   
+  var dataUrl = whoopEndpoint('/data/today');
+  var hydrated = false;
+  var hydratedDate = null;
+
+  // Data-first hydration: state should populate even if healthz is slow/fails.
   try {
-    var healthResp = await fetch(WHOOP_MCP_HEALTH_URL, { signal: AbortSignal.timeout(8000) });
-    if (!healthResp.ok) return { ok: false, error: 'health_unavailable' };
-    var health = await healthResp.json();
-    if (!health || !health.ok) return { ok: false, error: 'health_not_ok' };
+    var dataResp = await whoopRequest('/data/today', { timeoutMs: WHOOP_FETCH_TIMEOUT_MS, method: 'GET' });
+    if (!dataResp.ok) {
+      var dataBody = dataResp && dataResp.text ? String(dataResp.text).slice(0, 280) : '';
+      var dataError = whoopErrorDetail('data/today', dataUrl, WHOOP_FETCH_TIMEOUT_MS, null, dataResp.status, dataBody);
+      dataError.mode = dataResp.mode || null;
+      if (dataResp.error) dataError.bridge_error = dataResp.error;
+      logWhoopFetch('data/today non-200', dataError);
+    } else {
+      var data = dataResp.data || null;
+      if (data) {
+        var unwrapped = data.latest_day || data.data || data.today || data;
+        var normalized = normalizeWhoopDailyForApp(unwrapped);
+        if (!normalized) {
+          logWhoopFetch('normalize failed', { stage: 'normalize', url: dataUrl, sample: unwrapped || data });
+        } else {
+          _applyWhoopRefresh(normalized);
+          hydrated = true;
+          hydratedDate = normalized.date || null;
+          logWhoopFetch('apply reached', { stage: 'apply', url: dataUrl, date: hydratedDate, state_set: !!STATE.whoopData });
+        }
+      }
+    }
+  } catch(e) {
+    var dataException = whoopErrorDetail('data/today', dataUrl, WHOOP_FETCH_TIMEOUT_MS, e, null, null);
+    logWhoopFetch('data/today exception', dataException);
+  }
+
+  var healthUrl = whoopEndpoint('/healthz');
+  try {
+    var healthResp = await whoopRequest('/healthz', { timeoutMs: WHOOP_FETCH_TIMEOUT_MS, method: 'GET' });
+    if (!healthResp.ok) {
+      metadataDegraded = true;
+      var healthBody = healthResp && healthResp.text ? String(healthResp.text).slice(0, 280) : '';
+      var healthError = whoopErrorDetail('healthz', healthUrl, WHOOP_FETCH_TIMEOUT_MS, null, healthResp.status, healthBody);
+      healthError.mode = healthResp.mode || null;
+      if (healthResp.error) healthError.bridge_error = healthResp.error;
+      logWhoopFetch('healthz non-200', healthError);
+      if (hydrated || !!STATE.whoopData) {
+        var latest = hydratedDate || (STATE.whoopData && STATE.whoopData.date) || null;
+        var successOut = { ok: true, latest_date: latest, hydrated: true, state_set: !!STATE.whoopData, metadata_degraded: true, overall_ok: true, warning: 'health_unavailable', detail: healthError };
+        logWhoopFetch('refresh outcome', successOut);
+        return successOut;
+      }
+      return { ok: false, error: 'health_unavailable', detail: healthError };
+    }
+    var health = healthResp.data || null;
+    if (!health || !health.ok) {
+      metadataDegraded = true;
+      logWhoopFetch('healthz payload not ok', { stage: 'healthz', url: healthUrl, timeout_ms: WHOOP_FETCH_TIMEOUT_MS, payload: health });
+      if (hydrated || !!STATE.whoopData) {
+        var latestNotOk = hydratedDate || (STATE.whoopData && STATE.whoopData.date) || null;
+        var successNotOk = { ok: true, latest_date: latestNotOk, hydrated: true, state_set: !!STATE.whoopData, metadata_degraded: true, overall_ok: true, warning: 'health_not_ok', detail: { stage: 'healthz', url: healthUrl, payload: health } };
+        logWhoopFetch('refresh outcome', successNotOk);
+        return successNotOk;
+      }
+      return { ok: false, error: 'health_not_ok', detail: { stage: 'healthz', url: healthUrl, payload: health } };
+    }
     var auth = health.auth || {};
+    var connectedFromHealth = health.token_file_present && !auth.reauth_required;
     setWhoopConnectionMeta({
-      connected: health.token_file_present && !auth.reauth_required,
+      connected: hydrated ? true : connectedFromHealth,
       last_sync_at: (health.latest_sync || {}).finished_at || auth.last_api_success_at,
-      latest_date: health.latest_local_date,
+      latest_date: hydratedDate || health.latest_local_date,
       source: 'backend'
     });
-    showToast('WHOOP synced — latest: ' + (health.latest_local_date || 'unknown'));
-    return { ok: true, latest_date: health.latest_local_date };
+    if (!hydrated) showToast('WHOOP synced — latest: ' + (health.latest_local_date || 'unknown'));
+    var okOut = { ok: true, latest_date: hydratedDate || health.latest_local_date, hydrated: !!(hydrated || STATE.whoopData), state_set: !!STATE.whoopData, metadata_degraded: metadataDegraded, overall_ok: true };
+    logWhoopFetch('refresh outcome', okOut);
+    return okOut;
   } catch(e) {
-    return { ok: false, error: 'railway_unreachable' };
+    metadataDegraded = true;
+    var topError = whoopErrorDetail('healthz', healthUrl, WHOOP_FETCH_TIMEOUT_MS, e, null, null);
+    logWhoopFetch('healthz exception', topError);
+    if (hydrated || !!STATE.whoopData) {
+      var latestExc = hydratedDate || (STATE.whoopData && STATE.whoopData.date) || null;
+      var successExc = { ok: true, latest_date: latestExc, hydrated: true, state_set: !!STATE.whoopData, metadata_degraded: true, overall_ok: true, warning: 'healthz_exception', detail: topError };
+      logWhoopFetch('refresh outcome', successExc);
+      return successExc;
+    }
+    return { ok: false, error: 'railway_unreachable', detail: topError };
   }
 }
+
+window.debugWhoopFetch = async function() {
+  var timeoutMs = WHOOP_FETCH_TIMEOUT_MS;
+  var healthUrl = whoopEndpoint('/healthz');
+  var dataUrl = whoopEndpoint('/data/today');
+  var authState = await whoopBridgeAuthState();
+  var bridgeAuth = await whoopRequireBridgeAuth('debug');
+  async function probe(url, stage) {
+    var out = { stage: stage, url: url, timeout_ms: timeoutMs, ok: false, status: null, json: null, error: null };
+    try {
+      var requestPath = stage === 'healthz' ? '/healthz' : '/data/today';
+      var req = await whoopRequest(requestPath, { timeoutMs: timeoutMs, method: 'GET' });
+      out.mode = req.mode || (isLocalDevHost() ? 'invoke' : 'fetch');
+      out.auth_model = bridgeAuth && bridgeAuth.auth_model ? bridgeAuth.auth_model : (isLocalDevHost() ? 'bridge_no_jwt' : 'production_fetch');
+      if (out.mode === 'fetch') {
+        var fetchOpts = await whoopFetchOptions(timeoutMs, { method: 'GET' });
+        out.auth_header_attached = !!(fetchOpts && fetchOpts.headers && (fetchOpts.headers.Authorization || fetchOpts.headers.authorization));
+      } else {
+        out.auth_header_attached = false;
+      }
+      out.has_session = !!authState.has_session;
+      out.has_access_token = !!authState.has_access_token;
+      out.status = req.status;
+      out.json = req.data || null;
+      out.ok = !!req.ok;
+      if (!req.ok) {
+        out.error = {
+          name: req.error || 'request_failed',
+          message: req && req.detail && req.detail.message ? req.detail.message : null,
+          detail: req.detail || null
+        };
+      }
+    } catch(e) {
+      out.error = { name: e && e.name ? e.name : null, message: e && e.message ? e.message : String(e || '') };
+    }
+    try { console.log('[debugWhoopFetch]', stage, out); } catch(e) {}
+    return out;
+  }
+  var healthz = await probe(healthUrl, 'healthz');
+  var today = await probe(dataUrl, 'data/today');
+  return { healthz: healthz, today: today };
+};
 function _applyWhoopRefresh(normalized) {
   STATE.whoopData = normalized;
   setWhoopConnectionMeta({
@@ -2144,7 +2786,9 @@ function _applyWhoopRefresh(normalized) {
     source: 'backend'
   });
   showToast('WHOOP refreshed for ' + normalized.date);
-  updateGreeting();
+  if (typeof updateGreeting === 'function') {
+    updateGreeting();
+  }
   if (window.GrapplingIntelligence) {
     window.GrapplingIntelligence.appendDay(normalized);
     window.GrapplingIntelligence.runPipeline();
@@ -2389,15 +3033,15 @@ function normalizeAppleHealthDailyForApp(item) {
   };
 }
 
-function syncAppleHealthData(data) {
+function syncAppleHealthData(data, options) {
+  var opts = options || {};
+  var skipBackendWrite = !!opts.skipBackendWrite;
   if (!data || !data.date) { showToast('Apple Health sync: missing date field'); return false; }
   var normalized = normalizeAppleHealthDailyForApp(data);
   if (!normalized) { showToast('Apple Health sync: normalization failed'); return false; }
   
-  // ─── CANONICAL PATH FOR MEMBERS: Append to MultiUserHealth first ───────
-  // For members, MultiUserHealth is the canonical source; localStorage is cache
-  var backendAppended = false;
-  if (isMember() && AUTH_USER && AUTH_USER.id && window.MultiUserHealth) {
+  function appendAppleHealthFallback() {
+    if (!isMember() || !AUTH_USER || !AUTH_USER.id || !window.MultiUserHealth) return false;
     try {
       var record = window.MultiUserHealth.createDailyRecord({
         user_id: AUTH_USER.id,
@@ -2414,16 +3058,61 @@ function syncAppleHealthData(data) {
         synced_at: normalized.synced_at
       });
       window.MultiUserHealth.appendDay(AUTH_USER.id, record);
-      backendAppended = true;
-      _log('[Apple Health] CANONICAL: Appended to MultiUserHealth');
+      _log('[Apple Health] Fallback: Appended to MultiUserHealth');
+      return true;
     } catch(e) {
-      _log('[Apple Health] MultiUserHealth append failed:', e.message);
-      // Continue with localStorage as fallback
+      _log('[Apple Health] MultiUserHealth fallback failed:', e.message);
+      return false;
+    }
+  }
+  
+  // ─── TRUE CANONICAL: Write to Supabase daily_metrics if available ────────
+  // For members, this is the primary persistence path. Fallback runs only
+  // after confirmed backend failure.
+  if (!skipBackendWrite && isMember() && AUTH_USER && AUTH_USER.id) {
+    if (_supabase) {
+      showToast('Apple Health imported (manual) — saving to backend...');
+      (async function() {
+        try {
+          var result = await _supabase
+            .from('daily_metrics')
+            .upsert({
+              user_id: AUTH_USER.id,
+              date: normalized.date,
+              provider: 'apple_health',
+              recovery_score: normalized.recovery_score,
+              hrv_ms: normalized.hrv_ms,
+              resting_hr: normalized.resting_hr,
+              sleep_hours: normalized.sleep_hours,
+              sleep_performance_pct: normalized.sleep_performance_pct,
+              daily_strain: normalized.daily_strain,
+              readiness_label: normalized.readiness_state,
+              last_updated: normalized.synced_at
+            })
+            .select();
+          
+          if (result.error) {
+            _log('[Apple Health] Supabase write failed:', result.error.message);
+            appendAppleHealthFallback();
+            showToast('Apple Health imported locally only (manual import, backend save failed)');
+          } else {
+            _log('[Apple Health] CANONICAL: Written to Supabase daily_metrics');
+            showToast('Apple Health imported and saved to backend account');
+          }
+        } catch(e) {
+          _log('[Apple Health] Supabase write error:', e.message);
+          appendAppleHealthFallback();
+          showToast('Apple Health imported locally only (manual import, backend unavailable)');
+        }
+      })();
+    } else {
+      appendAppleHealthFallback();
+      showToast('Apple Health imported locally only (manual import, backend unavailable)');
     }
   }
   
   // ─── CACHE: Save to localStorage ────────────────────────────────────
-  // For guests, localStorage is the truth; for members, it's a cache
+  // Always save to localStorage as cache for all users
   STATE.appleHealthData = normalized;
   saveState();
   
@@ -2434,29 +3123,162 @@ function syncAppleHealthData(data) {
   }
   if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
   
-  var msg = 'Apple Health data synced for ' + normalized.date;
-  if (isMember() && backendAppended) {
-    msg += ' (saved to your account)';
+  if (!isMember()) {
+    showToast('Apple Health imported locally (manual import only, not linked live)');
   }
-  showToast(msg);
   return true;
 }
 
 window._syncAppleHealth = function(data) { return syncAppleHealthData(data); };
 
-// ─── CANONICAL READ: Load Apple Health from backend (MultiUserHealth) first ───
-// For members: backend is canonical. For guests: localStorage is canonical.
+// ─── CRONOMETER NORMALIZATION (CONTEXT ENRICHMENT) ─────────────────────────
+// Cronometer is additive context (nutrition/hydration), not primary readiness.
+function normalizeCronometerDailyForApp(item) {
+  if (!item || !item.date) return null;
+  var calories = item.calories != null ? item.calories : (item.energy_kcal != null ? item.energy_kcal : null);
+  var protein = item.protein_g != null ? item.protein_g : null;
+  var carbs = item.carbs_g != null ? item.carbs_g : null;
+  var fat = item.fat_g != null ? item.fat_g : null;
+  var water = item.water_ml != null ? item.water_ml : null;
+  return {
+    date: item.date,
+    recovery_score: null,
+    hrv_ms: null,
+    resting_hr: null,
+    sleep_hours: null,
+    sleep_performance_pct: null,
+    daily_strain: null,
+    readiness_state: 'unknown',
+    synced_at: new Date().toISOString(),
+    source: 'cronometer',
+    nutrition: {
+      calories: calories,
+      protein_g: protein,
+      carbs_g: carbs,
+      fat_g: fat,
+      water_ml: water
+    },
+    weight_kg: item.weight_kg != null ? item.weight_kg : null,
+    raw_daily: item
+  };
+}
+
+function syncCronometerData(data) {
+  if (!data || !data.date) { showToast('Cronometer sync: missing date field'); return false; }
+  var normalized = normalizeCronometerDailyForApp(data);
+  if (!normalized) { showToast('Cronometer sync: normalization failed'); return false; }
+  STATE.cronometerData = normalized;
+  saveState();
+  if (window.GrapplingIntelligence) {
+    window.GrapplingIntelligence.appendDay(normalized);
+    window.GrapplingIntelligence.runPipeline();
+  }
+  if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
+  showToast('Cronometer nutrition synced for ' + normalized.date);
+  return true;
+}
+
+window._syncCronometer = function(data) { return syncCronometerData(data); };
+
+// ─── CANONICAL READ: Load Apple Health backend-first for members ──────────────
+// For members: Supabase → MultiUserHealth → localStorage
+// For guests: localStorage only
 function getAppleHealthCanonical() {
-  // For members, check backend first
-  if (isMember() && AUTH_USER && AUTH_USER.id && window.MultiUserHealth) {
-    var backendData = loadAppleHealthFromBackend();
-    if (backendData) {
-      _log('[Apple Health] CANONICAL: Using backend MultiUserHealth');
-      return backendData;
+  // For members, try Supabase first (true canonical backend)
+  if (isMember() && AUTH_USER && AUTH_USER.id) {
+    // Synchronous query won't work for Supabase, but we already loaded on login
+    // Check if we have Supabase-loaded data (marked with _fromSupabase)
+    if (STATE.appleHealthData && STATE.appleHealthData._fromSupabase) {
+      _log('[Apple Health] CANONICAL: Using Supabase backend');
+      return STATE.appleHealthData;
+    }
+    // Try MultiUserHealth fallback
+    if (window.MultiUserHealth) {
+      var backendData = loadAppleHealthFromBackend();
+      if (backendData) {
+        _log('[Apple Health] CANONICAL: Using MultiUserHealth fallback');
+        return backendData;
+      }
     }
   }
-  // Fallback to STATE (which may be from localStorage for guests)
+  // Fallback to STATE (localStorage cache)
   return STATE.appleHealthData || null;
+}
+
+function applyAppleSupabaseHistoryToIntelligence(rows) {
+  if (!Array.isArray(rows) || !rows.length || !window.GrapplingIntelligence) return 0;
+  var applied = 0;
+  for (var i = 0; i < rows.length; i++) {
+    var rec = rows[i] || {};
+    var normalized = normalizeAppleHealthDailyForApp({
+      date: rec.date,
+      hrv_ms: rec.hrv_ms,
+      resting_hr: rec.resting_hr,
+      sleep_hours: rec.sleep_hours,
+      active_energy_kcal: rec.daily_strain != null ? Number(rec.daily_strain) * 100 : null
+    });
+    if (!normalized) continue;
+    window.GrapplingIntelligence.appendDay(normalized);
+    applied += 1;
+  }
+  if (applied > 0) {
+    window.GrapplingIntelligence.runPipeline();
+  }
+  return applied;
+}
+
+// ─── BACKEND READ: Async load Apple Health from Supabase for members ─────────
+// Called on member login to populate STATE with backend canonical data
+async function loadAppleHealthFromSupabase(options) {
+  if (!isMember() || !AUTH_USER || !AUTH_USER.id || !_supabase) return null;
+  var opts = options || {};
+  var includeHistory = !!opts.includeHistory;
+  var historyLimit = Number(opts.historyLimit);
+  if (!Number.isFinite(historyLimit) || historyLimit < 1) historyLimit = 90;
+  var queryLimit = includeHistory ? historyLimit : 1;
+  try {
+    var result = await _supabase
+      .from('daily_metrics')
+      .select('*')
+      .eq('user_id', AUTH_USER.id)
+      .eq('provider', 'apple_health')
+      .order('date', { ascending: false })
+      .limit(queryLimit);
+    
+    if (result.error) {
+      _log('[Apple Health] Supabase read failed:', result.error.message);
+      return null;
+    }
+    
+    if (result.data && result.data.length > 0) {
+      var rec = result.data[0];
+      var historySeeded = 0;
+      if (includeHistory) {
+        var chronological = result.data.slice().reverse();
+        historySeeded = applyAppleSupabaseHistoryToIntelligence(chronological);
+      }
+      var data = {
+        date: rec.date,
+        hrv_ms: rec.hrv_ms,
+        resting_hr: rec.resting_hr,
+        sleep_hours: rec.sleep_hours,
+        sleep_performance_pct: rec.sleep_performance_pct,
+        daily_strain: rec.daily_strain,
+        recovery_score: rec.recovery_score,
+        readiness_state: rec.readiness_label || 'unknown',
+        synced_at: rec.last_updated,
+        source: 'apple_health',
+        raw_daily: {},
+        _fromSupabase: true,
+        _historySeededDays: historySeeded
+      };
+      _log('[Apple Health] CANONICAL: Loaded from Supabase backend');
+      return data;
+    }
+  } catch(e) {
+    _log('[Apple Health] Supabase async read error:', e.message);
+  }
+  return null;
 }
 
 // ─── BACKEND-READ: Load Apple Health from MultiUserHealth on member login ───
@@ -2495,11 +3317,31 @@ function loadAppleHealthFromBackend() {
 
 // ─── MCP/BACKEND-FACING: Query canonical Apple Health data ──────────────────
 // Exposes Apple Health to the MCP/backend health layer
+// Uses Supabase as the true canonical source for members
 window.getCanonicalAppleHealth = function() {
   if (typeof getAppleHealthCanonical === 'function') {
     return getAppleHealthCanonical();
   }
   return STATE.appleHealthData || null;
+};
+
+// ─── MCP/BACKEND-FACING: Direct Supabase query for Apple Health ───────────────
+// Allows MCP to read Apple Health independently of browser state
+window.getAppleHealthFromBackend = async function(userId) {
+  if (!_supabase || !userId) return null;
+  try {
+    var result = await _supabase
+      .from('daily_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', 'apple_health')
+      .order('date', { ascending: false })
+      .limit(1);
+    
+    if (result.error) return null;
+    if (result.data && result.data.length > 0) return result.data[0];
+  } catch(e) {}
+  return null;
 };
 
 // ─── HEALTH CONNECT NORMALIZATION ────────────────────────────────
@@ -2552,14 +3394,16 @@ window.HealthProvider = {
     hrv:           ['whoop', 'polar', 'apple_health'],
     sleep:         ['whoop', 'polar', 'apple_health'],
     strain:        ['whoop', 'polar'],
-    rhr:           ['whoop', 'polar', 'apple_health']
+    rhr:           ['whoop', 'polar', 'apple_health'],
+    nutrition:     ['cronometer']
   },
 
   PROVIDER_LABELS: {
     whoop: 'WHOOP',
     polar: 'Polar',
     apple_health: 'Apple Health',
-    health_connect: 'Health Connect'
+    health_connect: 'Health Connect',
+    cronometer: 'Cronometer'
   },
 
   // Which providers have data loaded for the current user
@@ -2569,6 +3413,7 @@ window.HealthProvider = {
     if (STATE.polarData) out.push('polar');
     if (STATE.appleHealthData) out.push('apple_health');
     if (STATE.healthConnectData) out.push('health_connect');
+    if (STATE.cronometerData) out.push('cronometer');
     return out;
   },
 
@@ -2595,6 +3440,7 @@ window.HealthProvider = {
       return STATE.appleHealthData;
     }
     if (provider === 'health_connect') return STATE.healthConnectData;
+    if (provider === 'cronometer') return STATE.cronometerData;
     return null;
   },
 
@@ -2616,6 +3462,17 @@ window.HealthProvider = {
   // Flat health summary object for use by the website AI
   getHealthSummaryForAI: function() {
     var d = this.getLatestHealthData();
+    var crono = this._dataFor('cronometer');
+    var nutritionContext = crono && crono.date ? {
+      date: crono.date,
+      provider: 'cronometer',
+      calories: crono.nutrition && crono.nutrition.calories != null ? crono.nutrition.calories : null,
+      protein_g: crono.nutrition && crono.nutrition.protein_g != null ? crono.nutrition.protein_g : null,
+      carbs_g: crono.nutrition && crono.nutrition.carbs_g != null ? crono.nutrition.carbs_g : null,
+      fat_g: crono.nutrition && crono.nutrition.fat_g != null ? crono.nutrition.fat_g : null,
+      water_ml: crono.nutrition && crono.nutrition.water_ml != null ? crono.nutrition.water_ml : null,
+      weight_kg: crono.weight_kg != null ? crono.weight_kg : null
+    } : null;
     if (!d) return { connected: false, providers: [], provider: null, providerLabel: null };
     return {
       connected: true,
@@ -2629,7 +3486,8 @@ window.HealthProvider = {
       resting_hr: d.resting_hr,
       sleep_hours: d.sleep_hours,
       sleep_performance_pct: d.sleep_performance_pct,
-      daily_strain: d.daily_strain
+      daily_strain: d.daily_strain,
+      nutrition_context: nutritionContext
     };
   },
 
@@ -4436,6 +5294,26 @@ document.getElementById('refExpandAll').addEventListener('click', () => {
 
 function ccBuildActivity(snapshot) {
   var items = [];
+  (snapshot.lanes || []).forEach(function(lane) {
+    if (lane.status !== 'idle' || lane.updatedAt) {
+      items.push({
+        ts: lane.updatedAt || '',
+        type: lane.name,
+        title: 'Active: ' + (lane.activeAgentLabel || lane.activeAgent || 'Unassigned'),
+        body: lane.summary || lane.taskTitle || 'No current task summary',
+        status: lane.status || 'idle'
+      });
+    }
+    if (lane.status === 'blocked' && lane.blockers.length) {
+      items.push({
+        ts: lane.updatedAt || '',
+        type: lane.name + ' blocked',
+        title: lane.blockers[0],
+        body: 'Waiting on human or dependency',
+        status: 'blocked'
+      });
+    }
+  });
   snapshot.suggestions.forEach(function(item) {
     items.push({
       ts: item.createdAt || '',
@@ -4458,29 +5336,8 @@ function ccBuildActivity(snapshot) {
         ts: item.createdAt || '',
         type: item.lifecycleStage === 'verify_ready' ? 'verify ready' : 'preview ready',
         title: item.id,
-        body: item.title,
+        body: item.title + ' · ' + (CONTROL_LANE_CONFIG[item.assignedLane] ? CONTROL_LANE_CONFIG[item.assignedLane].name : 'Unassigned lane'),
         status: item.lifecycleStage
-      });
-    }
-  });
-  snapshot.agents.forEach(function(agent) {
-    // Only show agent activity when there's real task/summary content (not idle fallback)
-    if (agent.updatedAt && agent.summary && agent.status !== 'idle') {
-      items.push({
-        ts: agent.updatedAt,
-        type: agent.name,
-        title: ccTaskTitle(agent.task),
-        body: agent.summary,
-        status: agent.status
-      });
-    }
-    if (agent.status === 'blocked') {
-      items.push({
-        ts: agent.updatedAt || '',
-        type: 'blocked items',
-        title: agent.name,
-        body: agent.blockers || 'Waiting on dependency',
-        status: 'blocked'
       });
     }
   });
@@ -4488,11 +5345,12 @@ function ccBuildActivity(snapshot) {
   var promptJobs = _loadLocalPromptJobs ? _loadLocalPromptJobs() : [];
   promptJobs.slice(0, 8).forEach(function(job) {
     var agentName = job.target_agent ? (CONTROL_AGENT_LABELS[job.target_agent] || job.target_agent) : 'unknown';
+    var laneName = CONTROL_LANE_CONFIG[ccLaneForAgent(job.target_agent)].name;
     var promptSnippet = (job.prompt || '').slice(0, 60) + ((job.prompt || '').length > 60 ? '…' : '');
     // Dispatch event
     items.push({
       ts: job.created_at || '',
-      type: 'prompt → ' + agentName,
+      type: laneName + ' prompt → ' + agentName,
       title: promptSnippet,
       body: job.priority && job.priority !== 'normal' ? job.priority + ' priority' : '',
       status: job.status || 'pending'
@@ -4524,6 +5382,7 @@ function ccBuildActivity(snapshot) {
 function ccBuildSnapshot() {
   var snapshot = ControlCentreAdapters.getSnapshot();
   var suggestions = snapshot.suggestions.slice();
+  var lanes = (snapshot.lanes || []).slice();
   var agents = snapshot.agents.slice();
   var approved = suggestions.filter(function(item) { return item.approvalStatus === 'approved'; }).length;
   var rejected = suggestions.filter(function(item) { return item.approvalStatus === 'rejected'; }).length;
@@ -4531,15 +5390,15 @@ function ccBuildSnapshot() {
   var pending = suggestions.filter(function(item) { return item.approvalStatus === 'pending'; }).length;
   var withPhotos = suggestions.filter(function(item) { return item.photoCount > 0; }).length;
   var recommendedApprove = suggestions.filter(function(item) { return item.recommendation === 'approve' || item.recommendation === 'fast-track'; }).length;
-  var waitingOnHuman = suggestions.filter(function(item) { return item.waitingOnHuman; }).length + agents.filter(function(agent) { return agent.status === 'blocked'; }).length;
-  var blockedAgents = agents.filter(function(agent) { return agent.status === 'blocked'; });
+  var waitingOnHuman = suggestions.filter(function(item) { return item.waitingOnHuman; }).length + lanes.filter(function(lane) { return lane.status === 'blocked'; }).length;
+  var blockedLanes = lanes.filter(function(lane) { return lane.status === 'blocked'; });
   var previewReady = suggestions.filter(function(item) { return item.lifecycleStage === 'ready_for_preview'; });
   var verifyReady = suggestions.filter(function(item) { return item.lifecycleStage === 'verify_ready'; });
   var urgentSuggestions = suggestions.filter(function(item) { return item.priority === 'urgent'; });
   var workQueue = {
     queued: suggestions.filter(function(item) { return item.lifecycleStage === 'queued' || item.lifecycleStage === 'triage'; }).length,
     in_progress: suggestions.filter(function(item) { return item.lifecycleStage === 'in_progress'; }).length,
-    blocked: suggestions.filter(function(item) { return item.lifecycleStage === 'blocked'; }).length + blockedAgents.length,
+    blocked: suggestions.filter(function(item) { return item.lifecycleStage === 'blocked'; }).length + blockedLanes.length,
     ready_for_preview: previewReady.length,
     verify_ready: verifyReady.length
   };
@@ -4555,7 +5414,7 @@ function ccBuildSnapshot() {
   ];
   var priorities = [
     { label: 'Approvals Needed', value: pending, copy: pending ? pending + ' suggestion' + (pending !== 1 ? 's' : '') + ' waiting on review.' : 'Queue is clear right now.' },
-    { label: 'Blocked Agents', value: blockedAgents.length, copy: blockedAgents.length ? blockedAgents.map(function(item) { return item.name; }).join(', ') : 'No AI lanes are blocked.' },
+    { label: 'Blocked Lanes', value: blockedLanes.length, copy: blockedLanes.length ? blockedLanes.map(function(item) { return item.name; }).join(', ') : 'No AI lanes are blocked.' },
     { label: 'Preview Ready', value: previewReady.length, copy: previewReady.length ? previewReady[0].title : 'Nothing ready for preview yet.' },
     { label: 'Urgent Suggestions', value: urgentSuggestions.length, copy: urgentSuggestions.length ? urgentSuggestions[0].title : 'No urgent triage items.' }
   ];
@@ -4569,7 +5428,7 @@ function ccBuildSnapshot() {
     previewReadyCount: snapshot.automation.preview_ready_count || previewReady.length,
     verificationReadyCount: snapshot.automation.verification_ready_count || verifyReady.length
   };
-  snapshot.taskQueue = snapshot.agents.slice().sort(function(a, b) {
+  snapshot.taskQueue = lanes.slice().sort(function(a, b) {
     var order = { blocked: 0, in_progress: 1, waiting: 2, done: 3, idle: 4 };
     var av = order.hasOwnProperty(a.status) ? order[a.status] : 5;
     var bv = order.hasOwnProperty(b.status) ? order[b.status] : 5;
@@ -4616,23 +5475,25 @@ function ccRenderPriorityStrip(snapshot) {
 
 function ccRenderAgentBoard(snapshot) {
   var root = document.getElementById('ccAgentBoard');
-  document.getElementById('ccAgentMeta').textContent = snapshot.agents.length + ' lanes';
-  if (!snapshot.agents.length) {
-    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No agent lanes configured</div><div class="cc-empty-copy">Agent data will appear when work status is available.</div></div>';
+  var lanes = snapshot.lanes || [];
+  document.getElementById('ccAgentMeta').textContent = lanes.length + ' lanes';
+  if (!lanes.length) {
+    root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">No lanes configured</div><div class="cc-empty-copy">Lane data will appear when work status is available.</div></div>';
     return;
   }
-  root.innerHTML = '<div class="cc-agent-list">' + snapshot.agents.map(function(agent) {
-    var selected = CONTROL_CENTRE_UI.selectedType === 'agent' && CONTROL_CENTRE_UI.selectedId === agent.key;
-    var hasBranchOrCommit = agent.branch || agent.lastCommit;
-    return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-agent="' + ccEscape(agent.key) + '">' +
-      '<div class="cc-agent-header"><div><div class="cc-agent-name">' + ccEscape(agent.name) + '</div><div class="cc-agent-task">' + ccEscape(agent.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(agent.status || 'idle') + '">' + ccEscape(ccPrettyStatus(agent.status || 'idle')) + '</span></div>' +
+  root.innerHTML = '<div class="cc-agent-list">' + lanes.map(function(lane) {
+    var selected = CONTROL_CENTRE_UI.selectedType === 'lane' && CONTROL_CENTRE_UI.selectedId === lane.id;
+    var hasBranchOrCommit = lane.branch;
+    return '<article class="cc-agent-card' + (selected ? ' selected' : '') + '" data-cc-lane="' + ccEscape(lane.id) + '">' +
+      '<div class="cc-agent-header"><div><div class="cc-agent-name">' + ccEscape(lane.name) + '</div><div class="cc-agent-task">' + ccEscape(lane.taskTitle || lane.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(lane.status || 'idle') + '">' + ccEscape(ccPrettyStatus(lane.status || 'idle')) + '</span></div>' +
       '<div class="cc-agent-meta">' +
-      (hasBranchOrCommit ? '<span><span class="cc-label">Branch</span> <span class="cc-agent-mono">' + ccEscape(agent.branch || '\u2014') + '</span></span>' +
-      '<span><span class="cc-label">Commit</span> <span class="cc-agent-mono">' + ccEscape(agent.lastCommit || '\u2014') + '</span></span>' : '') +
-      '<span><span class="cc-label">Assigned</span> ' + ccEscape(agent.assignedCount || 0) + '</span>' +
-      '<span><span class="cc-label">Updated</span> ' + (agent.updatedAt ? ccEscape(ccFormatWhen(agent.updatedAt)) : '\u2014') + '</span>' +
+      '<span><span class="cc-label">Active</span> ' + ccEscape(lane.activeAgentLabel || lane.activeAgent || '\u2014') + '</span>' +
+      '<span><span class="cc-label">Fallback</span> ' + ccEscape((lane.fallbackAgents || []).map(function(key) { return CONTROL_AGENT_LABELS[key] || key; }).join(', ') || '\u2014') + '</span>' +
+      (hasBranchOrCommit ? '<span><span class="cc-label">Branch</span> <span class="cc-agent-mono">' + ccEscape(lane.branch || '\u2014') + '</span></span>' : '') +
+      '<span><span class="cc-label">Assigned</span> ' + ccEscape(lane.assignedCount || 0) + '</span>' +
+      '<span><span class="cc-label">Updated</span> ' + (lane.updatedAt ? ccEscape(ccFormatWhen(lane.updatedAt)) : '\u2014') + '</span>' +
       '</div>' +
-      (agent.blockers ? '<div class="cc-agent-meta"><span class="cc-agent-blocker"><span class="cc-label">Blocker</span> ' + ccEscape(agent.blockers) + '</span></div>' : '') +
+      (lane.blockers && lane.blockers.length ? '<div class="cc-agent-meta"><span class="cc-agent-blocker"><span class="cc-label">Blocker</span> ' + ccEscape(lane.blockers[0]) + '</span></div>' : '') +
       '</article>';
   }).join('') + '</div>';
 }
@@ -4652,17 +5513,21 @@ function ccRenderSuggestionList(snapshot) {
   }
   root.innerHTML = '<div class="cc-suggestion-list">' + snapshot.suggestions.map(function(item) {
     var selected = CONTROL_CENTRE_UI.selectedType === 'suggestion' && CONTROL_CENTRE_UI.selectedId === item.id;
+    var laneName = CONTROL_LANE_CONFIG[item.assignedLane] ? CONTROL_LANE_CONFIG[item.assignedLane].name : 'Unassigned lane';
+    var lane = (snapshot.lanes || []).find(function(entry) { return entry.id === item.assignedLane; }) || null;
     var badges = [
       ccBadge(item.recommendation),
       item.priority !== 'normal' ? ccBadge(item.priority) : '',
+      ccBadge(laneName),
       ccBadge(CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI)
     ].filter(Boolean);
+    if (item.waitingOn) badges.push(ccBadge('waiting: ' + item.waitingOn));
     if (item.duplicate) badges.push(ccBadge('duplicate'));
     if (item.photoCount) badges.push(ccBadge(item.photoCount + ' photo' + (item.photoCount !== 1 ? 's' : '')));
     return '<article class="cc-suggestion-card' + (selected ? ' selected' : '') + '" data-cc-suggestion="' + ccEscape(item.id) + '">' +
       '<div class="cc-suggestion-head"><div><div class="cc-suggestion-title">' + ccEscape(item.title) + '</div><div class="cc-suggestion-body">' + ccEscape(item.fullText.slice(0, 180)) + (item.fullText.length > 180 ? '…' : '') + '</div></div><span class="cc-status ' + ccEscape(item.approvalStatus === 'approved' ? 'done' : item.approvalStatus === 'pending' ? 'waiting' : item.approvalStatus) + '">' + ccEscape(ccPrettyStatus(item.approvalStatus)) + '</span></div>' +
       '<div class="cc-badge-row">' + badges.join('') + '</div>' +
-      '<div class="cc-inline-meta"><span>' + ccEscape(item.id) + '</span><span>' + ccEscape(item.source) + '</span><span>' + ccEscape(ccFormatWhen(item.createdAt)) + '</span></div>' +
+      '<div class="cc-inline-meta"><span>' + ccEscape(item.id) + '</span><span>' + ccEscape(item.source) + '</span><span>' + ccEscape(lane ? lane.activeAgentLabel : (CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI)) + '</span><span>' + ccEscape(ccFormatWhen(item.createdAt)) + '</span></div>' +
       '</article>';
   }).join('') + '</div>';
 }
@@ -4679,16 +5544,16 @@ function ccRenderWorkQueue(snapshot) {
     return '<div class="cc-queue-card"><div class="cc-queue-head"><div class="cc-queue-count">' + ccEscape(queue[item.key] || 0) + '</div></div><div class="cc-queue-label">' + ccEscape(item.label) + '</div></div>';
   }).join('');
   var tasks = snapshot.taskQueue.map(function(item) {
-    var selected = CONTROL_CENTRE_UI.selectedType === 'agent' && CONTROL_CENTRE_UI.selectedId === item.key;
-    return '<article class="cc-task-row' + (selected ? ' selected' : '') + '" data-cc-task-agent="' + ccEscape(item.key) + '">' +
+    var selected = CONTROL_CENTRE_UI.selectedType === 'lane' && CONTROL_CENTRE_UI.selectedId === item.id;
+    return '<article class="cc-task-row' + (selected ? ' selected' : '') + '" data-cc-task-lane="' + ccEscape(item.id) + '">' +
       '<div class="cc-task-main">' +
         '<div class="cc-task-head">' +
-          '<div class="cc-task-title">' + ccEscape(ccTaskTitle(item.task)) + '</div>' +
+          '<div class="cc-task-title">' + ccEscape(item.name + ': ' + ccTaskTitle(item.taskTitle || item.task)) + '</div>' +
           '<span class="cc-status ' + ccEscape(item.status || 'idle') + '">' + ccEscape(ccPrettyStatus(item.status || 'idle')) + '</span>' +
         '</div>' +
-        (ccTaskPreview(item.task || item.summary) ? '<div class="cc-task-preview">' + ccEscape(ccTaskPreview(item.task || item.summary)) + '</div>' : '') +
+        (ccTaskPreview(item.summary || item.task || item.taskTitle) ? '<div class="cc-task-preview">' + ccEscape(ccTaskPreview(item.summary || item.task || item.taskTitle)) + '</div>' : '') +
         '<div class="cc-task-meta">' +
-          '<span><span class="cc-label">Agent</span> ' + ccEscape(item.name) + '</span>' +
+          '<span><span class="cc-label">Active</span> ' + ccEscape(item.activeAgentLabel || item.activeAgent || '\u2014') + '</span>' +
           '<span><span class="cc-label">Updated</span> ' + (item.updatedAt ? ccEscape(ccFormatWhen(item.updatedAt)) : '\u2014') + '</span>' +
         '</div>' +
       '</div>' +
@@ -4724,12 +5589,18 @@ function ccRenderPipeline(snapshot) {
 }
 
 function ccEnsureSelection(snapshot) {
+  if (CONTROL_CENTRE_UI.selectedType === 'lane' && (snapshot.lanes || []).some(function(lane) { return lane.id === CONTROL_CENTRE_UI.selectedId; })) return;
   if (CONTROL_CENTRE_UI.selectedType === 'agent' && snapshot.agents.some(function(agent) { return agent.key === CONTROL_CENTRE_UI.selectedId; })) return;
   if (CONTROL_CENTRE_UI.selectedType === 'suggestion' && snapshot.suggestions.some(function(item) { return item.id === CONTROL_CENTRE_UI.selectedId; })) return;
   if (snapshot.suggestions.length) {
     var preferred = snapshot.suggestions.find(function(item) { return item.waitingOnHuman; }) || snapshot.suggestions[0];
     CONTROL_CENTRE_UI.selectedType = 'suggestion';
     CONTROL_CENTRE_UI.selectedId = preferred.id;
+    return;
+  }
+  if (snapshot.lanes && snapshot.lanes.length) {
+    CONTROL_CENTRE_UI.selectedType = 'lane';
+    CONTROL_CENTRE_UI.selectedId = snapshot.lanes[0].id;
     return;
   }
   if (snapshot.agents.length) {
@@ -4742,6 +5613,52 @@ function ccRenderDetail(snapshot) {
   var root = document.getElementById('ccDetailPanel');
   var meta = document.getElementById('ccDetailMeta');
   ccEnsureSelection(snapshot);
+  if (CONTROL_CENTRE_UI.selectedType === 'lane') {
+    var lane = (snapshot.lanes || []).find(function(entry) { return entry.id === CONTROL_CENTRE_UI.selectedId; });
+    if (!lane) return;
+    var thread = ccGetLaneThread(lane.id);
+    var laneMessages = (thread.messages || []).slice(-8);
+    var threadHtml = laneMessages.map(function(msg) {
+      var roleTone = msg.role === 'assistant' ? 'var(--blue)' : msg.role === 'system' ? 'var(--text-muted)' : 'var(--accent)';
+      var roleLabel = msg.role === 'assistant' ? 'Lane response' : msg.role === 'system' ? 'System' : 'You';
+      return '<div class="cc-activity-card" style="margin-bottom:6px;"><div class="cc-activity-head"><div style="display:flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:' + roleTone + ';flex-shrink:0;"></span><span class="cc-panel-title" style="font-size:11px;">' + ccEscape(roleLabel) + '</span></div><div class="cc-activity-time">' + ccEscape(ccFormatWhen(msg.created_at)) + '</div></div><div class="cc-activity-copy">' + ccEscape(msg.text || '') + '</div>' + (msg.job_id ? '<div class="cc-inline-meta" style="margin-top:4px;"><span>' + ccEscape(msg.job_id) + '</span><span>' + ccEscape(msg.status || '') + '</span></div>' : '') + '</div>';
+    }).join('');
+    var laneAssigned = snapshot.suggestions.filter(function(entry) { return entry.assignedLane === lane.id; }).slice(0, 10);
+    var laneActivity = snapshot.activity.filter(function(entry) { return (entry.type || '').indexOf(lane.name) !== -1; }).slice(0, 6);
+    meta.textContent = lane.name;
+    root.innerHTML = '<div class="cc-detail-head"><div><div class="cc-detail-title">' + ccEscape(lane.name) + '</div><div class="cc-detail-copy">' + ccEscape(lane.taskTitle || lane.task || 'No active task') + '</div></div><span class="cc-status ' + ccEscape(lane.status || 'idle') + '">' + ccEscape(ccPrettyStatus(lane.status || 'idle')) + '</span></div>' +
+      '<div class="cc-assignment-banner"><div><div class="cc-assignment-label">Active Agent</div><div class="cc-assignment-value">' + ccEscape(lane.activeAgentLabel || lane.activeAgent || '\u2014') + '</div></div><span class="cc-status ' + ccEscape(lane.status || 'idle') + '">' + ccEscape(ccPrettyStatus(lane.status || 'idle')) + '</span></div>' +
+      '<div class="cc-detail-grid">' +
+        '<div class="cc-detail-card"><h4>Fallback Agents</h4><p>' + ccEscape((lane.fallbackAgents || []).map(function(key) { return CONTROL_AGENT_LABELS[key] || key; }).join(', ') || 'None') + '</p></div>' +
+        '<div class="cc-detail-card"><h4>Branch</h4><p>' + ccEscape(lane.branch || 'none') + '</p></div>' +
+        '<div class="cc-detail-card"><h4>Summary</h4><p>' + ccEscape(lane.summary || 'No summary yet') + '</p></div>' +
+        '<div class="cc-detail-card"><h4>Assigned Items</h4><p>' + ccEscape(lane.assignedCount || 0) + ' active item' + ((lane.assignedCount || 0) !== 1 ? 's' : '') + '</p></div>' +
+      '</div>' +
+      '<div class="cc-detail-card" style="margin-top:10px;"><h4>Blockers</h4><p>' + ccEscape((lane.blockers || []).join(' | ') || 'No blocker reported') + '</p></div>' +
+      '<div class="cc-detail-card" style="margin-top:10px;"><h4>Recent Activity</h4><ul>' +
+        (laneActivity.map(function(entry) {
+          return '<li><span class="cc-label">' + ccEscape(ccFormatWhen(entry.ts)) + '</span> ' + ccEscape(entry.title || entry.type) + '</li>';
+        }).join('') || '<li>No recent lane activity.</li>') +
+      '</ul></div>' +
+      '<div class="cc-detail-card" style="margin-top:10px;"><h4>Lane Thread</h4>' +
+        '<div class="cc-assigned-list">' +
+          (threadHtml || '<div class="cc-empty"><div class="cc-empty-copy">No lane messages yet.</div></div>') +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">' +
+          '<textarea data-cc-lane-draft="' + ccEscape(lane.id) + '" placeholder="' + ccEscape(ccLaneThreadPlaceholder(lane.id)) + '" style="width:100%;min-height:72px;resize:vertical;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--text);padding:10px;font-family:DM Mono,monospace;font-size:11px;line-height:1.5;">' + ccEscape(thread.draft || '') + '</textarea>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">' +
+            '<span class="cc-label">Routes to active agent: ' + ccEscape(lane.activeAgentLabel || lane.activeAgent || '\u2014') + '</span>' +
+            '<button class="cc-action-link" data-cc-lane-send="' + ccEscape(lane.id) + '">Send to lane</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="cc-detail-card" style="margin-top:10px;"><h4>Assigned Queue</h4><div class="cc-assigned-list">' +
+        (laneAssigned.map(function(entry) {
+          return '<div class="cc-activity-card"><div class="cc-activity-head"><div class="cc-suggestion-title" style="font-size:14px;">' + ccEscape(entry.title) + '</div><span class="cc-status ' + ccEscape(entry.lifecycleStage === 'blocked' ? 'blocked' : entry.lifecycleStage === 'ready_for_preview' ? 'ready' : 'waiting') + '">' + ccEscape(ccPrettyStatus(entry.lifecycleStage)) + '</span></div><div class="cc-activity-copy">' + ccEscape(entry.fullText.slice(0, 120)) + '</div></div>';
+        }).join('') || '<div class="cc-empty"><div class="cc-empty-copy">No items assigned to this lane.</div></div>') +
+      '</div></div>';
+    return;
+  }
   if (CONTROL_CENTRE_UI.selectedType === 'agent') {
     var agent = snapshot.agents.find(function(item) { return item.key === CONTROL_CENTRE_UI.selectedId; });
     if (!agent) return;
@@ -4772,19 +5689,29 @@ function ccRenderDetail(snapshot) {
     root.innerHTML = '<div class="cc-empty"><div class="cc-empty-title">Select an item</div><div class="cc-empty-copy">Tap an agent card or suggestion to see detail here. Use Remote Control to dispatch prompts.</div></div>';
     return;
   }
+  var assignedLane = (snapshot.lanes || []).find(function(entry) { return entry.id === item.assignedLane; }) || null;
+  var laneName = assignedLane ? assignedLane.name : (CONTROL_LANE_CONFIG[item.assignedLane] ? CONTROL_LANE_CONFIG[item.assignedLane].name : 'Unassigned lane');
+  var activeAgent = assignedLane ? assignedLane.activeAgentLabel : (CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI);
   meta.textContent = item.id;
   root.innerHTML = '<div class="cc-detail-head"><div><div class="cc-detail-title">' + ccEscape(item.title) + '</div><div class="cc-detail-copy">' + ccEscape(item.fullText) + '</div></div><span class="cc-status ' + ccEscape(item.approvalStatus === 'approved' ? 'done' : item.approvalStatus === 'pending' ? 'waiting' : item.approvalStatus) + '">' + ccEscape(ccPrettyStatus(item.approvalStatus)) + '</span></div>' +
-    '<div class="cc-assignment-banner"><div><div class="cc-assignment-label">Assigned To</div><div class="cc-assignment-value">' + ccEscape(CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI) + '</div></div><span class="cc-status ' + ccEscape(item.lifecycleStage === 'blocked' ? 'blocked' : item.lifecycleStage === 'ready_for_preview' || item.lifecycleStage === 'verify_ready' ? 'ready' : item.lifecycleStage === 'in_progress' ? 'in_progress' : 'waiting') + '">' + ccEscape(ccPrettyStatus(item.lifecycleStage)) + '</span></div>' +
+    '<div class="cc-assignment-banner"><div><div class="cc-assignment-label">Assigned Lane</div><div class="cc-assignment-value">' + ccEscape(laneName) + ' · ' + ccEscape(activeAgent) + '</div></div><span class="cc-status ' + ccEscape(item.lifecycleStage === 'blocked' ? 'blocked' : item.lifecycleStage === 'ready_for_preview' || item.lifecycleStage === 'verify_ready' ? 'ready' : item.lifecycleStage === 'in_progress' ? 'in_progress' : 'waiting') + '">' + ccEscape(ccPrettyStatus(item.lifecycleStage)) + '</span></div>' +
     '<div class="cc-badge-row" style="margin-top:8px;">' +
       ccBadge(item.recommendation) +
       ccBadge(item.priority !== 'normal' ? item.priority + ' priority' : 'normal') +
       (item.handoffStatus !== 'none' ? ccBadge('handoff: ' + item.handoffStatus) : '') +
       (item.previewStatus !== 'not_started' ? ccBadge('preview: ' + item.previewStatus) : '') +
+      ccBadge('waiting: ' + (item.waitingOn || 'coding')) +
+    '</div>' +
+    '<div class="cc-badge-row" style="margin-top:8px;">' +
+      '<button class="cc-action-link" data-cc-assign-lane="coding" data-cc-suggestion-id="' + ccEscape(item.id) + '">Assign to coding</button>' +
+      '<button class="cc-action-link" data-cc-assign-lane="chat" data-cc-suggestion-id="' + ccEscape(item.id) + '">Assign to chat</button>' +
+      '<button class="cc-action-link" data-cc-assign-lane="audit" data-cc-suggestion-id="' + ccEscape(item.id) + '">Assign to audit</button>' +
+      '<button class="cc-action-link" data-cc-assign-lane="human" data-cc-suggestion-id="' + ccEscape(item.id) + '">Assign to human</button>' +
     '</div>' +
     '<div class="cc-detail-grid">' +
       '<div class="cc-detail-card"><h4>Triage Metadata</h4><p>Source: ' + ccEscape(item.source) + '<br>Created: ' + ccEscape(ccFormatWhen(item.createdAt)) + '<br>Classification: ' + ccEscape(item.classification) + '</p></div>' +
       '<div class="cc-detail-card"><h4>Workflow</h4><p>Approval: ' + ccEscape(item.approvalStatus) + '<br>Handoff: ' + ccEscape(item.handoffStatus) + '<br>Preview: ' + ccEscape(item.previewStatus) + '</p></div>' +
-      '<div class="cc-detail-card"><h4>Assigned AI</h4><p>' + ccEscape(CONTROL_AGENT_LABELS[item.assignedAI] || item.assignedAI) + '<br>' + ccEscape(item.blocker || 'No blocker recorded') + '</p></div>' +
+      '<div class="cc-detail-card"><h4>Assigned Lane / Agent</h4><p>' + ccEscape(laneName) + '<br>' + ccEscape(activeAgent) + '<br>' + ccEscape(item.blocker || 'No blocker recorded') + '</p></div>' +
       '<div class="cc-detail-card"><h4>Related / Duplicates</h4><p>' + (item.duplicate ? 'Possible duplicate detected.' : 'No duplicate signal.') + '<br>' + ccEscape((item.related || []).join(', ') || 'No related items attached.') + '</p></div>' +
     '</div>' +
     '<div class="cc-detail-card" style="margin-top:10px;"><h4>Photos</h4>' +
@@ -4809,26 +5736,26 @@ function ccRenderActivity(snapshot) {
 // Fetch live CC data from GrapplingMap MCP API endpoints
 var _CC_API_BASE = 'https://mcp.lauburugrapplingmap.com/api';
 var _ccLastFetchedAt = 0;
-function _ccFetchLiveData() {
+function _ccFetchLiveData(force) {
   var now = Date.now();
-  if (now - _ccLastFetchedAt < 15000) return; // throttle to 15s
+  if (!force && now - _ccLastFetchedAt < 15000) return Promise.resolve(false); // throttle to 15s
   _ccLastFetchedAt = now;
   if (!window.__GM_CONTROL_CENTRE_DATA__) window.__GM_CONTROL_CENTRE_DATA__ = {};
   // Fetch work status
-  fetch(_CC_API_BASE + '/work-status', { signal: AbortSignal.timeout(6000) })
+  var workStatusFetch = fetch(_CC_API_BASE + '/work-status', { signal: AbortSignal.timeout(6000) })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(data) {
       if (data && data.ok && data.item) window.__GM_CONTROL_CENTRE_DATA__.work_status = data.item;
     })
     .catch(function() {
       // Fallback: try repo JSON file
-      fetch('./automation/state/WORK_STATUS.json?_=' + now, { signal: AbortSignal.timeout(4000) })
+      return fetch('./automation/state/WORK_STATUS.json?_=' + now, { signal: AbortSignal.timeout(4000) })
         .then(function(r) { return r.ok ? r.json() : null; })
         .then(function(data) { if (data && data.agents) window.__GM_CONTROL_CENTRE_DATA__.work_status = data; })
         .catch(function() {});
     });
   // Fetch prompt jobs
-  fetch(_CC_API_BASE + '/prompt-jobs', { signal: AbortSignal.timeout(6000) })
+  var promptJobsFetch = fetch(_CC_API_BASE + '/prompt-jobs', { signal: AbortSignal.timeout(6000) })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(data) {
       if (data && data.ok && Array.isArray(data.items)) {
@@ -4836,27 +5763,41 @@ function _ccFetchLiveData() {
       }
     })
     .catch(function() {});
+
+  return Promise.allSettled([workStatusFetch, promptJobsFetch]).then(function() { return true; });
 }
 
-window.renderControlCentre = function() {
+window.renderControlCentre = function(options) {
+  var opts = options || {};
   var root = document.getElementById('controlCentreView');
   if (!root) return;
   if (!isAaronOperatorAccount()) return;
   if (root.getAttribute('data-cc-mounted') === 'false') return;
-  _ccFetchLiveData();
-  var snapshot = ccBuildSnapshot();
-  CONTROL_CENTRE_UI.snapshot = snapshot;
-  ccRenderEnvironmentBadge();
-  ccRenderPriorityStrip(snapshot);
-  ccRenderAgentBoard(snapshot);
-  ccRenderSummaryCards(snapshot);
-  ccRenderSuggestionList(snapshot);
-  ccRenderWorkQueue(snapshot);
-  ccRenderPipeline(snapshot);
-  ccRenderDetail(snapshot);
-  ccRenderActivity(snapshot);
-  var refreshIndicator = document.getElementById('ccAutoRefreshIndicator');
-  if (refreshIndicator) refreshIndicator.textContent = 'Auto-refresh active';
+  function paintControlCentre() {
+    var snapshot = ccBuildSnapshot();
+    if (ccSyncLaneThreadFromPromptJobs(snapshot)) snapshot = ccBuildSnapshot();
+    CONTROL_CENTRE_UI.snapshot = snapshot;
+    ccRenderEnvironmentBadge();
+    ccRenderPriorityStrip(snapshot);
+    ccRenderAgentBoard(snapshot);
+    ccRenderSummaryCards(snapshot);
+    ccRenderSuggestionList(snapshot);
+    ccRenderWorkQueue(snapshot);
+    ccRenderPipeline(snapshot);
+    ccRenderDetail(snapshot);
+    ccRenderActivity(snapshot);
+    var refreshIndicator = document.getElementById('ccAutoRefreshIndicator');
+    if (refreshIndicator) refreshIndicator.textContent = 'Auto-refresh active';
+  }
+
+  if (opts.awaitFreshData) {
+    return _ccFetchLiveData(!!opts.forceFresh).then(function() {
+      paintControlCentre();
+    });
+  }
+
+  _ccFetchLiveData(!!opts.forceFresh);
+  paintControlCentre();
 };
 
 // Auto-refresh Control Centre every 30s while it is the active tab
@@ -4866,7 +5807,7 @@ function ccStartAutoRefresh() {
   _ccAutoRefreshTimer = setInterval(function() {
     var ccView = document.getElementById('controlCentreView');
     if (ccView && ccView.style.display !== 'none' && typeof window.renderControlCentre === 'function') {
-      window.renderControlCentre();
+      window.renderControlCentre({ awaitFreshData: true });
     }
   }, 30000);
 }
@@ -4900,8 +5841,13 @@ document.getElementById('controlCentreView').addEventListener('click', function(
     var btn = event.target.closest('#ccRefreshBtn');
     btn.textContent = 'Refreshing…';
     btn.style.opacity = '0.5';
-    window.renderControlCentre();
-    setTimeout(function() { btn.textContent = 'Refreshed'; btn.style.opacity = ''; }, 200);
+    Promise.resolve(window.renderControlCentre({ awaitFreshData: true, forceFresh: true })).then(function() {
+      btn.textContent = 'Refreshed';
+      btn.style.opacity = '';
+    }).catch(function() {
+      btn.textContent = 'Refresh View';
+      btn.style.opacity = '';
+    });
     setTimeout(function() { btn.textContent = 'Refresh View'; }, 1500);
     return;
   }
@@ -4914,10 +5860,10 @@ document.getElementById('controlCentreView').addEventListener('click', function(
     ccScrollToSection(jumpButton.getAttribute('data-cc-jump'));
     return;
   }
-  var agentCard = event.target.closest('[data-cc-agent]');
-  if (agentCard) {
-    CONTROL_CENTRE_UI.selectedType = 'agent';
-    CONTROL_CENTRE_UI.selectedId = agentCard.getAttribute('data-cc-agent');
+  var laneCard = event.target.closest('[data-cc-lane]');
+  if (laneCard) {
+    CONTROL_CENTRE_UI.selectedType = 'lane';
+    CONTROL_CENTRE_UI.selectedId = laneCard.getAttribute('data-cc-lane');
     window.renderControlCentre();
     ccMaybeRevealDetailOnMobile();
     return;
@@ -4930,18 +5876,57 @@ document.getElementById('controlCentreView').addEventListener('click', function(
     ccMaybeRevealDetailOnMobile();
     return;
   }
-  var taskCard = event.target.closest('[data-cc-task-agent]');
+  var taskCard = event.target.closest('[data-cc-task-lane]');
   if (taskCard) {
-    CONTROL_CENTRE_UI.selectedType = 'agent';
-    CONTROL_CENTRE_UI.selectedId = taskCard.getAttribute('data-cc-task-agent');
+    CONTROL_CENTRE_UI.selectedType = 'lane';
+    CONTROL_CENTRE_UI.selectedId = taskCard.getAttribute('data-cc-task-lane');
     window.renderControlCentre();
     ccMaybeRevealDetailOnMobile();
+    return;
+  }
+  var laneAssignBtn = event.target.closest('[data-cc-assign-lane]');
+  if (laneAssignBtn) {
+    var suggestionId = laneAssignBtn.getAttribute('data-cc-suggestion-id');
+    var laneId = laneAssignBtn.getAttribute('data-cc-assign-lane');
+    if (laneId === 'human') {
+      CONTROL_CENTRE_UI.laneOverrides[suggestionId] = 'coding';
+      CONTROL_CENTRE_UI.humanOverrides[suggestionId] = true;
+      showToast('Suggestion set to waiting on human');
+    } else if (CONTROL_LANE_CONFIG[laneId]) {
+      CONTROL_CENTRE_UI.laneOverrides[suggestionId] = laneId;
+      delete CONTROL_CENTRE_UI.humanOverrides[suggestionId];
+      showToast('Suggestion assigned to ' + CONTROL_LANE_CONFIG[laneId].name);
+    }
+    window.renderControlCentre();
+    return;
+  }
+  var laneSendBtn = event.target.closest('[data-cc-lane-send]');
+  if (laneSendBtn) {
+    var sendLaneId = laneSendBtn.getAttribute('data-cc-lane-send');
+    sendLaneMessage(sendLaneId);
     return;
   }
   var button = event.target.closest('[data-cc-open-node]');
   if (!button) return;
   var label = button.getAttribute('data-cc-open-node');
   if (label) switchToReferenceNode(label, '');
+});
+
+document.getElementById('controlCentreView').addEventListener('input', function(event) {
+  var draftEl = event.target.closest('[data-cc-lane-draft]');
+  if (!draftEl) return;
+  var laneId = draftEl.getAttribute('data-cc-lane-draft');
+  ccSetLaneDraft(laneId, draftEl.value);
+});
+
+document.getElementById('controlCentreView').addEventListener('keydown', function(event) {
+  var draftEl = event.target.closest('[data-cc-lane-draft]');
+  if (!draftEl) return;
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    var laneId = draftEl.getAttribute('data-cc-lane-draft');
+    sendLaneMessage(laneId);
+  }
 });
 
 // ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
@@ -7602,15 +8587,17 @@ function openHealthMetricsManager() {
       '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
           '<span style="font-family:Barlow Condensed,sans-serif;font-size:14px;letter-spacing:0.4px;color:var(--text);">Apple Health</span>' +
-          '<span style="font-family:DM Mono,monospace;font-size:9px;color:' + (ahData ? '#34d399' : '#8892a4') + ';border:1px solid rgba(255,255,255,0.08);padding:2px 6px;border-radius:999px;">' + (ahData ? 'DATA LOADED' : 'NOT CONNECTED') + '</span>' +
+          '<span style="font-family:DM Mono,monospace;font-size:9px;color:' + (ahData ? '#34d399' : '#8892a4') + ';border:1px solid rgba(255,255,255,0.08);padding:2px 6px;border-radius:999px;">' + (ahData ? 'IMPORTED DATA' : 'MANUAL IMPORT') + '</span>' +
         '</div>' +
-        (ahData ? dataSummaryHtml(ahData) : '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);">Upload today\'s Apple Health export file to enable HRV and sleep-based recommendations.</div>') +
+        (ahData ? dataSummaryHtml(ahData) : '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);">Upload an Apple Health export to use manual-imported HRV and sleep data (not linked live).</div>') +
+        (isMember() ? '<div style="margin-top:8px;"><button id="appleReloadFromBackendBtn" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:10px;padding:6px 12px;border-radius:6px;cursor:pointer;">Reload latest imported data</button></div>' : '') +
         '<details style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">' +
-          '<summary style="cursor:pointer;font-family:DM Mono,monospace;font-size:10px;color:#8892a4;">Upload Apple Health file</summary>' +
+          '<summary style="cursor:pointer;font-family:DM Mono,monospace;font-size:10px;color:#8892a4;">Upload Apple Health export (manual)</summary>' +
           '<div id="appleDropZone" style="border:2px dashed rgba(255,255,255,0.2);border-radius:6px;padding:16px;text-align:center;margin-top:8px;background:rgba(255,255,255,0.02);transition:border-color 0.2s;">' +
-            '<div style="font-family:DM Mono,monospace;font-size:10px;color:#8892a4;margin-bottom:8px;">Drag & drop Apple Health JSON file here or click to select</div>' +
-            '<input type="file" id="appleImportFile" accept=".json" style="display:none;">' +
-            '<button id="appleSelectFileBtn" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:10px;padding:6px 12px;border-radius:6px;cursor:pointer;">Select File</button>' +
+            '<div style="font-family:DM Mono,monospace;font-size:10px;color:#8892a4;margin-bottom:8px;">Drag & drop Apple Health export.xml or JSON here, or click to select</div>' +
+            '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);margin-bottom:10px;">Signed-in members: large XML files are imported via backend to avoid browser freezes.</div>' +
+            '<input type="file" id="appleImportFile" accept=".xml,.json,text/xml,application/xml,application/json,text/json" style="display:none;">' +
+            '<button id="appleSelectFileBtn" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:10px;padding:6px 12px;border-radius:6px;cursor:pointer;">Select Export File</button>' +
           '</div>' +
         '</details>' +
         importBlockHtml('appleImportJson', '{"date":"2026-04-05","hrv_ms":48,"resting_hr":58,"sleep_hours":6.9,"active_energy_kcal":420}') +
@@ -7627,6 +8614,35 @@ function openHealthMetricsManager() {
         '</div>' +
         (hcData ? dataSummaryHtml(hcData) : '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);">Import a Health Connect export to enable health-based recommendations.</div>') +
         importBlockHtml('healthConnectImportJson', '{"date":"2026-04-05","recovery_score":70,"hrv_ms":50,"resting_hr":60,"sleep_hours":7.0,"active_energy_kcal":400}') +
+      '</div>'
+    );
+
+    // ── Cronometer section (optional/context only) ───────────────────
+    var cronoData = STATE.cronometerData || null;
+    sections.push(
+      '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
+          '<span style="font-family:Barlow Condensed,sans-serif;font-size:14px;letter-spacing:0.4px;color:var(--text);">Cronometer</span>' +
+          '<span style="font-family:DM Mono,monospace;font-size:9px;color:' + (cronoData ? '#34d399' : '#8892a4') + ';border:1px solid rgba(255,255,255,0.08);padding:2px 6px;border-radius:999px;">' + (cronoData ? 'CONTEXT DATA' : 'OPTIONAL') + '</span>' +
+        '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);">Optional nutrition context only. Does not replace WHOOP or Apple Health priority.</div>' +
+        (cronoData && cronoData.nutrition ?
+          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px;">' +
+            '<div style="border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:DM Mono,monospace;font-size:9px;color:#667;">Calories</div><div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--text);margin-top:2px;">' + (cronoData.nutrition.calories != null ? cronoData.nutrition.calories : '—') + '</div></div>' +
+            '<div style="border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:DM Mono,monospace;font-size:9px;color:#667;">Protein</div><div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--text);margin-top:2px;">' + (cronoData.nutrition.protein_g != null ? cronoData.nutrition.protein_g + '<span style="font-size:10px;">g</span>' : '—') + '</div></div>' +
+            '<div style="border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:DM Mono,monospace;font-size:9px;color:#667;">Water</div><div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--text);margin-top:2px;">' + (cronoData.nutrition.water_ml != null ? cronoData.nutrition.water_ml + '<span style="font-size:10px;">ml</span>' : '—') + '</div></div>' +
+          '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-muted);margin-top:4px;">Date: ' + cronoData.date + (cronoData.synced_at ? ' · Synced ' + ccFormatWhen(cronoData.synced_at) : '') + '</div>'
+          : '') +
+        '<details style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">' +
+          '<summary style="cursor:pointer;font-family:DM Mono,monospace;font-size:10px;color:#8892a4;">Upload Cronometer JSON (manual)</summary>' +
+          '<div id="cronometerDropZone" style="border:2px dashed rgba(255,255,255,0.2);border-radius:6px;padding:16px;text-align:center;margin-top:8px;background:rgba(255,255,255,0.02);transition:border-color 0.2s;">' +
+            '<div style="font-family:DM Mono,monospace;font-size:10px;color:#8892a4;margin-bottom:8px;">Select a small daily Cronometer JSON export</div>' +
+            '<input type="file" id="cronometerImportFile" accept=".json,application/json,text/json" style="display:none;">' +
+            '<button id="cronometerSelectFileBtn" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-dim);font-family:DM Mono,monospace;font-size:10px;padding:6px 12px;border-radius:6px;cursor:pointer;">Select JSON File</button>' +
+          '</div>' +
+        '</details>' +
+        importBlockHtml('cronometerImportJson', '{"date":"2026-04-05","calories":2450,"protein_g":180,"carbs_g":220,"fat_g":85,"water_ml":3200}') +
       '</div>'
     );
 
@@ -7707,14 +8723,170 @@ function openHealthMetricsManager() {
     var appleDropZone = document.getElementById('appleDropZone');
     var appleFileInput = document.getElementById('appleImportFile');
     var appleSelectBtn = document.getElementById('appleSelectFileBtn');
-    function handleAppleFile(file) {
+
+    function parseAppleHealthDate(value) {
+      if (!value) return null;
+      var m = String(value).trim().match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\s*([+-]\d{2})(\d{2}))?$/);
+      if (m) {
+        var iso = m[1] + 'T' + m[2] + (m[3] ? (m[3] + ':' + m[4]) : 'Z');
+        var d1 = new Date(iso);
+        if (!isNaN(d1.getTime())) return d1;
+      }
+      var ts = Date.parse(value);
+      if (!isNaN(ts)) return new Date(ts);
+      return null;
+    }
+
+    function extractAppleHealthDailyFromXml(xmlText) {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(xmlText, 'application/xml');
+      if (doc.querySelector('parsererror')) throw new Error('invalid_xml');
+
+      var days = {};
+      function ensureDay(dateKey) {
+        if (!days[dateKey]) {
+          days[dateKey] = {
+            date: dateKey,
+            hrv_sum: 0,
+            hrv_count: 0,
+            rhr_sum: 0,
+            rhr_count: 0,
+            sleep_hours: 0,
+            active_energy_kcal: 0
+          };
+        }
+        return days[dateKey];
+      }
+
+      var records = doc.querySelectorAll('Record');
+      for (var i = 0; i < records.length; i++) {
+        var rec = records[i];
+        var type = rec.getAttribute('type') || '';
+        var valueRaw = rec.getAttribute('value');
+        var startRaw = rec.getAttribute('startDate') || rec.getAttribute('creationDate') || '';
+        var endRaw = rec.getAttribute('endDate') || startRaw;
+        var startDate = parseAppleHealthDate(startRaw);
+        var endDate = parseAppleHealthDate(endRaw);
+        var dateKey = startDate ? startDate.toISOString().slice(0, 10) : String(startRaw).slice(0, 10);
+        if (!dateKey) continue;
+
+        var day = ensureDay(dateKey);
+        var valueNum = Number(valueRaw);
+
+        if (type.indexOf('HeartRateVariabilitySDNN') !== -1 && isFinite(valueNum)) {
+          day.hrv_sum += valueNum;
+          day.hrv_count += 1;
+        } else if (type.indexOf('RestingHeartRate') !== -1 && isFinite(valueNum)) {
+          day.rhr_sum += valueNum;
+          day.rhr_count += 1;
+        } else if (type.indexOf('ActiveEnergyBurned') !== -1 && isFinite(valueNum)) {
+          day.active_energy_kcal += valueNum;
+        } else if (type.indexOf('SleepAnalysis') !== -1) {
+          var sleepVal = String(valueRaw || '').toLowerCase();
+          if (sleepVal.indexOf('asleep') !== -1 && startDate && endDate && endDate > startDate) {
+            day.sleep_hours += (endDate.getTime() - startDate.getTime()) / 3600000;
+          }
+        }
+      }
+
+      var keys = Object.keys(days).sort();
+      if (!keys.length) throw new Error('no_daily_data');
+      var latest = days[keys[keys.length - 1]];
+
+      return {
+        date: latest.date,
+        hrv_ms: latest.hrv_count ? Math.round((latest.hrv_sum / latest.hrv_count) * 10) / 10 : null,
+        resting_hr: latest.rhr_count ? Math.round((latest.rhr_sum / latest.rhr_count) * 10) / 10 : null,
+        sleep_hours: latest.sleep_hours > 0 ? Math.round(latest.sleep_hours * 100) / 100 : null,
+        active_energy_kcal: latest.active_energy_kcal > 0 ? Math.round(latest.active_energy_kcal) : null
+      };
+    }
+
+    var APPLE_LOCAL_PARSE_MAX_BYTES = 8 * 1024 * 1024;
+    var APPLE_BACKEND_UPLOAD_MAX_BYTES = 120 * 1024 * 1024;
+
+    async function importAppleHealthViaBackend(file) {
+      if (!isMember() || !_supabase) return { ok: false, error: 'backend_unavailable' };
+      var headers = await UserStore._getAuthHeaders();
+      if (!headers || !headers.Authorization) return { ok: false, error: 'auth_required' };
+      var formData = new FormData();
+      formData.append('file', file, file.name || 'export.xml');
+      try {
+        var resp = await fetch(SUPABASE_FUNCTIONS_URL + '/apple-health-import', {
+          method: 'POST',
+          headers: { Authorization: headers.Authorization },
+          body: formData
+        });
+        var payload = null;
+        try { payload = await resp.json(); } catch(e) { payload = null; }
+        if (!resp.ok) return Object.assign({ ok: false, error: 'backend_import_failed', status: resp.status }, payload || {});
+        return Object.assign({ ok: true }, payload || {});
+      } catch(e) {
+        return { ok: false, error: e && e.message ? e.message : 'backend_import_failed' };
+      }
+    }
+
+    function applyAppleBackendHistoryToIntelligence(historyDays) {
+      if (!Array.isArray(historyDays) || !historyDays.length || !window.GrapplingIntelligence) return 0;
+      var applied = 0;
+      for (var i = 0; i < historyDays.length; i++) {
+        var normalized = normalizeAppleHealthDailyForApp(historyDays[i]);
+        if (!normalized) continue;
+        window.GrapplingIntelligence.appendDay(normalized);
+        applied += 1;
+      }
+      if (applied > 0) {
+        window.GrapplingIntelligence.runPipeline();
+      }
+      return applied;
+    }
+
+    async function handleAppleFile(file) {
       if (!file) return;
+      var fileName = String(file.name || '').toLowerCase();
+      var isXmlByName = /\.xml$/i.test(fileName);
+
+      if (isXmlByName && file.size > APPLE_BACKEND_UPLOAD_MAX_BYTES) {
+        showToast('Apple export is too large for direct upload. Please split the export first.');
+        return;
+      }
+
+      if (isXmlByName && isMember() && file.size > APPLE_LOCAL_PARSE_MAX_BYTES) {
+        showToast('Large Apple export detected — importing via backend...');
+        var backend = await importAppleHealthViaBackend(file);
+        if (backend && backend.ok && backend.latest_day) {
+          var backendHistoryApplied = applyAppleBackendHistoryToIntelligence(backend.history_days || []);
+          if (syncAppleHealthData(backend.latest_day, { skipBackendWrite: true })) {
+            showToast('Apple Health imported via backend' + (backend.day_count ? ' (' + backend.day_count + ' days parsed' + (backendHistoryApplied ? ', AI history seeded' : '') + ')' : ''));
+            closeModal();
+          }
+          return;
+        }
+        showToast('Backend import failed for this file. Try a smaller export.');
+        return;
+      }
+
       var reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         try {
-          var data = JSON.parse(e.target.result);
+          var text = String(e.target.result || '');
+          var isXml = isXmlByName || text.indexOf('<HealthData') !== -1 || text.trim().indexOf('<?xml') === 0;
+          if (isXml && isMember() && file.size > APPLE_LOCAL_PARSE_MAX_BYTES) {
+            var backendFallback = await importAppleHealthViaBackend(file);
+            if (backendFallback && backendFallback.ok && backendFallback.latest_day) {
+              var backendFallbackHistoryApplied = applyAppleBackendHistoryToIntelligence(backendFallback.history_days || []);
+              if (syncAppleHealthData(backendFallback.latest_day, { skipBackendWrite: true })) {
+                showToast('Apple Health imported via backend' + (backendFallback.day_count ? ' (' + backendFallback.day_count + ' days parsed' + (backendFallbackHistoryApplied ? ', AI history seeded' : '') + ')' : ''));
+                closeModal();
+              }
+              return;
+            }
+            showToast('Backend import failed for this file. Try a smaller export.');
+            return;
+          }
+          var data = isXml ? extractAppleHealthDailyFromXml(text) : JSON.parse(text);
           if (syncAppleHealthData(data)) { closeModal(); }
-        } catch(e) { showToast('Invalid JSON file'); }
+        } catch(e) { showToast('Invalid Apple Health file (use export.xml or JSON)'); }
       };
       reader.readAsText(file);
     }
@@ -7747,12 +8919,67 @@ function openHealthMetricsManager() {
       catch(e) { showToast('Invalid JSON'); }
     });
 
+    // Apple Health reload from backend (member only)
+    var appleReloadBtn = document.getElementById('appleReloadFromBackendBtn');
+    if (appleReloadBtn) appleReloadBtn.addEventListener('click', async function() {
+      appleReloadBtn.disabled = true;
+      appleReloadBtn.textContent = 'Reloading...';
+      try {
+        var loaded = null;
+        if (typeof loadAppleHealthFromSupabase === 'function') {
+          loaded = await loadAppleHealthFromSupabase({ includeHistory: true, historyLimit: 120 });
+        }
+        if (!loaded && typeof loadAppleHealthFromBackend === 'function') {
+          loaded = loadAppleHealthFromBackend();
+        }
+        if (loaded) {
+          STATE.appleHealthData = loaded;
+          saveState();
+          if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
+          render();
+          showToast('Reloaded latest imported Apple Health data');
+        } else {
+          showToast('No imported Apple Health data found for this account');
+        }
+      } catch(e) {
+        showToast('Could not reload Apple Health data');
+      }
+      appleReloadBtn.disabled = false;
+      appleReloadBtn.textContent = 'Reload latest imported data';
+    });
+
     // Health Connect JSON import
     var healthConnectImportBtn = document.getElementById('healthConnectImportJsonBtn');
     if (healthConnectImportBtn) healthConnectImportBtn.addEventListener('click', function() {
       var raw = document.getElementById('healthConnectImportJson').value.trim();
       if (!raw) return showToast('Paste JSON first');
       try { if (syncHealthConnectData(JSON.parse(raw))) { closeModal(); } }
+      catch(e) { showToast('Invalid JSON'); }
+    });
+
+    // Cronometer JSON file import (context-only enrichment)
+    var cronoFileInput = document.getElementById('cronometerImportFile');
+    var cronoSelectBtn = document.getElementById('cronometerSelectFileBtn');
+    function handleCronometerFile(file) {
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = JSON.parse(e.target.result);
+          if (syncCronometerData(data)) { closeModal(); }
+        } catch(e) { showToast('Invalid Cronometer JSON file'); }
+      };
+      reader.readAsText(file);
+    }
+    if (cronoSelectBtn) cronoSelectBtn.addEventListener('click', function() { cronoFileInput.click(); });
+    if (cronoFileInput) cronoFileInput.addEventListener('change', function() { handleCronometerFile(cronoFileInput.files[0]); });
+
+    // Cronometer JSON import
+    var cronometerImportBtn = document.getElementById('cronometerImportJsonBtn');
+    if (cronometerImportBtn) cronometerImportBtn.addEventListener('click', function() {
+      var raw = document.getElementById('cronometerImportJson').value.trim();
+      if (!raw) return showToast('Paste JSON first');
+      try { if (syncCronometerData(JSON.parse(raw))) { closeModal(); } }
       catch(e) { showToast('Invalid JSON'); }
     });
   }
@@ -7880,6 +9107,13 @@ function updateAITrainingCard() {
       html += ' <span style="color:var(--text-muted);">(' + Math.round(rule.confidence * 100) + '% confidence)</span>';
     }
     html += '</div>';
+  }
+
+  // Optional nutrition enrichment indicator (Cronometer context only)
+  var aiHealthSummary = _hp.getHealthSummaryForAI ? _hp.getHealthSummaryForAI() : null;
+  var nutritionContext = aiHealthSummary && aiHealthSummary.nutrition_context ? aiHealthSummary.nutrition_context : null;
+  if (nutritionContext && nutritionContext.date) {
+    html += '<div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Nutrition context active: Cronometer (' + ccEscape(nutritionContext.date) + '). Primary readiness signals remain WHOOP/Apple Health.</div>';
   }
 
   // Data quality caveat
@@ -9020,8 +10254,12 @@ fetch('./live-playlists.json').then(function(r){if(!r.ok)throw r;return r.json()
 }).catch(function(){window._livePlaylists={};});
 // Results feed — fail-soft fetch (no console errors if missing)
 fetch('./results.md').then(function(r){if(!r.ok)throw r;return r.text();}).then(function(t){
-  var m=t.match(/<!-- LATEST-RESULT-START -->([\s\S]*?)<!-- LATEST-RESULT-END -->/);
-  if(m){try{window._lastResult=JSON.parse(m[1].trim());}catch(e){window._lastResult=null;}}
+  var latestResultPattern = new RegExp('<!-- LATEST-RESULT-START -->([\\s\\S]*?)<!-- LATEST-RESULT-END -->');
+  var m = t.match(latestResultPattern);
+  if (m) {
+    try { window._lastResult = JSON.parse(m[1].trim()); }
+    catch(e) { window._lastResult = null; }
+  }
 }).catch(function(){window._lastResult=null;});
 if (typeof SECTIONS === 'undefined' || !SECTIONS.length) {
   document.getElementById('sections').innerHTML = '<div style="text-align:center;padding:80px 20px;color:var(--text-muted);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;letter-spacing:1px;">Content is loading — please refresh if this persists</div>';
@@ -10164,12 +11402,28 @@ _log('[GrapplingMap] Debug API ready: window.__APP_DEBUG__');
       UserStore.migrateLocalToCloud();
     }
     // Load health data from backend (Apple Health, Polar, etc.)
-    if (typeof loadAppleHealthFromBackend === 'function') {
-      var backendAppleHealth = loadAppleHealthFromBackend();
-      if (backendAppleHealth) {
-        STATE.appleHealthData = backendAppleHealth;
-        _log('[Apple Health] CANONICAL: Loaded from backend on login');
-      }
+    // Try Supabase first (true canonical), then MultiUserHealth fallback
+    if (typeof loadAppleHealthFromSupabase === 'function') {
+      (async function() {
+        var supabaseAppleHealth = await loadAppleHealthFromSupabase({ includeHistory: true, historyLimit: 120 });
+        if (supabaseAppleHealth) {
+          STATE.appleHealthData = supabaseAppleHealth;
+          saveState();
+          if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
+        } else if (typeof loadAppleHealthFromBackend === 'function') {
+          // Fallback to MultiUserHealth
+          var backendAppleHealth = loadAppleHealthFromBackend();
+          if (backendAppleHealth) {
+            STATE.appleHealthData = backendAppleHealth;
+            if (window.GrapplingIntelligence) {
+              window.GrapplingIntelligence.appendDay(backendAppleHealth);
+              window.GrapplingIntelligence.runPipeline();
+            }
+            saveState();
+            if (typeof updateAITrainingCard === 'function') updateAITrainingCard();
+          }
+        }
+      })();
     }
     if (typeof loadPolarFromBackend === 'function') {
       var backendPolar = loadPolarFromBackend();
@@ -10676,7 +11930,7 @@ var AIActions = {
     if (!health || !health.connected) {
       return {
         title: 'No health data connected',
-        body: 'Connect WHOOP, Polar, Apple Health, or Health Connect to get training recommendations based on your recovery and readiness.\n\nOpen Health Metrics from the menu to connect a provider.'
+        body: 'Connect WHOOP or Polar, or import Apple Health/Health Connect data, to get training recommendations based on your recovery and readiness.\n\nOpen Health Metrics from the menu to add a data source.'
       };
     }
 
@@ -10871,7 +12125,7 @@ var AIActions = {
 
     var msg = healthLine
       ? 'Ask about your health metrics or training readiness.'
-      : 'Connect a health source (WHOOP, Polar, Apple Health, Health Connect) to get readiness guidance.';
+      : 'Connect WHOOP/Polar or import Apple Health/Health Connect data to get readiness guidance.';
 
     greetingEl.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.6;">' + msg + healthLine + '</div>';
     greetingEl.style.display = '';
@@ -13406,10 +14660,20 @@ function openCoachPanel() {
   setTimeout(checkTutorialOnBoot, 1200);
 })();
 
-// Register service worker for PWA/offline support
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(function(){});
-}
+// Register service worker for PWA/offline support.
+// On localhost/127.0.0.1: skip registration and unregister any stale SW so
+// old service workers cannot intercept Railway API fetches during development.
+(function() {
+  if (!('serviceWorker' in navigator)) return;
+  var _devHost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+  if (_devHost) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(reg) { reg.unregister(); });
+    }).catch(function(){});
+  } else {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+})();
 </script>
 </body>
 </html>
