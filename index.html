@@ -6564,7 +6564,7 @@ window.initGraph3D = (function() {
       const pos=e.line.geometry.attributes.position;
       pos.setXYZ(0,src.x,src.y,src.z);pos.setXYZ(1,tgt.x,tgt.y,tgt.z);pos.needsUpdate=true;
       // Position direction arrow at 80% from source to target
-      if(e._arrow){var ax=src.x+(tgt.x-src.x)*0.8,ay=src.y+(tgt.y-src.y)*0.8,az=src.z+(tgt.z-src.z)*0.8;e._arrow.position.set(ax,ay,az);e._arrow.visible=e.line.visible;if(e._arrowMat)e._arrowMat.opacity=e._mat.opacity*0.8;var dx=tgt.x-src.x,dy=tgt.y-src.y,dz=tgt.z-src.z;var dl=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;var dir=new THREE.Vector3(dx/dl,dy/dl,dz/dl);var up=new THREE.Vector3(0,1,0);var q=new THREE.Quaternion();q.setFromUnitVectors(up,dir);e._arrow.quaternion.copy(q);}
+      if(e._arrow){var _af=0.85;var ax=src.x+(tgt.x-src.x)*_af,ay=src.y+(tgt.y-src.y)*_af,az=src.z+(tgt.z-src.z)*_af;e._arrow.position.set(ax,ay,az);e._arrow.visible=e.line.visible;if(e._arrowMat)e._arrowMat.opacity=Math.min(e._mat.opacity*1.6, 1.0);var dx=tgt.x-src.x,dy=tgt.y-src.y,dz=tgt.z-src.z;var dl=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;var dir=new THREE.Vector3(dx/dl,dy/dl,dz/dl);var up=new THREE.Vector3(0,1,0);var q=new THREE.Quaternion();q.setFromUnitVectors(up,dir);e._arrow.quaternion.copy(q);}
     });
     Object.entries(ringMap3d).forEach(([id,r])=>{const n=nodeMap3d[id];if(n)r.position.set(n.x,n.y,n.z);});
     // CW18: Sync "My path" overlay edges
@@ -7748,9 +7748,18 @@ window.initGraph3D = (function() {
         const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(1,1,1)]);
         const line=new THREE.Line(geo,mat);pivot3d.add(line);
         var ek=e.edgeKey || (normalizeSegment((nodeMap3d[e.source]||{}).label||'')+'|'+normalizeSegment((nodeMap3d[e.target]||{}).label||''));
-        // CC8: Direction indicator — cone arrowhead at 80% towards target
-        var arrowGeo = new THREE.ConeGeometry(1.6, 4.5, 6);
-        var arrowMat = new THREE.MeshBasicMaterial({color:cs,transparent:true,opacity:base*0.8});
+        // C4: Edge direction indicator — bright cone arrowhead near the
+        // target end of every edge. The cone uses a SEPARATE, brighter
+        // colour (not .multiplyScalar(0.65) like the line) so it pops
+        // off the muted line and the direction is legible at a glance.
+        // 8-segment geometry + larger radius/height than the original
+        // 6-segment 1.6/4.5 version so the cone is actually visible
+        // instead of disappearing into the edge. Position update in
+        // the per-frame loop uses a matching 0.85 factor.
+        var arrowColor = new THREE.Color(SECT_HEX3[src.section_idx]||0x334466);
+        arrowColor.lerp(new THREE.Color(SECT_HEX3[tgt.section_idx]||0x334466), 0.65);
+        var arrowGeo = new THREE.ConeGeometry(2.4, 7.0, 8);
+        var arrowMat = new THREE.MeshBasicMaterial({color:arrowColor,transparent:true,opacity:Math.min(base*1.6, 1.0)});
         var arrow = new THREE.Mesh(arrowGeo, arrowMat);
         arrow.visible = true;
         pivot3d.add(arrow);
