@@ -7628,22 +7628,50 @@ window.initGraph3D = (function() {
       ready=true;
       canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ready=false;},false);
 
-      // C5: Interactive legend — click section pills to toggle node visibility
+      // C5: Interactive legend — click a section pill to FOCUS the graph
+      // on just that section (dims/hides everything else). Click the same
+      // focused pill again to return to the full graph. Click a different
+      // pill to switch focus.
       const g3dLeg=document.getElementById('g3dLegend');
       if(g3dLeg){
         g3dLeg.innerHTML='';
         g3dLeg.style.display='flex';g3dLeg.style.flexWrap='wrap';g3dLeg.style.gap='4px';g3dLeg.style.lineHeight='1';
         var _legendHidden=new Set(); // section indices currently hidden
+        function _legendFocusedIdx(){
+          // Return the single visible section index when the legend is
+          // in focus mode (all sections hidden except one), or null when
+          // the filter is cleared or in an inconsistent state.
+          if(_legendHidden.size !== SECTIONS.length - 1) return null;
+          for(var _si=0; _si<SECTIONS.length; _si++){
+            if(!_legendHidden.has(_si)) return _si;
+          }
+          return null;
+        }
         function applyLegendFilter(){
-          // If all are hidden, restore all (toggle-all-off = show all)
+          // Safety net: if every section ends up hidden, clear the filter
+          // rather than rendering an empty graph.
           var allOff=_legendHidden.size>=SECTIONS.length;
           if(allOff) _legendHidden.clear();
-          // Update pill styles
+          var focused=_legendFocusedIdx();
+          // Update pill styles — three states: default / hidden / focused.
+          // Focused pill gets a full-brightness border + filled background
+          // so the user clearly sees which section they're focused on.
           g3dLeg.querySelectorAll('[data-sec-idx]').forEach(function(pill){
             var si=parseInt(pill.getAttribute('data-sec-idx'),10);
+            var col=SECT_CSS3[si]||'#8899aa';
             var hidden=_legendHidden.has(si);
-            pill.style.opacity=hidden?'0.35':'1';
+            var isFocused=(focused===si);
+            pill.style.opacity=hidden?'0.3':'1';
             pill.style.textDecoration=hidden?'line-through':'none';
+            if(isFocused){
+              pill.style.borderColor=col;
+              pill.style.background=col+'33';
+              pill.style.color='#e6ecf3';
+            } else {
+              pill.style.borderColor=col+'44';
+              pill.style.background=col+'12';
+              pill.style.color='#8899aa';
+            }
           });
           // Toggle node visibility
           Object.entries(meshMap3d).forEach(function(kv){
@@ -7673,16 +7701,30 @@ window.initGraph3D = (function() {
           pill.setAttribute('data-sec-idx',i);
           pill.style.cssText='display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:2px 8px;border-radius:10px;border:1px solid '+col+'44;background:'+col+'12;font-size:10px;color:#8899aa;font-family:Barlow Condensed,sans-serif;letter-spacing:0.3px;transition:all 0.15s;user-select:none;white-space:nowrap;';
           pill.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:'+col+';display:inline-block;flex-shrink:0;"></span>'+s.title.split(' ').slice(0,2).join(' ');
-          pill.addEventListener('mouseenter',function(){pill.style.borderColor=col+'88';});
-          pill.addEventListener('mouseleave',function(){pill.style.borderColor=col+'44';});
+          pill.title='Click to focus on '+s.title+' (click again to clear)';
+          pill.addEventListener('mouseenter',function(){if(_legendFocusedIdx()!==i)pill.style.borderColor=col+'88';});
+          pill.addEventListener('mouseleave',function(){if(_legendFocusedIdx()!==i)pill.style.borderColor=col+'44';});
           pill.addEventListener('click',function(ev){
             ev.stopPropagation();
-            if(_legendHidden.has(i)) _legendHidden.delete(i);
-            else _legendHidden.add(i);
+            // FOCUS semantic: clicking a pill focuses the graph on that
+            // section. Clicking the same already-focused pill returns to
+            // the full graph. Clicking a different pill switches focus.
+            if(_legendFocusedIdx()===i){
+              _legendHidden.clear();
+            } else {
+              _legendHidden.clear();
+              SECTIONS.forEach(function(_s, si){ if(si!==i) _legendHidden.add(si); });
+            }
             applyLegendFilter();
           });
           g3dLeg.appendChild(pill);
         });
+        // Discoverable caption — tiny hint so users know the pills are
+        // clickable and what clicking does.
+        var legendHint=document.createElement('span');
+        legendHint.style.cssText='display:inline-block;font-size:9px;color:#4a5568;font-family:Barlow Condensed,sans-serif;letter-spacing:0.5px;margin-left:4px;align-self:center;opacity:0.7;';
+        legendHint.textContent='CLICK TO FOCUS';
+        g3dLeg.appendChild(legendHint);
       }
       const lc=document.getElementById('g3dLabelCanvas');
       lc.width=W;lc.height=H;
