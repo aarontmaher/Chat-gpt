@@ -6028,6 +6028,14 @@ function switchToReferenceNode(text, section) {
       found.style.background = 'rgba(232,255,71,0.2)';
       found.style.borderRadius = '3px'; found.style.padding = '0 3px';
       setTimeout(function() { found.style.background=''; found.style.padding=''; }, 2500);
+      // DEEP-LINK-FALLBACK: record the label we just focused so the
+      // tech= hash handler can tell whether the technique lookup
+      // succeeded and skip the position-level fallback when it did.
+      // Cleared to null below so stale matches from previous calls
+      // don't satisfy the fallback check.
+      window.__lastRefFocusLabel = normalizeSegment(found.textContent || '');
+    } else {
+      window.__lastRefFocusLabel = null;
     }
   }, 300);
 }
@@ -10483,8 +10491,32 @@ if (typeof updateQuickAccess === 'function') updateQuickAccess();
       var _techSegs = techKey.split('|');
       var _techLabel = _techSegs[_techSegs.length - 1].replace(/_/g, ' ');
       var _techSection = _techSegs[0].replace(/_/g, ' ');
+      // Segment 1 (when present) is the containing position — used
+      // as the graceful fallback target when the technique leaf label
+      // can't be found in the Reference DOM (mobile deep link drift,
+      // content renamed upstream, etc). Empty string when the caller
+      // only supplied section + technique.
+      var _techPosition = _techSegs.length > 2 ? _techSegs[1].replace(/_/g, ' ') : '';
       switchToTab('reference');
-      setTimeout(function() { switchToReferenceNode(_techLabel, _techSection); }, 200);
+      setTimeout(function() {
+        // Clear the focus tracker before we try — switchToReferenceNode
+        // updates it on success/failure and the fallback check below
+        // depends on a clean slate to avoid reacting to a prior match.
+        window.__lastRefFocusLabel = null;
+        switchToReferenceNode(_techLabel, _techSection);
+        // DEEP-LINK-FALLBACK: if the technique label wasn't matched
+        // in the DOM, fall back to focusing the containing position
+        // so the user lands on something relevant instead of the
+        // root of the Reference tree. Run after the 300ms inner
+        // scroll timeout in switchToReferenceNode resolves.
+        if (_techPosition) {
+          setTimeout(function() {
+            if (!window.__lastRefFocusLabel) {
+              switchToReferenceNode(_techPosition, _techSection);
+            }
+          }, 600);
+        }
+      }, 200);
       deepLinked = true;
     } else if (hash.indexOf('pos=') === 0) {
       var _posParams = {};
